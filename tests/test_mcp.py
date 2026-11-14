@@ -11,6 +11,7 @@ from fastapi.testclient import TestClient
 from xangx.demo.seed import seed_all
 from xangx.server import access
 from xangx.server import app as server_app
+from xangx.server import mcp
 from xangx.shared.db import connect, init_db
 from xangx.shared.events import append_event, read_events
 
@@ -183,6 +184,18 @@ class McpTest(unittest.TestCase):
         self.assertIn("Χρειάζεται έγκριση", by_name["send_order"]["description"])
         self.assertNotIn("Χρειάζεται έγκριση", by_name["get_store_status"]["description"])
         self.assertEqual(by_name["send_order"]["inputSchema"]["required"], ["order_id"])
+
+    def test_tools_have_greek_titles(self):
+        tools = self.rpc("tools/list").json()["result"]["tools"]
+        for t in tools:
+            self.assertEqual(t["title"], mcp.TITLES_EL[t["name"]])
+        self.assertEqual(len(tools), len(mcp.TITLES_EL))
+
+    def test_marker_summary_is_greek_title(self):
+        self.call("get_store_status", {})
+        marker = [e for e in self.events("agent.planned") if e.payload.get("via") == "mcp"]
+        self.assertEqual(len(marker), 1)
+        self.assertEqual(marker[0].payload["steps"][0]["summary"], "Κατάσταση του μαγαζιού")
 
     # --- tools/call ---
     def test_unknown_and_excluded_tool(self):

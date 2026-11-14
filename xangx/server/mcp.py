@@ -28,6 +28,20 @@ from xangx.shared.events import read_events
 # Tools that other agents never see (notify_owner writes to the owner's screen and Telegram).
 EXCLUDED_TOOLS = frozenset({"notify_owner"})
 
+# Greek titles shown on the owner's screen and in tools/list "title" (descriptions stay English).
+TITLES_EL = {
+    "get_store_status": "Κατάσταση του μαγαζιού",
+    "list_recent_events": "Πρόσφατα γεγονότα",
+    "list_open_invoices": "Τιμολόγια που θέλουν προσοχή",
+    "process_invoice": "Έλεγχος τιμολογίου",
+    "set_payment_reminder": "Υπενθύμιση πληρωμής",
+    "request_credit": "Αίτημα πιστωτικού",
+    "daily_report": "Αναφορά της ημέρας",
+    "propose_order": "Πρόταση παραγγελίας",
+    "send_order": "Αποστολή παραγγελίας",
+    "delivery_status": "Κατάσταση παραλαβής",
+}
+
 MIN_TOKEN_LENGTH = 24
 MAX_BODY_BYTES = 64 * 1024
 MAX_STRING = 2000
@@ -103,9 +117,10 @@ def _visible_tools():
         description = definitions[name]["description"]
         if t.needs_approval:
             description += NEEDS_APPROVAL_NOTE
-        listed.append(
-            {"name": name, "description": description, "inputSchema": definitions[name]["input_schema"]}
-        )
+        entry = {"name": name, "description": description, "inputSchema": definitions[name]["input_schema"]}
+        if name in TITLES_EL:
+            entry["title"] = TITLES_EL[name]
+        listed.append(entry)
     return listed
 
 
@@ -163,7 +178,7 @@ def _write_marker(conn, name, t):
     agent.planned already exists in the catalog; extra payload fields are allowed.
     The tool run and the approval card point back to it with caused_by.
     """
-    summary = (t.description or name).split(".")[0].strip()[:200]
+    summary = TITLES_EL.get(name) or (t.description or name).split(".")[0].strip()[:200]
     event, _ = append_event(
         conn, type="agent.planned", actor="master",
         payload={"steps": [{"tool": name, "summary": summary}], "via": "mcp"},
