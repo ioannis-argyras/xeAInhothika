@@ -251,9 +251,10 @@ def seed_history(conn, now):
 
 
 def _seed_morning(conn, on_hand, rate, today):
-    """The state of this morning: a count at 06:30, then the open order P-0318."""
+    """The state of this morning: a count (yesterday 23:59, so today's feed starts
+    clean), then the open order P-0318."""
     events = []
-    at = _utc(today, 6, 30)
+    at = _utc(today - timedelta(days=1), 23, 59)
     for p in PRODUCTS:
         pid = p["id"]
         current = on_hand[pid]

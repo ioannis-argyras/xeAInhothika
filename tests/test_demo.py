@@ -112,6 +112,17 @@ class DemoSeedTests(unittest.TestCase):
         self.assertFalse(afm_valid("990000019"))
         self.assertFalse(iban_valid("GR0000000000000000000000000"))
 
+    def test_morning_count_is_not_in_todays_feed(self):
+        day_start = "2026-11-13T22:00:00.000Z"
+        count = self.conn.execute(
+            "SELECT at FROM events WHERE type='stock.moved' "
+            "AND json_extract(payload, '$.reason') = 'count' "
+            "AND at >= '2026-11-13T21:00:00.000Z' ORDER BY at"
+        ).fetchall()
+        self.assertTrue(count)
+        self.assertTrue(all(r["at"] < day_start for r in count))
+        self.assertEqual(stock_levels(self.conn)["cola-330"], 8)
+
     def test_history_is_system_and_in_the_past(self):
         row = self.conn.execute(
             "SELECT MIN(at) AS first, MAX(at) AS last, COUNT(DISTINCT actor) AS actors "
