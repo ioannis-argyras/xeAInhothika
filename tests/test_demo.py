@@ -7,6 +7,7 @@ from xangx.demo.catalog_data import (
     PRODUCTS,
     SUPPLIERS,
     afm_valid,
+    ean13,
     iban_valid,
 )
 from xangx.demo.seed import seed_all
@@ -63,6 +64,41 @@ class DemoSeedTests(unittest.TestCase):
         self.assertIn("chips-salt-90", low)
         self.assertLessEqual(len(low), 3)
         self.assertTrue(all(level >= 0 for level in levels.values()))
+
+    def test_case_barcodes_of_the_open_order(self):
+        rows = self.conn.execute(
+            "SELECT product_id, case_barcode FROM supplier_products "
+            "WHERE case_barcode IS NOT NULL AND supplier_id = 'sup-ymittou'"
+        ).fetchall()
+        self.assertEqual(
+            sorted(r["product_id"] for r in rows),
+            sorted(["cola-330", "water-1500x6", "chips-salt-90", "choco-milk-100",
+                    "juice-orange-1l"]),
+        )
+        codes = [r["case_barcode"] for r in rows]
+        self.assertEqual(len(set(codes)), 5)
+        product_codes = {p["barcode"] for p in PRODUCTS}
+        for code in codes:
+            self.assertEqual(len(code), 13)
+            self.assertTrue(code.startswith("200"))
+            self.assertEqual(code, ean13(code[:12]))
+            self.assertNotIn(code, product_codes)
+        total = self.conn.execute(
+            "SELECT COUNT(*) FROM supplier_products WHERE case_barcode IS NOT NULL"
+        ).fetchone()[0]
+        self.assertEqual(total, 5)
+
+    def test_init_db_adds_case_barcode_to_an_old_database(self):
+        old = connect(":memory:")
+        old.executescript(
+            "CREATE TABLE supplier_products (supplier_id TEXT NOT NULL, "
+            "product_id TEXT NOT NULL, supplier_code TEXT, pack_size INTEGER, "
+            "PRIMARY KEY (supplier_id, product_id));"
+        )
+        init_db(old)
+        init_db(old)
+        names = [r[1] for r in old.execute("PRAGMA table_info(supplier_products)")]
+        self.assertEqual(names.count("case_barcode"), 1)
 
     def test_afm_and_iban_valid(self):
         for supplier in SUPPLIERS:

@@ -66,6 +66,7 @@ CREATE TABLE IF NOT EXISTS supplier_products (
     product_id    TEXT NOT NULL REFERENCES products(id),
     supplier_code TEXT,
     pack_size     INTEGER,
+    case_barcode  TEXT,
     PRIMARY KEY (supplier_id, product_id)
 );
 
@@ -100,4 +101,7 @@ def connect(path=None):
 def init_db(conn):
     """Create all tables, indexes and triggers. Safe to run again."""
     conn.executescript(SCHEMA)
+    columns = [r[1] for r in conn.execute("PRAGMA table_info(supplier_products)")]
+    if "case_barcode" not in columns:
+        conn.execute("ALTER TABLE supplier_products ADD COLUMN case_barcode TEXT")
     conn.commit()

@@ -155,6 +155,16 @@ def _supplier_price(supplier_id, product):
     return cost + 2  # first supplier as second source for Kava products
 
 
+# Case (carton) barcodes of the products on order P-0318: invented EAN-13, prefix 200
+# (internal use, not real), different from every product barcode.
+CASE_BARCODES = {
+    ("sup-ymittou", "cola-330"): ean13("200000318001"),
+    ("sup-ymittou", "water-1500x6"): ean13("200000318002"),
+    ("sup-ymittou", "chips-salt-90"): ean13("200000318003"),
+    ("sup-ymittou", "choco-milk-100"): ean13("200000318004"),
+    ("sup-ymittou", "juice-orange-1l"): ean13("200000318005"),
+}
+
 SUPPLIER_PRODUCTS = []
 for _p in PRODUCTS:
     _suppliers = [_p["main_supplier"]]
@@ -169,6 +179,7 @@ for _p in PRODUCTS:
                 "product_id": _p["id"],
                 "supplier_code": f"{_s[4:7].upper()}-{_p['barcode'][-5:]}",
                 "pack_size": _p["pack_size"],
+                "case_barcode": CASE_BARCODES.get((_s, _p["id"])),
                 "unit_cents": _supplier_price(_s, _p),
             }
         )

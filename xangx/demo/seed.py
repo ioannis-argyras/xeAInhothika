@@ -90,9 +90,11 @@ def seed_reference(conn):
             )
         for sp in SUPPLIER_PRODUCTS:
             conn.execute(
-                "INSERT OR REPLACE INTO supplier_products VALUES (?,?,?,?)",
+                "INSERT OR REPLACE INTO supplier_products "
+                "(supplier_id, product_id, supplier_code, pack_size, case_barcode) "
+                "VALUES (?,?,?,?,?)",
                 (sp["supplier_id"], sp["product_id"], sp["supplier_code"],
-                 sp["pack_size"]),
+                 sp["pack_size"], sp.get("case_barcode")),
             )
         for pos in POSITIONS:
             conn.execute(
