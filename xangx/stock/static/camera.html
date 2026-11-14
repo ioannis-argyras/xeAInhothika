@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="el">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Κάμερα ραφιού · Xangxothaika</title>
+<style>
+  body{font:17px system-ui,sans-serif;margin:0;padding:12px;background:#111;color:#eee}
+  h1{font-size:19px;margin:4px 0 10px}
+  video{width:100%;border-radius:10px;background:#000;max-height:50vh;object-fit:cover}
+  button,label.b{display:block;width:100%;box-sizing:border-box;padding:18px;margin:8px 0;font-size:20px;border:0;border-radius:12px;background:#2e9e6b;color:#fff;text-align:center}
+  button:disabled{background:#333;color:#888}
+  label.b{background:#3a3a3a;font-size:17px;padding:14px}
+  #st{min-height:1.4em;color:#bbb}
+  #res{font-size:21px;font-weight:600;line-height:1.4}
+  #res .none{color:#999;font-weight:400;font-size:17px}
+</style>
+</head>
+<body>
+<h1 id="title">Κάμερα ραφιού</h1>
+<video id="v" autoplay playsinline muted></video>
+<button id="now">Φωτογραφία τώρα</button>
+<label><input type="checkbox" id="auto" checked> αυτόματα κάθε 30 δευτερόλεπτα</label>
+<label class="b">Από τη συλλογή<input type="file" id="file" accept="image/*" hidden></label>
+<div id="res"></div>
+<p id="st">Ανοίγω την κάμερα…</p>
+<script>
+const $ = id => document.getElementById(id);
+const cam = new URLSearchParams(location.search).get('cam') || 'cam-1';
+const v = $('v'); let timer = null, busy = false;
+$('title').textContent = 'Κάμερα ραφιού · ' + cam;
+const say = t => $('st').textContent = t;
+
+async function start() {
+  if (!window.isSecureContext) { say('Χωρίς HTTPS ο browser δεν δίνει κάμερα. Χρησιμοποίησε «Από τη συλλογή».'); return; }
+  try {
+    v.srcObject = await navigator.mediaDevices.getUserMedia({video: {facingMode: {ideal: 'environment'}, width: {ideal: 1920}}, audio: false});
+    say('Η κάμερα είναι έτοιμη.');
+  } catch (e) { say('Η κάμερα δεν άνοιξε (' + e.name + '). Χρησιμοποίησε «Από τη συλλογή».'); }
+}
+
+// Shrink to 1024 px wide, JPEG quality 0.8, then base64.
+function toB64(source, w, h) {
+  const scale = Math.min(1, 1024 / w), c = document.createElement('canvas');
+  c.width = Math.round(w * scale); c.height = Math.round(h * scale);
+  c.getContext('2d').drawImage(source, 0, 0, c.width, c.height);
+  return c.toDataURL('image/jpeg', 0.8).split(',')[1];
+}
+function fromCamera() {
+  if (!v.videoWidth) throw new Error('η κάμερα δεν είναι έτοιμη');
+  return toB64(v, v.videoWidth, v.videoHeight);
+}
+async function fromFile(file) {
+  const img = await createImageBitmap(file);
+  return toB64(img, img.width, img.height);
+}
+
+function show(j) {
+  if (j.first) { $('res').innerHTML = '<span class="none">Πρώτη φωτογραφία: τη κρατώ για σύγκριση.</span>'; return; }
+  const moved = (j.results || []).filter(r => r.taken > 0 || r.added > 0);
+  if (!moved.length) { $('res').innerHTML = '<span class="none">Καμία αλλαγή στο ράφι.</span>'; return; }
+  $('res').innerHTML = '';
+  for (const r of moved) {
+    const d = document.createElement('div');
+    const parts = [];
+    if (r.taken > 0) parts.push('πήραν ' + r.taken);
+    if (r.added > 0) parts.push('γέμισαν ' + r.added);
+    d.textContent = r.position_name + ': ' + parts.join(', ') + ' ' + r.product_name;
+    $('res').appendChild(d);
+  }
+}
+
+async function send(b64) {
+  if (busy) return; busy = true; $('now').disabled = true;
+  const t0 = Date.now(); say('Στέλνω και ρωτάω τι άλλαξε…');
+  try {
+    const r = await fetch('/stock/camera/photo', {method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({camera_id: cam, image_b64: b64})});
+    const j = await r.json();
+    if (!r.ok) { say('Σφάλμα: ' + (j.detail || r.status)); return; }
+    show(j);
+    say('Ενημερώθηκε ' + new Date().toLocaleTimeString('el-GR') + ' (' + ((Date.now() - t0) / 1000).toFixed(1) + '″)');
+  } catch (e) { say('Δεν έφτασε στον server: ' + e.message); }
+  finally { busy = false; $('now').disabled = false; }
+}
+
+$('now').onclick = () => { try { send(fromCamera()); } catch (e) { say('Σφάλμα: ' + e.message); } };
+$('file').onchange = e => { const f = e.target.files[0]; if (f) fromFile(f).then(send).catch(err => say('Σφάλμα: ' + err.message)); e.target.value = ''; };
+function setAuto() {
+  clearInterval(timer);
+  if ($('auto').checked) timer = setInterval(() => { try { send(fromCamera()); } catch (e) {} }, 30000);
+}
+$('auto').onchange = setAuto;
+start().then(setAuto);
+</script>
+</body>
+</html>
