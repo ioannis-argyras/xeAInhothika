@@ -212,6 +212,11 @@ async def access_middleware(request: Request, call_next):
     if path == "/healthz" and request.method == "GET":
         return JSONResponse({"ok": True})
 
+    # The MCP door has its own bearer token (xangx/server/mcp.py), not the team cookie.
+    # Exact path only: /mcpx or /mcp/anything stay locked.
+    if path == "/mcp":
+        return await call_next(request)
+
     if request.method == "GET" and _is_font_file(path):
         return await call_next(request)
 

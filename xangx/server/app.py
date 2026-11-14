@@ -18,6 +18,7 @@ from xangx.screen.api_b2 import router as api_b2_router
 from xangx.screen.api_c import router as api_c_router
 from xangx.screen.describe import describe, load_names
 from xangx.server.access import access_middleware
+from xangx.server.mcp import router as mcp_router
 from xangx.shared import views
 from xangx.shared.catalog import CATALOG
 from xangx.shared.db import connect, init_db
@@ -72,6 +73,7 @@ include_role_routes(app)
 app.include_router(api_b1_router)
 app.include_router(api_b2_router)
 app.include_router(api_c_router)
+app.include_router(mcp_router)
 
 # Added last, so it runs first: the team access code covers every route above.
 app.middleware("http")(access_middleware)
