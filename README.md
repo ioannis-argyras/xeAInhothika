@@ -7,3 +7,11 @@ The demo store is a 24-hour convenience store: a phone camera watches the shelf,
 Built at the Gen AI Summit Hackathon, Athens, 14–15/11/2026.
 
 **Status:** work in progress.
+
+## Development
+
+- Python 3.11, no dependencies (standard library only).
+- Create the empty database: `python scripts/init_db.py`
+- Run the tests: `python -m unittest discover -s tests -v`
+
+All agents talk through an append-only event log (`xangx/shared/`).
