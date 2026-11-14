@@ -21,6 +21,9 @@ dist/
 # Temporary files (deleted at the end of each task)
 .tmp/
 
+# Demo database, camera photos and invoice files: rebuilt by scripts, never go to git
+data/
+
 # Real invoices: only on one laptop, never in git
 pragmatika/
 
