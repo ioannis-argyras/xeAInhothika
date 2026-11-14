@@ -358,5 +358,55 @@ class TelegramTest(MasterTestCase):
             agent.start_background()
 
 
+class PaymentsDueTest(MasterTestCase):
+    def setUp(self):
+        super().setUp()
+        self.conn.execute("INSERT INTO suppliers (id, name) VALUES ('sup-y', 'Διανομές Υμηττού')")
+        self.conn.commit()
+
+    def remind(self, invoice_id, due_on, cents=15929):
+        append_event(self.conn, type="payment.reminder_set", actor="accountant", payload={
+            "supplier_id": "sup-y", "invoice_id": invoice_id, "due_on": due_on, "amount_cents": cents})
+
+    def told(self):
+        return [e.payload["text"] for e in read_events(self.conn, types=["notification.sent"])]
+
+    def test_due_today_is_told_once_per_day(self):
+        self.remind("A-2271", agent.greek_today())
+        self.remind("A-9", "2999-01-01")
+        agent.morning_check(self.conn)
+        agent.morning_check(self.conn)
+        self.assertEqual(self.told(), ["Σήμερα λήγει η πληρωμή 159,29 € στον Διανομές Υμηττού (A-2271)"])
+        findings = read_events(self.conn, types=["check.morning_done"])[0].payload["findings"]
+        self.assertIn({"type": "payment_due", "ref": "A-2271"}, findings)
+
+    def test_overdue_says_since_when_and_answered_is_silent(self):
+        self.remind("A-1", "2026-11-10")
+        self.remind("A-2", "2026-11-10")
+        append_event(self.conn, type="payment.recorded", actor="owner",
+                     payload={"invoice_id": "A-2", "method": "bank", "amount_cents": 15929})
+        agent.morning_check(self.conn)
+        self.assertEqual(self.told(), ["Έληξε στις 10/11/2026 η πληρωμή 159,29 € στον Διανομές Υμηττού (A-1)"])
+
+    def test_telegram_asks_with_four_buttons_and_records_the_answer(self):
+        append_event(self.conn, type="payment.asked", actor="accountant", payload={
+            "invoice_id": "B-512", "supplier_id": "sup-y", "amount_cents": 5170, "invoice_date": "2026-11-14"})
+        api = mock.Mock()
+        api.call = mock.Mock(return_value={})
+        self.assertEqual(telegram.notify_once(self.conn, api, "111"), 1)
+        params = api.call.call_args.kwargs
+        self.assertIn("Πλήρωσες το τιμολόγιο B-512;", params["text"])
+        row = params["reply_markup"]["inline_keyboard"][0]
+        self.assertEqual([b["text"] for b in row], ["Μετρητά", "Κάρτα", "Τράπεζα", "Όχι ακόμα"])
+        callback = {"update_id": 5, "callback_query": {
+            "id": "c", "data": row[1]["callback_data"], "message": {"chat": {"id": 111}}}}
+        telegram.process_update(self.conn, api, callback, "111")
+        recorded = read_events(self.conn, types=["payment.recorded"])
+        self.assertEqual([e.payload["method"] for e in recorded], ["card"])
+        self.assertEqual(api.call.call_args.kwargs["text"], "Πληρώθηκε το B-512 με κάρτα")
+        # answered: a second asking would not be sent
+        self.assertEqual(telegram.notify_once(self.conn, api, "111"), 0)
+
+
 if __name__ == "__main__":
     unittest.main()

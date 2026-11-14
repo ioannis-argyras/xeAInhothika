@@ -11,12 +11,14 @@ Public functions (blocking; called from a thread pool by the server):
 import json
 import os
 import time
+from datetime import datetime, timezone
 from types import SimpleNamespace
 
 from xangx.master import tools as tool_catalog
 from xangx.master.prompt import SYSTEM_PROMPT
+from xangx.screen.describe import load_names
 from xangx.shared import append_event, read_events
-from xangx.shared import views
+from xangx.shared import payments, views
 from xangx.shared.money import format_eur
 
 MODEL = "claude-opus-5-5"
@@ -392,6 +394,33 @@ def decide_approval(conn, approval_id, decision, channel="web"):
     return {"ok": ok, "message": message, "event_ids": ids}
 
 
+def greek_today():
+    """Today's date in Greece, YYYY-MM-DD."""
+    now = datetime.now(timezone.utc)
+    return (now + tool_catalog.greek_offset(now)).strftime("%Y-%m-%d")
+
+
+def _tell_payments_due(conn, findings, day_start, today):
+    """One notification per invoice per day for payments that are due today or overdue."""
+    names = load_names(conn)
+    for item in payments.open_payments(conn, day_start, today):
+        if item["kind"] != "due":
+            continue
+        findings.append({"type": "payment_due", "ref": item["invoice_id"]})
+        number = names["invoice"].get(item["invoice_id"]) or item["invoice_id"]
+        who = names["supplier"].get(item["supplier_id"]) or str(item["supplier_id"])
+        amount = format_eur(item["amount_cents"] or 0)
+        if item["due_on"] == today:
+            text = f"Σήμερα λήγει η πληρωμή {amount} στον {who} ({number})"
+        else:
+            day = "/".join(reversed(item["due_on"].split("-")))
+            text = f"Έληξε στις {day} η πληρωμή {amount} στον {who} ({number})"
+        append_event(
+            conn, type="notification.sent", actor="master",
+            payload={"channel": "all", "text": text},
+            idem_key=f"payment-due:{item['invoice_id']}:{today}")
+
+
 def morning_check(conn):
     """No LLM: collect what needs attention today and write check.morning_done."""
     findings = [
@@ -405,6 +434,7 @@ def morning_check(conn):
     for e in read_events(conn, types=["exception.flagged"]):
         if e.at >= day_start:
             findings.append({"type": "exception", "ref": e.payload.get("ref")})
+    _tell_payments_due(conn, findings, day_start, greek_today())
     event, _ = append_event(
         conn, type="check.morning_done", actor="master", payload={"findings": findings}
     )

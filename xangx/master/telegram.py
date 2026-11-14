@@ -15,14 +15,17 @@ except ImportError:  # pragma: no cover
     import httpx
 
 from xangx.master import agent
+from xangx.master import tools as tool_catalog
+from xangx.screen.describe import describe, load_names
 from xangx.shared import connect
+from xangx.shared import payments
 from xangx.shared import views
 from xangx.shared.cursors import consume, get_cursor, set_cursor
 
 POLL_TIMEOUT = 30
 RETRY_SECONDS = 5
 NOTIFIER_ACTOR = "telegram-notifier"
-NOTIFY_TYPES = ["approval.requested", "notification.sent"]
+NOTIFY_TYPES = ["approval.requested", "notification.sent", "payment.asked"]
 MAX_TEXT = 4000
 
 
@@ -64,6 +67,16 @@ def process_update(conn, api, update, owner_chat_id):
             result = agent.decide_approval(conn, parts[1], parts[2], "telegram")
             api.call("answerCallbackQuery", callback_query_id=callback["id"])
             send_text(api, owner_chat_id, result["message"])
+        elif str(callback.get("data", "")).startswith("pay:"):
+            invoice_id, _, method = str(callback["data"])[4:].rpartition(":")
+            api.call("answerCallbackQuery", callback_query_id=callback["id"])
+            if method not in payments.METHODS:
+                return
+            event = payments.record_payment(conn, invoice_id, method, agent.greek_today())
+            if event is None:
+                send_text(api, owner_chat_id, "Δεν έχω ρωτήσει για αυτό το τιμολόγιο.")
+            else:
+                send_text(api, owner_chat_id, describe(event, load_names(conn)))
         return
     message = update.get("message")
     if not message:
@@ -93,7 +106,22 @@ def poll_forever(api, owner_chat_id, db_path=None):
 
 def make_notify_handler(conn, api, owner_chat_id):
     def handle(event):
-        if event.type == "approval.requested":
+        if event.type == "payment.asked":
+            invoice_id = event.payload.get("invoice_id")
+            open_now = payments.open_payments(
+                conn, tool_catalog.greek_day_start_utc(), agent.greek_today())
+            item = next((i for i in open_now if i["invoice_id"] == invoice_id), None)
+            if item is None:
+                return
+            title, line = payments.card_texts(item, load_names(conn))
+            buttons = [
+                {"text": "Μετρητά", "callback_data": f"pay:{invoice_id}:cash"},
+                {"text": "Κάρτα", "callback_data": f"pay:{invoice_id}:card"},
+                {"text": "Τράπεζα", "callback_data": f"pay:{invoice_id}:bank"},
+                {"text": "Όχι ακόμα", "callback_data": f"pay:{invoice_id}:not_yet"},
+            ]
+            send_text(api, owner_chat_id, f"{title}\n{line}", buttons)
+        elif event.type == "approval.requested":
             approval_id = event.payload.get("approval_id")
             still_pending = any(
                 e.payload.get("approval_id") == approval_id
