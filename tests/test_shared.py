@@ -3,7 +3,14 @@ import sqlite3
 import unittest
 from pathlib import Path
 
-from xangx.shared import EventError, append_event, connect, init_db, read_events
+from xangx.shared import (
+    EventError,
+    append_event,
+    append_events,
+    connect,
+    init_db,
+    read_events,
+)
 from xangx.shared.catalog import CATALOG
 from xangx.shared.cursors import consume, get_cursor
 from xangx.shared.money import format_eur, line_net_cents, vat_cents
@@ -38,6 +45,13 @@ def approval_payload(approval_id):
         "why": "w",
         "ref": "order:P-1",
     }
+
+
+INVOICE_READ = {
+    "invoice_id": "INV-1", "supplier_afm": "123456789", "series": "A",
+    "number": "1", "date": "2025-03-01", "lines": [], "net_cents": 0,
+    "vat_by_rate": {}, "total_cents": 0, "checks": {}, "confidence": "high",
+}
 
 
 class SharedTests(unittest.TestCase):
@@ -172,6 +186,63 @@ class SharedTests(unittest.TestCase):
                 documented.update(re.findall(r"`([^`]+)`", first_cell))
         self.assertTrue(documented)
         self.assertEqual(documented - set(CATALOG), set())
+
+    def test_12_append_events_atomic(self):
+        items = [
+            dict(type="stock.moved", actor="stock",
+                 payload={"product_id": "p", "qty": q, "reason": "count"})
+            for q in (1, 2, 3)
+        ]
+        results = append_events(self.conn, items)
+        self.assertEqual(len(results), 3)
+        self.assertTrue(all(created for _, created in results))
+        self.assertEqual(len(read_events(self.conn)), 3)
+
+    def test_13_append_events_nothing_written_on_error(self):
+        items = [
+            dict(type="stock.moved", actor="stock",
+                 payload={"product_id": "p", "qty": 1, "reason": "count"})
+            for _ in range(2)
+        ]
+        items.append(
+            dict(type="stock.moved", actor="stock", caused_by=999,
+                 payload={"product_id": "p", "qty": 1, "reason": "count"})
+        )
+        with self.assertRaises(EventError):
+            append_events(self.conn, items)
+        self.assertEqual(len(read_events(self.conn)), 0)
+
+    def test_14_system_may_set_at(self):
+        at = "2025-03-01T10:00:00.000Z"
+        event, created = append_event(
+            self.conn, type="invoice.read", actor="system", at=at,
+            payload=INVOICE_READ,
+        )
+        self.assertTrue(created)
+        self.assertEqual(event.at, at)
+        self.assertEqual(read_events(self.conn)[0].at, at)
+
+    def test_15_other_actor_cannot_set_at(self):
+        with self.assertRaises(EventError):
+            append_event(
+                self.conn, type="owner.said", actor="owner",
+                payload={"text": "x", "channel": "web"},
+                at="2025-03-01T10:00:00.000Z",
+            )
+
+    def test_16_invoice_read_by_system(self):
+        event, created = append_event(
+            self.conn, type="invoice.read", actor="system", payload=INVOICE_READ
+        )
+        self.assertTrue(created)
+        self.assertEqual(event.actor, "system")
+
+    def test_17_bad_at_format(self):
+        with self.assertRaises(EventError):
+            append_event(
+                self.conn, type="invoice.read", actor="system",
+                payload=INVOICE_READ, at="2025-03-01 10:00",
+            )
 
 
 if __name__ == "__main__":

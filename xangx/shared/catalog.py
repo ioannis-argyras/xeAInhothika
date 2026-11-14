@@ -62,7 +62,7 @@ CATALOG = {
         ["invoices"], "invoice_id", "source", "file_ref", "sha256"
     ),
     "invoice.read": _spec(
-        ["invoices"],
+        ["invoices", "system"],
         "invoice_id", "supplier_afm", "series", "number", "date", "lines",
         "net_cents", "vat_by_rate", "total_cents", "checks", "confidence",
     ),
