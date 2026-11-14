@@ -10,7 +10,7 @@ from xangx.demo.seed import seed_all
 from xangx.server import app as server_app
 from xangx.shared import views
 from xangx.shared.db import connect, init_db
-from xangx.shared.events import read_events
+from xangx.shared.events import append_event, read_events
 from xangx.stock import camera, worker
 
 
@@ -156,6 +156,99 @@ class CountTakenTest(unittest.TestCase):
     def test_fake_without_key(self):
         with mock.patch.dict(os.environ, {"XANGX_FAKE_LLM": "1"}):
             self.assertEqual(camera.count_taken("a", "b", self.POS)[0]["taken"], 5)
+
+
+
+class DeliveryTest(unittest.TestCase):
+    """Delivery check with barcodes, on the demo data plus a small sent order of 10 water packs."""
+
+    setUpClass = classmethod(CameraTest.setUpClass.__func__)
+    tearDownClass = classmethod(CameraTest.tearDownClass.__func__)
+    setUp = CameraTest.setUp
+    tearDown = CameraTest.tearDown
+
+    def order(self, order_id="P-0900", qty=10):
+        append_event(self.conn, type="order.proposed", actor="orders", subject=f"order:{order_id}",
+                     payload={"order_id": order_id, "supplier_id": "sup-ymittou", "net_cents": qty * 215,
+                              "lines": [{"product_id": "water-1500x6", "qty": qty, "unit_cents": 215,
+                                         "last_unit_cents": 215}],
+                              "why": {"per_day": 1.0, "on_hand": 2, "lead_days": 1}})
+        return self.client.post("/stock/delivery/start", json={"order_id": order_id}).json()
+
+    def barcode(self, pid):
+        return self.conn.execute("SELECT barcode FROM products WHERE id = ?", (pid,)).fetchone()[0]
+
+    def scan(self, code, delivery_id="D-P-0900"):
+        return self.client.post("/stock/delivery/scan", json={"delivery_id": delivery_id, "barcode": code})
+
+    def test_page_and_decoder_are_served(self):
+        r = self.client.get("/stock/scan?order=P-0318")
+        self.assertEqual(r.status_code, 200)
+        self.assertIn("Με το χέρι", r.text)
+        w = self.client.get("/stock/vendor/zxing_reader.wasm")
+        self.assertEqual(w.headers["content-type"], "application/wasm")
+        self.assertEqual(self.client.get("/stock/vendor/../routes.py").status_code, 404)
+
+    def test_nine_of_ten_gives_a_shortage_of_one(self):
+        s = self.order()
+        self.assertEqual((s["scanned"], s["expected"]), (0, 10))
+        water = self.barcode("water-1500x6")
+        for _ in range(9):
+            r = self.scan(water)
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual((r.json()["scanned"], r.json()["expected"]), (9, 10))
+        self.assertEqual(r.json()["missing"][0]["qty"], 1)
+        before = views.stock_on_hand(self.conn, "water-1500x6")
+        done = self.client.post("/stock/delivery/complete", json={"delivery_id": "D-P-0900"}).json()
+        self.assertTrue(done["completed"])
+        p = read_events(self.conn, types=["delivery.completed"])[-1].payload
+        self.assertEqual(p["shortages"], [{"product_id": "water-1500x6", "qty": 1}])
+        self.assertEqual(p["lines"], [{"product_id": "water-1500x6", "expected": 10, "scanned": 9}])
+        self.assertEqual(views.stock_on_hand(self.conn, "water-1500x6"), before + 9)
+        moved = [e for e in read_events(self.conn, types=["stock.moved"])
+                 if e.payload["reason"] == "delivery" and e.caused_by is not None
+                 and e.payload["product_id"] == "water-1500x6"]
+        self.assertEqual(moved[-1].payload["unit_cost_cents"], 215)
+        self.assertEqual(self.scan(water).status_code, 400)  # closed: no more scans
+
+    def test_unknown_barcode_is_kept(self):
+        self.order()
+        r = self.scan("0000000000017").json()
+        self.assertEqual(r["unknown_barcodes"], ["0000000000017"])
+        self.assertIsNone(r["last"]["product_id"])
+        self.client.post("/stock/delivery/complete", json={"delivery_id": "D-P-0900"})
+        p = read_events(self.conn, types=["delivery.completed"])[-1].payload
+        self.assertEqual(p["unknown_barcodes"], ["0000000000017"])
+        self.assertEqual(self.scan("12ab").status_code, 400)
+
+    def test_complete_twice_writes_once(self):
+        self.order()
+        self.scan(self.barcode("water-1500x6"))
+        self.scan(self.barcode("cola-330"))  # not ordered: comes as extra
+        for _ in range(2):
+            r = self.client.post("/stock/delivery/complete", json={"delivery_id": "D-P-0900"})
+            self.assertEqual(r.status_code, 200)
+        done = [e for e in read_events(self.conn, types=["delivery.completed"])
+                if e.payload["delivery_id"] == "D-P-0900"]
+        self.assertEqual(len(done), 1)
+        moved = [e for e in read_events(self.conn, types=["stock.moved"])
+                 if (e.idem_key or "").startswith("delivery:D-P-0900:")]
+        self.assertEqual(sorted(e.payload["product_id"] for e in moved), ["cola-330", "water-1500x6"])
+        self.assertEqual(r.json()["extra"][0]["product_id"], "cola-330")
+        self.client.post("/stock/delivery/start", json={"order_id": "P-0900"})  # again: no 2nd start
+        self.assertEqual(len([e for e in read_events(self.conn, types=["delivery.started"])
+                              if e.payload["delivery_id"] == "D-P-0900"]), 1)
+
+    def test_unknown_order_and_tool(self):
+        r = self.client.post("/stock/delivery/start", json={"order_id": "P-9999"})
+        self.assertEqual(r.status_code, 400)
+        from xangx.stock import tools
+        self.assertIn("Δεν έχει ξεκινήσει", tools.delivery_status(self.conn, "P-0318")["summary"])
+        self.order()
+        self.scan(self.barcode("water-1500x6"))
+        out = tools.delivery_status(self.conn, "P-0900")
+        self.assertIn("1 από 10", out["summary"])
+        self.assertIn("9 Νερό", out["summary"])
 
 
 if __name__ == "__main__":

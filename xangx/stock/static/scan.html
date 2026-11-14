@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="el">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Παραλαβή · Xangxothaika</title>
+<style>
+  :root{--bg:#111;--panel:#1c1c1c;--ink:#eee;--muted:#a8a8a8;--ok:#2e9e6b;--warn:#e0a63a;--line:#333}
+  body{font:17px system-ui,sans-serif;margin:0;padding:12px 12px calc(12px + env(safe-area-inset-bottom));background:var(--bg);color:var(--ink)}
+  h1{font-size:19px;margin:4px 0 8px}
+  #count{font-size:56px;font-weight:700;line-height:1.1;font-variant-numeric:tabular-nums}
+  #unit{color:var(--muted);margin-top:-2px}
+  #last{min-height:1.5em;font-size:19px;font-weight:600;margin:6px 0}
+  #last.ok{color:var(--ok)} #last.warn{color:var(--warn)}
+  video{width:100%;border-radius:10px;background:#000;max-height:38vh;object-fit:cover;margin:6px 0}
+  label{display:block;margin:10px 0 4px;color:var(--muted)}
+  .row{display:flex;gap:8px}
+  input{flex:1;min-width:0;font-size:20px;padding:12px;border-radius:10px;border:1px solid var(--line);background:var(--panel);color:var(--ink)}
+  button{min-height:48px;padding:12px 16px;font-size:18px;border:0;border-radius:12px;background:#3a3a3a;color:#fff}
+  button.main{display:block;width:100%;margin:14px 0 8px;background:var(--ok);font-size:20px;padding:16px}
+  button:disabled{background:#333;color:#888}
+  button:focus-visible,input:focus-visible{outline:3px solid #7fc8a9;outline-offset:2px}
+  #st{min-height:1.4em;color:var(--muted);font-size:15px}
+  section{background:var(--panel);border-radius:12px;padding:10px 12px;margin:10px 0}
+  section h2{font-size:16px;margin:0 0 6px;color:var(--muted);font-weight:600}
+  ul{margin:0;padding-left:20px;line-height:1.6}
+  dialog{background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:14px;padding:16px;width:min(92vw,420px)}
+  dialog::backdrop{background:rgba(0,0,0,.6)}
+  dialog .row button{flex:1}
+</style>
+</head>
+<body>
+<h1 id="title">Παραλαβή</h1>
+<div id="count">…</div>
+<div id="unit">τεμάχια ήρθαν από όσα παραγγείλαμε</div>
+<div id="last" aria-live="polite"></div>
+<video id="v" autoplay playsinline muted hidden></video>
+<p id="st">Ξεκινώ…</p>
+
+<label for="man">Με το χέρι ή σκάνερ USB</label>
+<div class="row">
+  <input id="man" inputmode="numeric" autocomplete="off" enterkeyhint="done" placeholder="π.χ. 5449000000996">
+  <button id="add">Πρόσθεσε</button>
+</div>
+
+<section id="miss" hidden><h2>Λείπουν</h2><ul id="missList"></ul></section>
+<section id="extra" hidden><h2>Δεν ήταν στην παραγγελία</h2><ul id="extraList"></ul></section>
+
+<button class="main" id="done">Κλείσε την παραλαβή</button>
+
+<dialog id="ask" aria-labelledby="askTitle">
+  <h2 id="askTitle" tabindex="-1" style="font-size:19px;margin:0 0 8px">Να κλείσει η παραλαβή;</h2>
+  <p id="askText"></p>
+  <div class="row"><button id="no">Όχι, συνεχίζω</button><button id="yes" style="background:var(--ok)">Ναι, κλείσε</button></div>
+</dialog>
+
+<script>
+const $ = id => document.getElementById(id);
+const order = new URLSearchParams(location.search).get('order') || '';
+let deliveryId = null, closed = false, queue = Promise.resolve();
+const say = t => $('st').textContent = t;
+$('title').textContent = 'Παραλαβή · ' + order;
+
+async function post(path, body) {
+  const r = await fetch(path, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body)});
+  let j = {};
+  try { j = await r.json(); } catch (e) {}
+  if (!r.ok) throw new Error(j.detail || ('σφάλμα ' + r.status));
+  return j;
+}
+
+function list(el, box, items, text) {
+  el.innerHTML = '';
+  for (const it of items) { const li = document.createElement('li'); li.textContent = text(it); el.appendChild(li); }
+  box.hidden = !items.length;
+}
+
+function show(s) {
+  closed = s.completed;
+  $('count').textContent = s.scanned + ' από ' + s.expected;
+  list($('missList'), $('miss'), s.missing, m => m.qty + ' ' + m.name);
+  const extra = s.extra.map(e => e.scanned + ' ' + e.name).concat(s.unknown_barcodes.map(b => 'άγνωστο barcode ' + b));
+  list($('extraList'), $('extra'), extra, t => t);
+  $('done').disabled = closed; $('man').disabled = closed; $('add').disabled = closed;
+  if (closed) say('Η παραλαβή έκλεισε: ήρθαν ' + s.scanned + ' από ' + s.expected + '.');
+}
+
+function scan(code) {
+  if (!deliveryId || closed) return;
+  queue = queue.then(async () => {
+    try {
+      const s = await post('/stock/delivery/scan', {delivery_id: deliveryId, barcode: code});
+      show(s);
+      const l = $('last');
+      if (s.last.product_id) { l.className = 'ok'; l.textContent = 'Μετρήθηκε: ' + s.last.name; }
+      else { l.className = 'warn'; l.textContent = 'Άγνωστο barcode: ' + code; }
+      if (navigator.vibrate) navigator.vibrate(60);
+    } catch (e) { $('last').className = 'warn'; $('last').textContent = e.message; }
+  });
+}
+
+function manual() {
+  const code = $('man').value.replace(/\D/g, ''); $('man').value = '';
+  if (code) scan(code);
+  $('man').focus();
+}
+$('add').onclick = manual;
+$('man').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); manual(); } });
+
+$('done').onclick = () => {
+  const n = $('missList').children.length;
+  $('askText').textContent = n ? 'Λείπουν ακόμα ' + [...$('missList').children].map(li => li.textContent).join(', ') + '. Θα γραφτούν ως λείψη.' : 'Ήρθαν όλα.';
+  $('ask').showModal(); $('askTitle').focus();
+};
+$('no').onclick = () => $('ask').close();
+$('yes').onclick = async () => {
+  $('ask').close(); $('done').disabled = true;
+  try { show(await post('/stock/delivery/complete', {delivery_id: deliveryId})); }
+  catch (e) { say('Δεν έκλεισε: ' + e.message); $('done').disabled = false; }
+};
+
+// Camera: the same barcode counts once while it stays in the frame. It counts again only
+// after it has been out of the frame for GONE_MS (taken away, next item brought in).
+const GONE_MS = 1200;
+let seen = {code: null, at: 0};
+function fromCamera(code) {
+  const now = Date.now();
+  if (code === seen.code && now - seen.at < GONE_MS) { seen.at = now; return; }
+  seen = {code, at: now};
+  scan(code);
+}
+
+function loadScript(src) {
+  return new Promise((ok, fail) => { const s = document.createElement('script'); s.src = src; s.onload = ok; s.onerror = fail; document.head.appendChild(s); });
+}
+
+async function nativeDetector() {
+  if (!('BarcodeDetector' in window)) return null;
+  try {
+    const have = await BarcodeDetector.getSupportedFormats();
+    const want = ['ean_13', 'ean_8', 'upc_a', 'upc_e', 'code_128'].filter(f => have.includes(f));
+    if (!want.length) return null;
+    const det = new BarcodeDetector({formats: want});
+    return async v => { const r = await det.detect(v); return r.length ? r[0].rawValue : null; };
+  } catch (e) { return null; }
+}
+
+// Only when the browser cannot read barcodes itself (iPhone): zxing-wasm 3.1.6, served by us.
+async function zxingDetector() {
+  await loadScript('/stock/vendor/zxing-reader.js');
+  ZXingWASM.prepareZXingModule({overrides: {locateFile: (p, prefix) => p.endsWith('.wasm') ? '/stock/vendor/zxing_reader.wasm' : prefix + p}, fireImmediately: true});
+  const c = document.createElement('canvas'), ctx = c.getContext('2d', {willReadFrequently: true});
+  const opts = {formats: ['EAN13', 'EAN8', 'UPCA', 'UPCE', 'Code128'], tryHarder: true, maxNumberOfSymbols: 1};
+  return async v => {
+    if (!v.videoWidth) return null;
+    const w = Math.min(1280, v.videoWidth), h = Math.round(v.videoHeight * w / v.videoWidth);
+    c.width = w; c.height = h; ctx.drawImage(v, 0, 0, w, h);
+    const r = await ZXingWASM.readBarcodes(ctx.getImageData(0, 0, w, h), opts);
+    const ok = r.find(x => x.isValid && x.text); return ok ? ok.text : null;
+  };
+}
+
+async function startCamera() {
+  if (!window.isSecureContext || !navigator.mediaDevices) { say('Χωρίς HTTPS δεν ανοίγει η κάμερα. Γράψε ή σκάναρε με USB στο πεδίο.'); return; }
+  let decode = await nativeDetector();
+  if (!decode) {
+    say('Φορτώνω τον αναγνώστη barcode…');
+    try { decode = await zxingDetector(); }
+    catch (e) { say('Ο αναγνώστης δεν φόρτωσε. Γράψε ή σκάναρε με USB στο πεδίο.'); return; }
+  }
+  const v = $('v');
+  try { v.srcObject = await navigator.mediaDevices.getUserMedia({video: {facingMode: {ideal: 'environment'}, width: {ideal: 1920}}, audio: false}); }
+  catch (e) { say('Η κάμερα δεν άνοιξε (' + e.name + '). Γράψε ή σκάναρε με USB στο πεδίο.'); return; }
+  v.hidden = false; say('Στόχευσε το barcode. Ένα τεμάχιο τη φορά.');
+  const loop = async () => {
+    if (closed) return;
+    try { const code = await decode(v); if (code) fromCamera(code); } catch (e) {}
+    setTimeout(loop, 150);
+  };
+  loop();
+}
+
+async function start() {
+  if (!order) { say('Λείπει η παραγγελία στη διεύθυνση (?order=P-0318).'); return; }
+  try {
+    const s = await post('/stock/delivery/start', {order_id: order});
+    deliveryId = s.delivery_id; show(s);
+  } catch (e) { say(e.message); $('done').disabled = true; return; }
+  if (!closed) startCamera();
+}
+start();
+</script>
+</body>
+</html>
