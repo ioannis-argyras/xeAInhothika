@@ -21,6 +21,15 @@ STATIC_DIR = Path(__file__).resolve().parent.parent / "screen" / "static"
 app = FastAPI(title="Xangxothaika")
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
+
+@app.middleware("http")
+async def always_revalidate(request: Request, call_next):
+    """Screens must pick up a fix at once: the browser checks for a newer file every time."""
+    response = await call_next(request)
+    if request.url.path == "/" or request.url.path.startswith("/static/"):
+        response.headers["Cache-Control"] = "no-cache"
+    return response
+
 # Each role may add pages and API routes in `xangx/<role>/routes.py`, exposing
 # `router = fastapi.APIRouter()`. Paths start with the role name (/stock/..., /invoices/...).
 ROLE_ROUTE_MODULES = (

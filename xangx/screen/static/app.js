@@ -201,6 +201,10 @@ function connectStream() {
     let e;
     try { e = JSON.parse(msg.data); } catch (err) { return; }
     if (e.quiet) { refreshSoon(); return; }  // till sales: only the totals change
+    if (liveSteps && (e.type === "agent.tool_ran" || e.type === "approval.requested")) {
+      liveSteps.hidden = false;
+      liveSteps.appendChild(el("div", "step", e.text));
+    }
     const box = $("feed");
     const empty = box.querySelector(".empty");
     if (empty) empty.remove();
@@ -211,6 +215,17 @@ function connectStream() {
 }
 
 /* ---------- συνομιλία ---------- */
+let liveSteps = null;  // the steps box of the answer being worked on, filled from the live stream
+
+// Plain text with **bold** parts, built from text nodes (never innerHTML).
+function richText(node, text) {
+  node.replaceChildren();
+  String(text).split("**").forEach((part, i) => {
+    if (!part) return;
+    node.appendChild(i % 2 ? el("b", null, part) : document.createTextNode(part));
+  });
+}
+
 function addMsg(node) {
   const empty = $("conv-empty");
   if (empty) empty.remove();
@@ -244,17 +259,25 @@ $("ask").addEventListener("submit", async (ev) => {
   ai.appendChild(el("div", "who", "Xangxothaika"));
   const body = el("div", "ai-text working", "δουλεύω…");
   ai.appendChild(body);
+  const steps = el("div", "steps");
+  steps.hidden = true;
+  ai.appendChild(steps);
+  liveSteps = steps;
   addMsg(ai);
   try {
     const r = await post("/api/chat", { text });
     body.className = "ai-text";
-    body.textContent = r.reply || "Δεν έχω κάτι να πω.";
-    await showSteps(ai, r.event_ids);
+    richText(body, r.reply || "Δεν έχω κάτι να πω.");
+    if (!steps.children.length) {
+      steps.remove();
+      await showSteps(ai, r.event_ids);
+    }
   } catch (e) {
     ai.classList.add("err");
     body.className = "ai-text";
     body.textContent = e.message;
   }
+  liveSteps = null;
   send.disabled = false;
   refreshSoon();
   ai.scrollIntoView({ block: "end" });

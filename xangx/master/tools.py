@@ -127,6 +127,15 @@ def greek_day_start_utc(now=None):
     return start.strftime("%Y-%m-%dT%H:%M:%S.000Z")
 
 
+def greek_time(at_utc=None):
+    """'14/11/2026 17:10' in Greek time, from an `at` string (or now). The agent never sees UTC."""
+    if at_utc is None:
+        moment = datetime.now(timezone.utc)
+    else:
+        moment = datetime.strptime(at_utc[:19], "%Y-%m-%dT%H:%M:%S").replace(tzinfo=timezone.utc)
+    return (moment + greek_offset(moment)).strftime("%d/%m/%Y %H:%M")
+
+
 # --- Shared readings of the store ------------------------------------------
 
 def _stock_levels(conn):
@@ -198,6 +207,7 @@ def store_status(conn):
 )
 def get_store_status(conn):
     status = store_status(conn)
+    status["now_greece"] = greek_time()
     status["summary"] = (
         f"Κατάσταση: {len(status['pending_approvals'])} εγκρίσεις σε αναμονή, "
         f"{len(status['low_products'])} προϊόντα σε χαμηλό"
@@ -208,7 +218,7 @@ def get_store_status(conn):
 def _short_event(event):
     item = {
         "id": event.id,
-        "at": event.at,
+        "time_greece": greek_time(event.at),
         "actor": event.actor,
         "type": event.type,
         "subject": event.subject,

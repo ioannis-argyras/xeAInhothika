@@ -66,6 +66,9 @@ class ServerTest(unittest.TestCase):
             r = self.client.post("/api/approvals/A-1", json={"decision": "maybe"})
             self.assertEqual(r.status_code, 400)
 
+    def test_screens_always_revalidate(self):
+        self.assertEqual(self.client.get("/static/app.js").headers["cache-control"], "no-cache")
+
     def test_role_routes_are_included(self):
         from fastapi import APIRouter, FastAPI
 
