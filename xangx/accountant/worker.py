@@ -11,8 +11,13 @@ from xangx.shared.cursors import consume
 INTERVAL_S = 5
 
 
+def _handle(conn, event):
+    core.flag_for(conn, event)
+    core.payment_for(conn, event)
+
+
 def run_once(conn):
-    return consume(conn, "accountant", core.FLAG_TYPES, lambda e: core.flag_for(conn, e))
+    return consume(conn, "accountant", core.FLAG_TYPES, lambda e: _handle(conn, e))
 
 
 def _loop(db_path):

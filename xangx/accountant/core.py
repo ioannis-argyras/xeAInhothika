@@ -31,8 +31,19 @@ def _read(conn, invoice_id):
 
 # ---------- 1. payment reminder ----------
 
+def _due_date(read_payload, supplier):
+    """Due date: the paper's own date, else invoice date + the paper's days, else + supplier days."""
+    paid = read_payload.get("payment") or {}
+    if paid.get("due_date"):
+        return date.fromisoformat(paid["due_date"])
+    days = paid.get("credit_days")
+    if days is None:
+        days = supplier["credit_days"] or 0
+    return date.fromisoformat(read_payload["date"]) + timedelta(days=days)
+
+
 def set_payment_reminder(conn, invoice_id):
-    """payment.reminder_set: due on invoice date + supplier credit days. No payment."""
+    """payment.reminder_set: due date from the paper, else invoice date + credit days. No payment."""
     read = _read(conn, invoice_id)
     if read is None:
         return {"summary": f"Το τιμολόγιο {invoice_id} δεν έχει διαβαστεί ακόμα.", "event_ids": []}
@@ -41,7 +52,7 @@ def set_payment_reminder(conn, invoice_id):
     if supplier is None:
         return {"summary": f"Άγνωστος προμηθευτής στο τιμολόγιο {invoice_id}.", "event_ids": []}
     try:
-        due = date.fromisoformat(p["date"]) + timedelta(days=supplier["credit_days"] or 0)
+        due = _due_date(p, supplier)
     except ValueError:
         return {"summary": f"Η ημερομηνία του τιμολογίου {invoice_id} δεν διαβάστηκε.", "event_ids": []}
     event, created = append_event(
@@ -56,6 +67,45 @@ def set_payment_reminder(conn, invoice_id):
                     + ("" if created else " (υπήρχε ήδη)")),
         "event_ids": [event.id] if created else [],
     }
+
+
+def ask_payment(conn, invoice_id):
+    """payment.asked: a cash invoice, so the owner is asked whether it was paid. Once."""
+    read = _read(conn, invoice_id)
+    if read is None:
+        return {"summary": f"Το τιμολόγιο {invoice_id} δεν έχει διαβαστεί ακόμα.", "event_ids": []}
+    p = read.payload
+    supplier = _supplier(conn, p["supplier_afm"])
+    if supplier is None:
+        return {"summary": f"Άγνωστος προμηθευτής στο τιμολόγιο {invoice_id}.", "event_ids": []}
+    event, created = append_event(
+        conn, type="payment.asked", actor=ACTOR,
+        payload={"invoice_id": invoice_id, "supplier_id": supplier["id"],
+                 "amount_cents": p["total_cents"], "invoice_date": p["date"]},
+        subject=f"invoice:{invoice_id}", idem_key=f"payment-asked:{invoice_id}",
+        caused_by=read.id,
+    )
+    return {
+        "summary": (f"Τοις μετρητοίς: ρωτάω αν πληρώθηκαν {format_eur(p['total_cents'])} "
+                    f"στον {supplier['name']}." + ("" if created else " (το είχα ήδη ρωτήσει)")),
+        "event_ids": [event.id] if created else [],
+    }
+
+
+def payment_for(conn, event):
+    """After invoice.read: a reminder for credit, a question for cash. Returns the result dict."""
+    p = event.payload
+    if event.type != "invoice.read" or event.actor != "invoices":
+        return None
+    terms = (p.get("payment") or {}).get("terms", "unknown")
+    if terms == "unknown":
+        supplier = _supplier(conn, p["supplier_afm"])
+        if supplier is None:
+            return None
+        terms = "credit" if (supplier["credit_days"] or 0) > 0 else "cash"
+    if terms == "credit":
+        return set_payment_reminder(conn, p["invoice_id"])
+    return ask_payment(conn, p["invoice_id"])
 
 
 # ---------- 2. credit request (needs the owner's yes) ----------

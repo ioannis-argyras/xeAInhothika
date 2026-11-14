@@ -16,7 +16,7 @@ from xangx.shared import append_event, connect, init_db, read_events
 Y = SUPPLIER_BY_ID["sup-ymittou"]
 
 
-def _data(number="2271", iban=None, total_delta=0):
+def _data(number="2271", iban=None, total_delta=0, payment=None):
     lines = [{"name": "Coca-Cola 330ml κουτί", "qty": 48, "unit_cents": 57, "net_cents": 2736,
               "vat_rate": 24},
              {"name": "Νερό 1,5L εξάδα", "qty": 10, "unit_cents": 215, "net_cents": 2150,
@@ -25,7 +25,8 @@ def _data(number="2271", iban=None, total_delta=0):
     return {"supplier_afm": Y["afm"], "series": "Α", "number": number, "date": "2026-11-14",
             "lines": lines, "net_cents": 4886, "vat_by_rate": vat,
             "total_cents": 4886 + 937 + total_delta, "iban": iban or Y["iban"],
-            "pages": {"seen": 1, "total": 1}, "hidden_instructions": None}
+            "pages": {"seen": 1, "total": 1}, "hidden_instructions": None,
+            "payment": payment}
 
 
 class Accountant(unittest.TestCase):
@@ -126,6 +127,47 @@ class Accountant(unittest.TestCase):
         worker.run_once(self.conn)
         kinds = sorted(e.payload["kind"] for e in self._types("exception.flagged"))
         self.assertEqual(kinds, ["arithmetic", "duplicate_invoice", "new_iban"])
+
+    def test_credit_reminder_uses_the_papers_due_date(self):
+        self._invoice(payment={"terms": "credit", "credit_days": None, "due_date": "2026-12-01"})
+        worker.run_once(self.conn)
+        [r] = self._types("payment.reminder_set")
+        self.assertEqual(r.payload["due_on"], "2026-12-01")
+        self.assertEqual(self._types("payment.asked"), [])
+
+    def test_credit_reminder_uses_the_papers_days(self):
+        self._invoice(payment={"terms": "credit", "credit_days": 10, "due_date": None})
+        worker.run_once(self.conn)
+        [r] = self._types("payment.reminder_set")
+        self.assertEqual(r.payload["due_on"], "2026-11-24")  # not the supplier's 30
+
+    def test_unknown_terms_use_supplier_days(self):
+        self._invoice()
+        worker.run_once(self.conn)
+        [r] = self._types("payment.reminder_set")
+        self.assertEqual(r.payload["due_on"], "2026-12-14")
+        self.assertEqual(self._types("payment.asked"), [])
+
+    def test_cash_invoice_asks_once(self):
+        self._invoice(payment={"terms": "cash", "credit_days": None, "due_date": None})
+        worker.run_once(self.conn)
+        worker.run_once(self.conn)
+        [q] = self._types("payment.asked")
+        self.assertEqual(q.payload["amount_cents"], 5823)
+        self.assertEqual(q.payload["invoice_date"], "2026-11-14")
+        self.assertEqual(q.payload["supplier_id"], "sup-ymittou")
+        self.assertEqual(self._types("payment.reminder_set"), [])
+        again = acc.ask_payment(self.conn, q.payload["invoice_id"])
+        self.assertEqual(again["event_ids"], [])
+        self.assertEqual(len(self._types("payment.asked")), 1)
+
+    def test_unknown_terms_and_no_credit_at_supplier_asks(self):
+        with self.conn:
+            self.conn.execute("UPDATE suppliers SET credit_days = 0 WHERE id = 'sup-ymittou'")
+        self._invoice()
+        worker.run_once(self.conn)
+        self.assertEqual(len(self._types("payment.asked")), 1)
+        self.assertEqual(self._types("payment.reminder_set"), [])
 
 
 if __name__ == "__main__":
