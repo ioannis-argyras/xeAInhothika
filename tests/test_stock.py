@@ -209,6 +209,25 @@ class DeliveryTest(unittest.TestCase):
         self.client.post("/stock/delivery/complete", json={"delivery_id": "D-P-0901"})
         self.assertEqual(views.stock_on_hand(self.conn, "cola-330") - before, 49)
 
+    def test_practice_counts_but_writes_nothing(self):
+        self.order("P-0903", 10)
+        water = self.barcode("water-1500x6")
+        self.client.post("/stock/delivery/scan", json={"delivery_id": "D-P-0903", "barcode": water})
+        self.client.post("/stock/delivery/complete", json={"delivery_id": "D-P-0903"})
+        before = self.conn.execute("SELECT COUNT(*) FROM events").fetchone()[0]
+        r = self.client.post("/stock/delivery/practice",
+                             json={"order_id": "P-0903", "barcodes": [water, water, "123456789"]})
+        self.assertEqual(r.status_code, 200)
+        j = r.json()
+        self.assertEqual((j["practice"], j["completed"], j["scanned"], j["expected"]), (True, False, 2, 10))
+        self.assertEqual(j["unknown_barcodes"], ["123456789"])
+        self.assertIsNone(j["last"]["product_id"])
+        self.assertEqual(self.conn.execute("SELECT COUNT(*) FROM events").fetchone()[0], before)
+        bad = self.client.post("/stock/delivery/practice", json={"order_id": "P-0903", "barcodes": ["12"]})
+        self.assertEqual(bad.status_code, 400)
+        self.assertEqual(self.client.post("/stock/delivery/practice",
+                                          json={"order_id": "P-0903", "barcodes": "x"}).status_code, 400)
+
     def test_case_barcode_of_another_supplier_is_unknown(self):
         sup = self.conn.execute("SELECT id FROM suppliers WHERE id != 'sup-ymittou' LIMIT 1").fetchone()[0]
         append_event(self.conn, type="order.proposed", actor="orders", subject="order:P-0902",

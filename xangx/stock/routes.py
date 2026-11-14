@@ -92,6 +92,14 @@ def delivery_scan(body: dict = Body(...)):
     return _delivery_call(delivery.scan, _field(body, "delivery_id"), _field(body, "barcode"))
 
 
+@router.post("/stock/delivery/practice")
+def delivery_practice(body: dict = Body(...)):
+    codes = body.get("barcodes")
+    if not isinstance(codes, list) or not all(isinstance(c, str) for c in codes):
+        raise HTTPException(400, "Χρειάζεται λίστα barcodes.")
+    return _delivery_call(delivery.practice, _field(body, "order_id"), codes)
+
+
 @router.post("/stock/delivery/complete")
 def delivery_complete(body: dict = Body(...)):
     return _delivery_call(delivery.complete, _field(body, "delivery_id"))

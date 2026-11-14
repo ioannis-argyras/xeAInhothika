@@ -99,15 +99,20 @@ def scan(conn, delivery_id, barcode):
 
 def _count(conn, delivery_id, order):
     """(lines, shortages, unknown_barcodes, extra) from the order and the scans so far."""
+    scans = [(e.payload.get("product_id"), int(e.payload.get("units") or 1), e.payload["barcode"])
+             for e in read_events(conn, types=["delivery.item_scanned"])
+             if e.payload.get("delivery_id") == delivery_id]
+    return _tally(order, scans)
+
+
+def _tally(order, scans):
+    """(lines, shortages, unknown_barcodes, extra) from the order and (product_id, units, barcode) scans."""
     scanned, unknown = {}, []
-    for e in read_events(conn, types=["delivery.item_scanned"]):
-        if e.payload.get("delivery_id") != delivery_id:
-            continue
-        pid = e.payload.get("product_id")
+    for pid, units, code in scans:
         if pid:
-            scanned[pid] = scanned.get(pid, 0) + int(e.payload.get("units") or 1)
-        elif e.payload["barcode"] not in unknown:
-            unknown.append(e.payload["barcode"])
+            scanned[pid] = scanned.get(pid, 0) + units
+        elif code not in unknown:
+            unknown.append(code)
     expected = {}
     for l in order.payload.get("lines", []):
         expected[l["product_id"]] = expected.get(l["product_id"], 0) + l["qty"]
@@ -133,11 +138,15 @@ def status(conn, delivery_id):
         shortages, unknown = done.payload["shortages"], done.payload["unknown_barcodes"]
     else:
         lines, shortages, unknown, extra = _count(conn, delivery_id, _order(conn, order_id))
+    return _shape(conn, delivery_id, order_id, done is not None, lines, shortages, unknown, extra)
+
+
+def _shape(conn, delivery_id, order_id, completed, lines, shortages, unknown, extra):
     names = {pid: p["name"] for pid, p in _products(conn).items()}
     expected = sum(l["expected"] for l in lines)
     got = sum(min(l["scanned"], l["expected"]) for l in lines)
     return {
-        "delivery_id": delivery_id, "order_id": order_id, "completed": done is not None,
+        "delivery_id": delivery_id, "order_id": order_id, "completed": completed,
         "scanned": got, "expected": expected,
         "lines": [dict(l, name=names.get(l["product_id"], l["product_id"])) for l in lines],
         "missing": [{"product_id": s["product_id"], "qty": s["qty"],
@@ -174,3 +183,29 @@ def complete(conn, delivery_id):
                       "idem_key": f"delivery:{delivery_id}:{l['product_id']}"})
     append_events(conn, items)
     return status(conn, delivery_id)
+
+
+MAX_PRACTICE_SCANS = 1000
+
+
+def practice(conn, order_id, barcodes):
+    """The same counter for a practice run: nothing is written. The phone keeps the scans."""
+    order = _order(conn, order_id)
+    if order is None:
+        raise DeliveryError(f"Δεν βρήκα την παραγγελία {order_id}.")
+    if len(barcodes) > MAX_PRACTICE_SCANS:
+        raise DeliveryError("Πάρα πολλά σκαναρίσματα για δοκιμή.")
+    supplier = order.payload.get("supplier_id")
+    scans = []
+    for b in barcodes:
+        code = clean_barcode(b)
+        pid, units = _lookup(conn, code, supplier)
+        scans.append((pid, units, code))
+    lines, shortages, unknown, extra = _tally(order, scans)
+    result = _shape(conn, "practice", order_id, False, lines, shortages, unknown, extra)
+    result["practice"] = True
+    if scans:
+        pid, units, code = scans[-1]
+        result["last"] = {"barcode": code, "product_id": pid, "units": units,
+                          "name": _products(conn).get(pid, {}).get("name") if pid else None}
+    return result

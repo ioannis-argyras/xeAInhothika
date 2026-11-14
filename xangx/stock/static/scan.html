@@ -21,6 +21,9 @@
   button:disabled{background:#333;color:#888}
   button:focus-visible,input:focus-visible{outline:3px solid #7fc8a9;outline-offset:2px}
   #st{min-height:1.4em;color:var(--muted);font-size:15px}
+  #st a{color:#7fc8a9}
+  [hidden]{display:none!important}
+  #trial{background:var(--warn);color:#111;font-weight:700;border-radius:10px;padding:8px 12px;margin:0 0 8px}
   section{background:var(--panel);border-radius:12px;padding:10px 12px;margin:10px 0}
   section h2{font-size:16px;margin:0 0 6px;color:var(--muted);font-weight:600}
   ul{margin:0;padding-left:20px;line-height:1.6}
@@ -31,6 +34,7 @@
 </head>
 <body>
 <h1 id="title">Παραλαβή</h1>
+<p id="trial" hidden>Δοκιμή · δεν αποθηκεύεται τίποτα</p>
 <div id="count">…</div>
 <div id="unit">τεμάχια ήρθαν από όσα παραγγείλαμε</div>
 <div id="last" aria-live="polite"></div>
@@ -56,10 +60,24 @@
 
 <script>
 const $ = id => document.getElementById(id);
-const order = new URLSearchParams(location.search).get('order') || '';
-let deliveryId = null, closed = false, queue = Promise.resolve();
+const params = new URLSearchParams(location.search);
+const order = params.get('order') || '';
+// Practice (?dokimi=1): the same counter, but the scans stay on the phone and nothing is saved.
+const practice = params.get('dokimi') === '1';
+let deliveryId = null, closed = false, queue = Promise.resolve(), codes = [];
 const say = t => $('st').textContent = t;
-$('title').textContent = 'Παραλαβή · ' + order;
+$('title').textContent = (practice ? 'Δοκιμή παραλαβής · ' : 'Παραλαβή · ') + order;
+$('trial').hidden = !practice;
+if (practice) $('done').hidden = true;
+
+function closedNote(s) {
+  const st = $('st');
+  st.textContent = 'Η παραλαβή έκλεισε: ήρθαν ' + s.scanned + ' από ' + s.expected + '. Η κάμερα δεν ανοίγει σε κλειστή παραλαβή. ';
+  const a = document.createElement('a');
+  a.href = '?order=' + encodeURIComponent(order) + '&dokimi=1';
+  a.textContent = 'Άνοιξε τη δοκιμή';
+  st.appendChild(a);
+}
 
 async function post(path, body) {
   const r = await fetch(path, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body)});
@@ -82,14 +100,19 @@ function show(s) {
   const extra = s.extra.map(e => e.scanned + ' ' + e.name).concat(s.unknown_barcodes.map(b => 'άγνωστο barcode ' + b));
   list($('extraList'), $('extra'), extra, t => t);
   $('done').disabled = closed; $('man').disabled = closed; $('add').disabled = closed;
-  if (closed) say('Η παραλαβή έκλεισε: ήρθαν ' + s.scanned + ' από ' + s.expected + '.');
+  if (closed) closedNote(s);
 }
 
 function scan(code) {
   if (!deliveryId || closed) return;
   queue = queue.then(async () => {
     try {
-      const s = await post('/stock/delivery/scan', {delivery_id: deliveryId, barcode: code});
+      let s;
+      if (practice) {
+        codes.push(code);
+        try { s = await post('/stock/delivery/practice', {order_id: order, barcodes: codes}); }
+        catch (e) { codes.pop(); throw e; }
+      } else s = await post('/stock/delivery/scan', {delivery_id: deliveryId, barcode: code});
       show(s);
       const l = $('last');
       if (s.last.product_id) { l.className = 'ok'; l.textContent = 'Μετρήθηκε: ' + (s.last.units > 1 ? 'κιβώτιο ' + s.last.units + ' × ' : '') + s.last.name; }
@@ -183,7 +206,8 @@ async function startCamera() {
 async function start() {
   if (!order) { say('Λείπει η παραγγελία στη διεύθυνση (?order=P-0318).'); return; }
   try {
-    const s = await post('/stock/delivery/start', {order_id: order});
+    const s = practice ? await post('/stock/delivery/practice', {order_id: order, barcodes: []})
+                       : await post('/stock/delivery/start', {order_id: order});
     deliveryId = s.delivery_id; show(s);
   } catch (e) { say(e.message); $('done').disabled = true; return; }
   if (!closed) startCamera();
