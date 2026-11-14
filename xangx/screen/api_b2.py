@@ -15,7 +15,7 @@ from xangx.screen.describe import load_names
 from xangx.shared import views
 from xangx.shared.db import connect, init_db
 from xangx.shared.events import read_events
-from xangx.stock import camera
+from xangx.stock import camera, expiry
 
 router = APIRouter()
 
@@ -126,7 +126,9 @@ def build_shelves(conn, until_id=None):
     last_id = conn.execute("SELECT COALESCE(MAX(id),0) AS m FROM events"
                            + (" WHERE id <= ?" if until_id is not None else ""),
                            (until_id,) if until_id is not None else ()).fetchone()["m"]
-    return {"last_id": last_id, "low_count": sum(1 for p in positions if p["low"]),
+    soon = expiry.expiring(conn, within_days=3, now=_reference_time(conn, until_id),
+                           until_id=until_id)
+    return {"last_id": last_id, "expiring": soon, "low_count": sum(1 for p in positions if p["low"]),
             "total": len(positions), "latest": latest, "positions": positions,
             "camera_id": (latest or {}).get("camera_id") or (sorted(cameras)[0] if cameras else None)}
 

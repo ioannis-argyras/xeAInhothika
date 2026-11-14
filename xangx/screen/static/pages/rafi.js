@@ -163,11 +163,57 @@
     }
   }
 
+  /* ---------- λήγουν σύντομα ---------- */
+  function whenText(n) {
+    if (n < 0) return "έχουν λήξει";
+    if (n === 0) return "λήγουν σήμερα";
+    if (n === 1) return "λήγουν αύριο";
+    return "σε " + n + " μέρες";
+  }
+
+  function dateText(iso) {
+    var p = String(iso).split("-");
+    return p.length === 3 ? p[2] + "/" + p[1] + "/" + p[0] : String(iso);
+  }
+
+  function renderExpiring(d) {
+    var body = $("exp-body");
+    body.textContent = "";
+    var list = d.expiring || [];
+    $("exp-sub").textContent = list.length ? list.length + (list.length === 1 ? " παρτίδα" : " παρτίδες") : "";
+    if (!list.length) {
+      body.appendChild(el("div", "empty-note", "Δεν λήγει τίποτα τις επόμενες 3 μέρες."));
+      return;
+    }
+    list.forEach(function (x) {
+      var hot = x.days_left <= 1;
+      var row = el("div", "rw" + (hot ? " hot" : ""));
+      var no = el("span", "no");
+      no.appendChild(icon("hourglass-medium"));
+      row.appendChild(no);
+      var mid = el("span");
+      mid.appendChild(el("b", null, x.name));
+      var sub = el("span", "m", "ημερομηνία λήξης " + dateText(x.expires_on));
+      sub.style.display = "block";
+      mid.appendChild(sub);
+      row.appendChild(mid);
+      var right = el("span", "n");
+      right.appendChild(el("b", hot ? "warn" : null, x.qty + " τεμ."));
+      var when = el("span", "m", whenText(x.days_left));
+      when.style.display = "block";
+      right.appendChild(when);
+      row.appendChild(right);
+      body.appendChild(row);
+    });
+  }
+
   function render(d) {
     last = d;
     renderBand(d);
     renderPhotos(d);
     renderPositions(d);
+    renderExpiring(d);
+    $("exp-card").setAttribute("aria-busy", "false");
     $("photo-card").setAttribute("aria-busy", "false");
     $("pos-card").setAttribute("aria-busy", "false");
   }
@@ -178,6 +224,9 @@
     $("photo-body").appendChild(el("div", "empty-note", msg));
     $("pos-body").textContent = "";
     $("pos-body").appendChild(el("div", "empty-note", msg));
+    $("exp-body").textContent = "";
+    $("exp-body").appendChild(el("div", "empty-note", msg));
+    $("exp-card").setAttribute("aria-busy", "false");
     $("photo-card").setAttribute("aria-busy", "false");
     $("pos-card").setAttribute("aria-busy", "false");
   }
