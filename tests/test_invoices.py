@@ -336,5 +336,64 @@ class InvoiceFlow(unittest.TestCase):
         self.assertIn("summary", lst)
 
 
+class SendDemo(unittest.TestCase):
+    """The script that puts the 3 demo invoices in myDATA dev. No network."""
+
+    SUP, STORE = "999877210", "999809391"
+
+    def setUp(self):
+        from xangx.invoices import send_demo
+        self.sd = send_demo
+        self.invs = send_demo.demo_invoices()
+        pairs = ",".join(f"{i['supplier']['afm']}={self.SUP}" for i in self.invs)
+        self.env = mock.patch.dict(os.environ, {"MYDATA_AFM_MAP": pairs})
+        self.env.start()
+
+    def tearDown(self):
+        self.env.stop()
+
+    def _paper(self, inv):
+        from scripts.make_demo_invoices import render
+        return render(inv)
+
+    def test_only_the_three_demo_invoices(self):
+        self.assertEqual([f"{i['series']}-{i['number']}" for i in self.invs],
+                         ["Α-2271", "Β-512", "Γ-318"])
+
+    def test_line_vat_adds_up_to_printed_vat(self):
+        from scripts.make_demo_invoices import totals
+        for inv in self.invs:
+            _, _, vat_by_rate, _ = totals(inv["lines"])
+            lines = self.sd.lines_with_vat(inv["lines"])
+            for rate, vat in vat_by_rate.items():
+                self.assertEqual(sum(ln["vat_cents"] for ln in lines if ln["vat_rate"] == rate), vat)
+
+    def test_plan_matches_the_paper(self):
+        from scripts.make_demo_invoices import totals
+        for inv in self.invs:
+            p = self.sd.plan(inv, self.SUP, self.STORE, self._paper(inv))
+            self.assertNotIn("error", p, p.get("error"))
+            self.assertEqual(p["gross"], totals(inv["lines"])[3])
+            root = ET.fromstring(p["xml"])
+            afms = [e.text for e in root.iter() if e.tag.endswith("vatNumber")]
+            self.assertEqual(afms, [self.SUP, self.STORE])  # issuer, counterpart
+            gross_el = [e for e in root.iter() if e.tag.endswith("totalGrossValue")][0]
+            self.assertEqual(gross_el.text, "%d.%02d" % divmod(p["gross"], 100))
+
+    def test_plan_stops_without_afm_map(self):
+        with mock.patch.dict(os.environ, {"MYDATA_AFM_MAP": ""}):
+            p = self.sd.plan(self.invs[0], self.SUP, self.STORE, self._paper(self.invs[0]))
+        self.assertIn("MYDATA_AFM_MAP", p["error"])
+
+    def test_plan_stops_when_paper_differs(self):
+        p = self.sd.plan(self.invs[0], self.SUP, self.STORE, "<p>14/11/2026 σύνολο 1,00</p>")
+        self.assertIn("not on the printed invoice", p["error"])
+
+    def test_already_sent_is_found(self):
+        docs = [{"issuer_afm": self.SUP, "series": "Α", "number": "2271", "mark": "4001"}]
+        self.assertEqual(self.sd.already_sent(docs, self.SUP, "Α", "2271")["mark"], "4001")
+        self.assertIsNone(self.sd.already_sent(docs, self.SUP, "Β", "512"))
+
+
 if __name__ == "__main__":
     unittest.main()

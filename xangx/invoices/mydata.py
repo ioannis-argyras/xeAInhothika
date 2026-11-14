@@ -203,7 +203,7 @@ def build_invoice_xml(issuer_afm, counterpart_afm, series, number, issue_date, l
                       invoice_type="1.1", payment_type=5):
     """Build an InvoicesDoc with one invoice.
 
-    lines: [{"net_cents": int, "vat_rate": 24|13|6|0}]
+    lines: [{"net_cents": int, "vat_rate": 24|13|6|0, optional "vat_cents": int}]
     payment_type: 5 = on credit, 1 = bank transfer, 3 = cash, 7 = card.
     """
     details = []
@@ -211,7 +211,7 @@ def build_invoice_xml(issuer_afm, counterpart_afm, series, number, issue_date, l
     for i, line in enumerate(lines, 1):
         net = int(line["net_cents"])
         rate = int(line["vat_rate"])
-        vat = int(round(net * rate / 100))
+        vat = int(line["vat_cents"]) if "vat_cents" in line else int(round(net * rate / 100))
         net_total += net
         vat_total += vat
         details.append(
