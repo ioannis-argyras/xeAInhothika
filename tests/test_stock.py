@@ -90,6 +90,19 @@ class CameraTest(unittest.TestCase):
         self.assertEqual(events[0].actor, "camera")
         self.assertTrue(os.path.exists(os.path.join(os.environ["XANGX_FILES"], p["file_ref"])))
 
+    def test_practice_counts_but_writes_nothing(self):
+        self.post(jpeg("real"))  # the real camera's last photo
+        practice = lambda data: self.client.post("/stock/camera/photo", json={
+            "camera_id": "cam-1", "image_b64": b64(data), "practice": True})
+        before = self.conn.execute("SELECT COUNT(*) FROM events").fetchone()[0]
+        self.assertTrue(practice(jpeg("a")).json()["first"])  # practice keeps its own chain
+        r = practice(jpeg("b")).json()
+        self.assertEqual((r["practice"], r["results"][0]["taken"], r["event_ids"]), (True, 5, []))
+        self.assertEqual(self.conn.execute("SELECT COUNT(*) FROM events").fetchone()[0], before)
+        self.assertEqual(camera.last_photo("cam-1"), camera.save_photo(jpeg("real")))
+        self.assertEqual(self.post(jpeg("c")).json()["results"][0]["taken"], 5)  # real chain still works
+        self.assertEqual(len(self.shelf_events()), 1)
+
     def test_same_photo_again_writes_nothing(self):
         self.post(jpeg("a"))
         self.post(jpeg("b"))

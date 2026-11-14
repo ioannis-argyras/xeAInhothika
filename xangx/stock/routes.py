@@ -56,7 +56,7 @@ def camera_photo(body: dict = Body(...)):
     conn = connect()
     try:
         init_db(conn)
-        return camera.handle_photo(conn, camera_id, data)
+        return camera.handle_photo(conn, camera_id, data, practice=body.get("practice") is True)
     except camera.PhotoError as exc:
         raise HTTPException(400, str(exc)) from None
     except camera.CameraError as exc:

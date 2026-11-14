@@ -190,8 +190,11 @@ def camera_positions(conn, camera_id):
     return [dict(r) for r in rows]
 
 
-def handle_photo(conn, camera_id, data, count=None):
+def handle_photo(conn, camera_id, data, count=None, practice=False):
     """Save the photo, compare it with the camera's previous one, write shelf events.
+
+    practice=True (the page's &dokimi=1): the same count, but no events are written and the
+    practice photos are compared only with each other, so the real camera chain is untouched.
 
     Returns {"first": True} for the camera's first photo, else
     {"results": [{position_id, position_name, product_name, taken, added, confidence}],
@@ -203,12 +206,13 @@ def handle_photo(conn, camera_id, data, count=None):
     if not positions:
         raise PhotoError(f"Δεν ξέρω την κάμερα {camera_id!r}.")
     ref = save_photo(data)
-    prev = last_photo(camera_id)
+    key = f"{camera_id}.dokimi" if practice else camera_id  # camera_id is known: it has positions
+    prev = last_photo(key)
     if prev is None:
-        remember_photo(camera_id, ref)
-        return {"first": True, "results": [], "event_ids": []}
+        remember_photo(key, ref)
+        return {"first": True, "results": [], "event_ids": [], "practice": practice}
     if prev == ref:  # the very same photo again: nothing can have changed
-        return {"first": False, "same": True, "results": [], "event_ids": []}
+        return {"first": False, "same": True, "results": [], "event_ids": [], "practice": practice}
 
     counts = (count or count_taken)(files_dir() / prev, files_dir() / ref, positions)
     by_id = {p["position_id"]: p for p in positions}
@@ -234,7 +238,7 @@ def handle_photo(conn, camera_id, data, count=None):
                               payload={"position_id": pos["position_id"], "product_id": pos["product_id"],
                                        "added": c["added"], "confidence": c["confidence"],
                                        "file_ref": ref}))
-    written = append_events(conn, items) if items else []
-    remember_photo(camera_id, ref)
-    return {"first": False, "results": results,
+    written = append_events(conn, items) if items and not practice else []
+    remember_photo(key, ref)
+    return {"first": False, "results": results, "practice": practice,
             "event_ids": [e.id for e, created in written if created]}
