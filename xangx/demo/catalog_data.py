@@ -48,6 +48,18 @@ _PRODUCT_ROWS = [
     ("coffee-instant-100", "Στιγμιαίος καφές 100g", "Καφές", 24, 520, 3, 340, 0.5, 12, _Y),
 ]
 
+# Shelf life in days from the day the goods enter the store. Not listed = never expires.
+_SHELF_LIFE_DAYS = {
+    "milk-fresh-1l": 7, "yogurt-greek-200": 21,
+    "juice-orange-1l": 30, "juice-apple-1l": 30, "juice-mixed-1l": 30, "juice-orange-250": 30,
+    "cola-330": 270, "cola-zero-330": 270, "sprite-330": 270, "fanta-330": 270,
+    "ice-tea-lemon-500": 270, "cola-1500": 270, "energy-250": 270,
+    "water-500": 365, "water-1500": 365, "water-1500x6": 365, "water-sparkling-500": 365,
+    "chips-salt-90": 180, "chips-oregano-90": 180, "chips-paprika-90": 180,
+    "nuts-mixed-100": 180, "biscuit-butter-200": 180,
+    "choco-milk-100": 270, "choco-dark-100": 270, "choco-hazel-100": 270, "choco-bar-45": 270,
+}
+
 # Public retail barcode of the Coca-Cola can; the others are invented (valid EAN-13).
 _PUBLIC_BARCODES = {"cola-330": "5449000000996"}
 
@@ -102,6 +114,7 @@ PRODUCTS = [
         "weight": weight,
         "pack_size": pack,
         "main_supplier": supplier,
+        "shelf_life_days": _SHELF_LIFE_DAYS.get(pid),
     }
     for i, (pid, name, category, vat, price, low, cost, weight, pack, supplier)
     in enumerate(_PRODUCT_ROWS, start=1)

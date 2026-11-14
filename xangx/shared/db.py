@@ -104,4 +104,7 @@ def init_db(conn):
     columns = [r[1] for r in conn.execute("PRAGMA table_info(supplier_products)")]
     if "case_barcode" not in columns:
         conn.execute("ALTER TABLE supplier_products ADD COLUMN case_barcode TEXT")
+    product_columns = [r[1] for r in conn.execute("PRAGMA table_info(products)")]
+    if "shelf_life_days" not in product_columns:
+        conn.execute("ALTER TABLE products ADD COLUMN shelf_life_days INTEGER")
     conn.commit()

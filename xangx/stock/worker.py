@@ -57,6 +57,29 @@ def on_shelf_taken(conn, event, now=None):
     return written
 
 
+EXPIRING_DAYS = 2
+EXPIRY_EVERY_SECONDS = 60
+
+
+def check_expiring(conn, now=None):
+    """Write stock.expiring for each batch that expires within 2 days (once per batch)."""
+    from xangx.stock import expiry
+
+    written = []
+    for item in expiry.expiring(conn, within_days=EXPIRING_DAYS, now=now):
+        if item["days_left"] < 0:
+            continue
+        event, created = append_event(
+            conn, type="stock.expiring", actor=ACTOR, subject=f"product:{item['product_id']}",
+            idem_key=f"expiring:{item['product_id']}:{item['expires_on']}",
+            payload={"product_id": item["product_id"], "qty": item["qty"],
+                     "expires_on": item["expires_on"]},
+        )
+        if created:
+            written.append(event)
+    return written
+
+
 def run_once(conn):
     return consume(conn, ACTOR, ["shelf.items_taken"], lambda e: on_shelf_taken(conn, e))
 
@@ -64,9 +87,13 @@ def run_once(conn):
 def _loop(db_path, interval):
     conn = connect(db_path)
     init_db(conn)
+    next_expiry = 0.0
     while True:
         try:
             run_once(conn)
+            if time.monotonic() >= next_expiry:
+                next_expiry = time.monotonic() + EXPIRY_EVERY_SECONDS
+                check_expiring(conn)
         except Exception as exc:  # keep the worker alive; the event is retried next round
             print(f"stock worker: {exc}", flush=True)
         time.sleep(interval)

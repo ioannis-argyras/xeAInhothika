@@ -90,7 +90,7 @@ class ServerTest(unittest.TestCase):
     def test_state_with_data(self):
         conn = connect(self.db)
         init_db(conn)
-        conn.execute("INSERT INTO products VALUES ('cola-330','Coca-Cola 330ml',NULL,'x',13,100,6)")
+        conn.execute("INSERT INTO products (id, name, barcode, category, vat_rate, sell_price_cents, low_threshold) VALUES ('cola-330','Coca-Cola 330ml',NULL,'x',13,100,6)")
         conn.execute("INSERT INTO positions VALUES ('fr1-a','Ψυγείο 1','cola-330','cam-1')")
         conn.commit()
         append_event(conn, type="stock.moved", actor="stock",
@@ -224,7 +224,7 @@ class HomeStateTest(unittest.TestCase):
         self.client = TestClient(server_app.app)
         conn = connect(self.db)
         init_db(conn)
-        conn.execute("INSERT INTO products VALUES ('cola-330','Coca-Cola 330ml',NULL,'x',13,100,6)")
+        conn.execute("INSERT INTO products (id, name, barcode, category, vat_rate, sell_price_cents, low_threshold) VALUES ('cola-330','Coca-Cola 330ml',NULL,'x',13,100,6)")
         conn.execute("INSERT INTO positions VALUES ('fr1-a','Ψυγείο 1','cola-330','cam-1')")
         conn.commit()
         append_event(conn, type="check.morning_done", actor="master", payload={"findings": []})

@@ -1,7 +1,7 @@
 """Stock tools for the partner (master): how a delivery is going."""
 
 from xangx.master.tools import tool
-from xangx.stock import delivery
+from xangx.stock import delivery, expiry
 
 
 @tool(
@@ -27,3 +27,22 @@ def delivery_status(conn, order_id):
                     f"λείπουν: {missing}.")
     s["event_ids"] = []
     return s
+
+
+@tool(
+    name="expiring_soon",
+    description=(
+        "Which batches in the store expire soon (or already expired): product, quantity and "
+        "date. Batches are counted from the day the goods came in, oldest sold first."
+    ),
+    input_schema={
+        "type": "object",
+        "properties": {
+            "within_days": {"type": "integer", "description": "Look this many days ahead, e.g. 3"},
+        },
+        "required": ["within_days"],
+    },
+)
+def expiring_soon(conn, within_days):
+    items = expiry.expiring(conn, within_days=max(int(within_days), 0))
+    return {"items": items, "summary": expiry.summary_text(items, within_days), "event_ids": []}

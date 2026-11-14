@@ -40,6 +40,11 @@ HOUR_WEIGHTS = [
     1.0, 0.8, 0.6, 0.5, 0.5, 0.8, 1.5, 2.5, 3.0, 3.0, 3.5, 4.0,
     5.0, 5.0, 4.5, 4.5, 5.0, 6.5, 8.0, 9.0, 9.0, 8.0, 6.0, 3.0,
 ]
+# So that the Shelf page has something to show under "expires soon": the batch of milk that came
+# 7 days ago counts as entered a day later (expires tomorrow), the batch of yogurt that came
+# 7 days ago as entered 12 days earlier (expires in 2 days). Only the date of the stock move
+# changes, not the stock. Key: (product, days before today of the delivery) -> days to shift.
+EXPIRY_SHIFT = {("milk-fresh-1l", 7): 1, ("yogurt-greek-200", 7): -12}
 UNITS_PER_DAY = 300  # expected units sold per day, for the order-up-to levels
 
 
@@ -78,9 +83,11 @@ def seed_reference(conn):
     with conn:
         for p in PRODUCTS:
             conn.execute(
-                "INSERT OR REPLACE INTO products VALUES (?,?,?,?,?,?,?)",
+                "INSERT OR REPLACE INTO products "
+                "(id, name, barcode, category, vat_rate, sell_price_cents, low_threshold, "
+                "shelf_life_days) VALUES (?,?,?,?,?,?,?,?)",
                 (p["id"], p["name"], p["barcode"], p["category"], p["vat_rate"],
-                 p["sell_price_cents"], p["low_threshold"]),
+                 p["sell_price_cents"], p["low_threshold"], p.get("shelf_life_days")),
             )
         for s in SUPPLIERS:
             conn.execute(
@@ -198,8 +205,10 @@ def seed_history(conn, now):
                              "vat_rate": p["vat_rate"]}
                         )
                         on_hand[p["id"]] += qty
+                        shift = EXPIRY_SHIFT.get((p["id"], (today - day).days), 0)
                         events.append(
-                            _stock_move(_utc(day, 8, 30), p["id"], qty, "delivery", unit)
+                            _stock_move(_utc(day + timedelta(days=shift), 8, 30), p["id"],
+                                        qty, "delivery", unit)
                         )
                     if lines:
                         invoice_no[supplier["id"]] += 1
