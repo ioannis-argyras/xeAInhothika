@@ -40,6 +40,9 @@ TITLES_EL = {
     "propose_order": "Πρόταση παραγγελίας",
     "send_order": "Αποστολή παραγγελίας",
     "delivery_status": "Κατάσταση παραλαβής",
+    "compare_suppliers": "Σύγκρινε προμηθευτές",
+    "expiring_soon": "Δες τι λήγει σύντομα",
+    "monthly_folder": "Φάκελος του μήνα για τον λογιστή",
 }
 
 MIN_TOKEN_LENGTH = 24

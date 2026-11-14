@@ -84,7 +84,15 @@ class ResetTests(DirectorBase):
         morning = self.types("check.morning_done")[0]
         rows = {r["actor"]: r["last_id"] for r in self.conn.execute("SELECT * FROM cursors")}
         self.assertIn("stock", rows)
-        self.assertTrue(all(v == morning.id - 1 for v in rows.values()))
+        # All workers start at the same place: the end of the seeded history. Only what the morning
+        # check itself wrote (its notices for the owner, then check.morning_done) comes after it,
+        # so the notifier still delivers those and nothing older is replayed.
+        self.assertEqual(len(set(rows.values())), 1)
+        start = next(iter(rows.values()))
+        self.assertLess(start, morning.id)
+        after = read_events(self.conn, after_id=start)
+        self.assertEqual(after[-1].id, morning.id)
+        self.assertTrue(all(e.actor == "master" and e.type in ("notification.sent", "check.morning_done") for e in after))
 
 
 class StepTests(DirectorBase):

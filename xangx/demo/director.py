@@ -98,7 +98,7 @@ def _clear_tables(conn):
 def _cursor_actors(old_actors):
     """Workers that read the log. They start from the end of the seeded history, not from 0:
     otherwise the Telegram notifier would replay the whole history to the owner's phone."""
-    names = {"stock", "accountant"} | set(old_actors)
+    names = {"stock", "accountant", "orders-compare", "autorun"} | set(old_actors)
     try:
         from xangx.master.telegram import NOTIFIER_ACTOR
 
