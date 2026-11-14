@@ -1,0 +1,31 @@
+# Keys and secrets: never in git
+.env
+.env.*
+!.env.example
+.dev.vars
+*.pem
+*.key
+.cf-auth/
+
+# Local data and builds
+*.sqlite*
+*.db
+__pycache__/
+.venv/
+venv/
+node_modules/
+dist/
+.pytest_cache/
+.wrangler/
+
+# Temporary files (deleted at the end of each task)
+.tmp/
+
+# Real invoices: only on one laptop, never in git
+pragmatika/
+
+# Team tooling that stays local
+.claude/
+CLAUDE.md
+prompts/
+docs/
