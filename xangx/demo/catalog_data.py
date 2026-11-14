@@ -124,7 +124,7 @@ SUPPLIERS = [
     {
         "id": _A, "name": "Αρτοποιία Λαμπρόπουλου", "afm": make_afm("99000003"),
         "email": "fournos@example.com", "phone": "210 0000 103",
-        "iban": make_iban("00000030000000000000103"), "credit_days": 7,
+        "iban": make_iban("00000030000000000000103"), "credit_days": 0,
         "interval_days": 6, "offset": 2, "series": "Β",
     },
     {
