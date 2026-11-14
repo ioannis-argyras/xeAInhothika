@@ -272,6 +272,40 @@ class InvoiceFlow(unittest.TestCase):
         self.assertFalse(md.payload["found"])
         self.assertIn("error", md.payload)
 
+    def test_demo_invoices_tell_the_story(self):
+        import importlib.util
+        spec = importlib.util.spec_from_file_location(
+            "make_demo_invoices", Path(__file__).parent.parent / "scripts" / "make_demo_invoices.py")
+        demo = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(demo)
+        from xangx.demo.catalog_data import iban_valid
+        invs = {i["file"]: i for i in demo.invoices()}
+        # previous Cola price 0,57 from history
+        old = _invoice(number="2200", lines=[("Coca-Cola 330ml κουτί", 24, 57, 24)])
+        old.update(invoice_id="INV-OLD", checks={}, confidence="high")
+        old.pop("pages"), old.pop("hidden_instructions")
+        old["lines"][0]["product_id"] = "cola-330"
+        append_event(self.conn, type="invoice.read", actor="system", payload=old)
+
+        def as_read(inv):
+            net, _, vat, total = demo.totals(inv["lines"])
+            return {"supplier_afm": inv["supplier"]["afm"], "series": inv["series"],
+                    "number": inv["number"], "date": inv["date"], "lines": inv["lines"],
+                    "net_cents": net, "vat_by_rate": {str(k): v for k, v in vat.items()},
+                    "total_cents": total, "iban": inv["iban"],
+                    "pages": {"seen": 1, "total": 1}, "hidden_instructions": None}
+        [a] = self._receive(b"a2271")
+        core.process_invoice(self.conn, a, reader=lambda p: as_read(invs["A-2271-ymittou"]))
+        kinds = {(i["kind"], i["product_id"]) for i in
+                 self._types("invoice.matched")[0].payload["issues"]}
+        self.assertIn(("shortage", "water-1500x6"), kinds)
+        [pc] = self._types("price.changed")
+        self.assertEqual((pc.payload["product_id"], pc.payload["pct"]), ("cola-330", 8.8))
+        bakery = invs["B-512-artopoieio"]
+        self.assertTrue(iban_valid(bakery["iban"]))
+        self.assertNotEqual(bakery["iban"], bakery["supplier"]["iban"])
+        self.assertIn("IBAN", invs["TEST-hidden-instruction"]["hidden"])
+
     def test_tools_registered(self):
         from xangx.master import tools as catalog
         catalog.load_role_tools()
