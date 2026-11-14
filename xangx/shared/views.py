@@ -55,3 +55,20 @@ def is_paused(conn, until_id=None):
         conn, until_id=until_id, types=["system.paused", "system.resumed"]
     )
     return bool(events) and events[-1].type == "system.paused"
+
+
+def stock_levels(conn, until_id=None):
+    """Stock on hand for every product, in ONE pass: {product_id: qty}."""
+    sql = (
+        "SELECT json_extract(payload, '$.product_id') AS pid, "
+        "SUM(json_extract(payload, '$.qty')) AS total "
+        "FROM events WHERE type = 'stock.moved'"
+    )
+    params = []
+    if until_id is not None:
+        sql += " AND id <= ?"
+        params.append(until_id)
+    sql += " GROUP BY pid"
+    return {
+        row["pid"]: row["total"] for row in conn.execute(sql, params) if row["pid"]
+    }

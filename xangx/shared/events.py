@@ -72,7 +72,7 @@ def _validate(
         raise EventError(
             f"Unknown actor {actor!r}. Allowed actors: {', '.join(sorted(ACTORS))}."
         )
-    if actor not in spec.actors:
+    if actor != "system" and actor not in spec.actors:
         raise EventError(
             f"Actor {actor!r} may not write {type!r}. "
             f"Allowed actors for this type: {', '.join(sorted(spec.actors))}."
