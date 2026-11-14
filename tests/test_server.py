@@ -290,5 +290,36 @@ class LoginPageTest(unittest.TestCase):
         self.assertIn('type="password"', page)
 
 
+class ScreenPagesAccessTest(unittest.TestCase):
+    """The tasks, invoices, shelf, time machine and director routes sit behind the access code."""
+    PATHS = ("/api/screen/tasks", "/api/screen/invoices", "/api/screen/shelves",
+             "/api/screen/replay", "/demo/skinothetis")
+
+    def setUp(self):
+        self.dir = tempfile.TemporaryDirectory()
+        self.env = mock.patch.dict(os.environ, {
+            "XANGX_DB": os.path.join(self.dir.name, "t.sqlite"),
+            "XANGX_ACCESS_CODE": "test-1234", "XANGX_DATA_DIR": self.dir.name})
+        self.env.start()
+        self.client = TestClient(server_app.app, follow_redirects=False)
+
+    def tearDown(self):
+        self.env.stop()
+        try:
+            self.dir.cleanup()
+        except OSError:
+            pass
+
+    def test_blocked_without_login(self):
+        for path in self.PATHS:
+            r = self.client.get(path, headers={"accept": "text/html"})
+            self.assertIn(r.status_code, (302, 303, 401), path)
+
+    def test_served_after_login(self):
+        self.assertEqual(self.client.post("/login", data={"code": "test-1234"}).status_code, 303)
+        for path in self.PATHS:
+            self.assertEqual(self.client.get(path).status_code, 200, path)
+
+
 if __name__ == "__main__":
     unittest.main()

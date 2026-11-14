@@ -13,6 +13,9 @@ from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.concurrency import run_in_threadpool
 
+from xangx.screen.api_b1 import router as api_b1_router
+from xangx.screen.api_b2 import router as api_b2_router
+from xangx.screen.api_c import router as api_c_router
 from xangx.screen.describe import describe, load_names
 from xangx.server.access import access_middleware
 from xangx.shared import views
@@ -45,6 +48,7 @@ ROLE_ROUTE_MODULES = (
     "xangx.orders.routes",
     "xangx.invoices.routes",
     "xangx.accountant.routes",
+    "xangx.demo.routes",
 )
 
 
@@ -65,6 +69,9 @@ def include_role_routes(target):
 
 
 include_role_routes(app)
+app.include_router(api_b1_router)
+app.include_router(api_b2_router)
+app.include_router(api_c_router)
 
 # Added last, so it runs first: the team access code covers every route above.
 app.middleware("http")(access_middleware)
