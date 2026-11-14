@@ -106,13 +106,14 @@ async function send(b64) {
   try {
     const r = await fetch('/stock/camera/photo', {method: 'POST', headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({camera_id: cam, image_b64: b64, practice})});
-    const j = await r.json();
-    if (!r.ok) { say('Σφάλμα: ' + (j.detail || r.status)); return; }
+    let j = {};
+    try { j = await r.json(); } catch (e) {}
+    if (!r.ok) { say(j.detail || 'Ο server δεν μπόρεσε να τη διαβάσει (σφάλμα ' + r.status + '). Δοκίμασε ξανά.'); return; }
     show(j);
     const now = new Date().toLocaleTimeString('el-GR', {hour12: false});
     $('when').textContent = now;
     say(now + ' · ' + ((Date.now() - t0) / 1000).toFixed(1).replace('.', ',') + '″');
-  } catch (e) { say('Δεν έφτασε στον server: ' + e.message); }
+  } catch (e) { say('Η φωτογραφία δεν έφτασε: χάθηκε η σύνδεση με το μαγαζί. Πάτα ξανά όταν επανέλθει.'); }
   finally { busy = false; $('now').disabled = false; }
 }
 

@@ -103,6 +103,29 @@ class CameraTest(unittest.TestCase):
         self.assertEqual(self.post(jpeg("c")).json()["results"][0]["taken"], 5)  # real chain still works
         self.assertEqual(len(self.shelf_events()), 1)
 
+    def test_no_internet_gives_plain_greek_502(self):
+        import anthropic
+
+        class Down:  # a client whose every call fails like a cut network
+            class beta:
+                class messages:
+                    @staticmethod
+                    def create(**kw):
+                        raise anthropic.APIConnectionError.__new__(anthropic.APIConnectionError)
+
+        a = camera.save_photo(jpeg("a"))
+        b = camera.save_photo(jpeg("b"))
+        files = camera.files_dir()
+        with self.assertRaises(camera.CameraError) as cm:
+            camera.count_taken(files / a, files / b, [{"position_id": "p", "name": "n", "product_name": "x"}],
+                               client=Down)
+        self.assertEqual(str(cm.exception), camera.NO_NET)
+        self.post(jpeg("a"))
+        with mock.patch.object(camera, "count_taken", side_effect=camera.CameraError(camera.NO_NET)):
+            r = self.post(jpeg("b"))
+        self.assertEqual((r.status_code, r.json()["detail"]), (502, camera.NO_NET))
+        self.assertEqual(camera.last_photo("cam-1"), camera.save_photo(jpeg("a")))  # the old photo stays
+
     def test_same_photo_again_writes_nothing(self):
         self.post(jpeg("a"))
         self.post(jpeg("b"))

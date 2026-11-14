@@ -43,7 +43,11 @@ SCHEMA = {
 
 
 class CameraError(RuntimeError):
-    """Claude did not give a usable answer."""
+    """Claude did not give a usable answer. The message is shown to the owner (Greek)."""
+
+
+NO_NET = ("Δεν υπάρχει σύνδεση με το internet, οπότε δεν μπόρεσα να συγκρίνω τη φωτογραφία. "
+          "Η προηγούμενη φωτογραφία κρατήθηκε· πάτα ξανά «Φωτογραφία τώρα» όταν έρθει το δίκτυο.")
 
 
 def use_fake_llm():
@@ -87,12 +91,31 @@ def count_taken(prev_path, new_path, positions, client=None):
     if client is None and use_fake_llm():
         first = positions[0]["position_id"]
         return [{"position_id": first, "taken": 5, "added": 0, "confidence": "high"}]
-    if client is None:
-        import anthropic
+    import anthropic
 
+    if client is None:
         client = anthropic.Anthropic()
     listing = "\n".join(f'- {p["position_id"]}: {p["name"]} ({p["product_name"]})' for p in positions)
-    resp = client.beta.messages.create(
+    try:
+        resp = _ask(client, prev_path, new_path, listing)
+    except (anthropic.APIConnectionError, anthropic.APITimeoutError) as exc:
+        raise CameraError(NO_NET) from exc
+    except anthropic.APIStatusError as exc:
+        raise CameraError(f"Το Claude δεν απάντησε (σφάλμα {exc.status_code}). Δοκίμασε ξανά σε λίγο.") from exc
+    if resp.stop_reason == "refusal":
+        raise CameraError("Το Claude δεν δέχτηκε να διαβάσει τις φωτογραφίες.")
+    if resp.stop_reason == "max_tokens":
+        raise CameraError("Η απάντηση του Claude κόπηκε. Δοκίμασε ξανά.")
+    text = "".join(b.text for b in resp.content if getattr(b, "type", "") == "text")
+    try:
+        data = json.loads(text)
+    except ValueError as exc:
+        raise CameraError("Το Claude δεν έδωσε καθαρή απάντηση. Δοκίμασε ξανά.") from exc
+    return _clean(data.get("positions"), positions)
+
+
+def _ask(client, prev_path, new_path, listing):
+    return client.beta.messages.create(
         model=MODEL,
         max_tokens=8000,
         messages=[{
@@ -110,16 +133,6 @@ def count_taken(prev_path, new_path, positions, client=None):
         betas=[FALLBACK_BETA],
         fallbacks="default",
     )
-    if resp.stop_reason == "refusal":
-        raise CameraError("Claude declined to read the photos")
-    if resp.stop_reason == "max_tokens":
-        raise CameraError("Claude's answer was cut off")
-    text = "".join(b.text for b in resp.content if getattr(b, "type", "") == "text")
-    try:
-        data = json.loads(text)
-    except ValueError as exc:
-        raise CameraError(f"Claude did not return JSON: {exc}") from exc
-    return _clean(data.get("positions"), positions)
 
 
 # --- Photos from the shelf camera -------------------------------------------

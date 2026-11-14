@@ -73,7 +73,7 @@ def camera_photo(body: dict = Body(...)):
     except camera.PhotoError as exc:
         raise HTTPException(400, str(exc)) from None
     except camera.CameraError as exc:
-        raise HTTPException(502, f"Η κάμερα δεν πήρε απάντηση: {exc}") from None
+        raise HTTPException(502, str(exc)) from None
     finally:
         conn.close()
 

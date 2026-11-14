@@ -90,8 +90,11 @@ function closedNote(s) {
   st.appendChild(a);
 }
 
+const LOST = 'χάθηκε η σύνδεση με το μαγαζί';
 async function post(path, body) {
-  const r = await fetch(path, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body)});
+  let r;
+  try { r = await fetch(path, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body)}); }
+  catch (e) { throw new Error(LOST); }
   let j = {};
   try { j = await r.json(); } catch (e) {}
   if (!r.ok) throw new Error(j.detail || ('σφάλμα ' + r.status));
@@ -165,7 +168,10 @@ function scan(code) {
                 l ? l.scanned + ' από ' + l.expected : '');
       } else setLast(false, 'Άγνωστο barcode: ' + code);
       if (navigator.vibrate) navigator.vibrate(60);
-    } catch (e) { setLast(false, e.message); }
+    } catch (e) {
+      setLast(false, e.message === LOST ? 'Δεν μετρήθηκε: ' + LOST + '. Ξανασκάναρε το ίδιο barcode όταν επανέλθει.' : e.message);
+      seen = {code: null, at: 0};  // the same barcode may count as soon as the line is back
+    }
   });
 }
 
