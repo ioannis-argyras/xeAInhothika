@@ -34,7 +34,7 @@
   /* ---------- βιτρίνα ---------- */
   function renderBand(d) {
     var l = d.latest;
-    $("kick").textContent = "Ράφι · " + d.total + " θέσεις" + (l ? " · τελευταία κίνηση " + l.at_full : " · καμία κίνηση σήμερα");
+    $("kick").textContent = "Ράφι · " + d.total + " θέσεις" + (l ? " · τελευταία κίνηση " + l.at : " · καμία κίνηση σήμερα");
     var lead = $("lead");
     lead.textContent = "";
     lead.appendChild(el("b", null, d.low_count ? d.low_count + " σε χαμηλό" : "Κανένα σε χαμηλό"));
@@ -81,10 +81,10 @@
     var grid = el("div", "photos");
 
     var a = el("div");
-    a.appendChild(photoBox(both ? l.before_url : null, l.before_at_full, beforeN, 0));
+    a.appendChild(photoBox(both ? l.before_url : null, l.before_at_full ? l.before_at_full.slice(0, 5) : null, beforeN, 0));
     a.appendChild(el("div", "cap m", "Πριν" + (beforeN != null ? " · " + beforeN + " " + l.product_name : "")));
     var b = el("div");
-    b.appendChild(photoBox(l.after_url && both ? l.after_url : null, l.at_full,
+    b.appendChild(photoBox(l.after_url && both ? l.after_url : null, l.at,
       afterN == null ? null : (taken ? afterN : beforeN + l.qty), taken ? (l.qty || 0) : 0));
     var cap = el("div", "cap");
     cap.appendChild(el("b", null, "Μετά · " + (taken ? "πήραν " : "μπήκαν ") + l.qty));

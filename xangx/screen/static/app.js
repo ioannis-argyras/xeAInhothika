@@ -66,6 +66,7 @@ function route() {
   document.querySelectorAll(".screen").forEach((s) => s.classList.toggle("on", s.id === "s-" + current));
   document.querySelectorAll(".links a").forEach((a) => a.classList.toggle("on", a.dataset.k === current));
   document.querySelectorAll(".tabs a").forEach((a) => {
+    if (!a.dataset.k) return;
     const on = a.dataset.k === current;
     a.classList.toggle("on", on);
     a.querySelector("i").className = (on ? "ph-fill" : "ph") + " ph-" + a.dataset.i;
