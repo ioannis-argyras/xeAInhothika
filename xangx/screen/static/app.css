@@ -245,3 +245,5 @@ i.ph,i.ph-bold,i.ph-fill{line-height:1}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 @media (prefers-contrast:more){.tabs{background:#fff;backdrop-filter:none}}
+/* Η ετικέτα δίπλα σε ό,τι νούμερο πωλήσεων: το ταμείο του demo είναι προσομοίωση. */
+.sim{display:inline-block;margin-left:10px;padding:2px 10px;border:1px solid var(--n3);border-radius:999px;font-size:12px;font-weight:500;line-height:1.5;letter-spacing:0;color:var(--n4);white-space:nowrap;vertical-align:middle}

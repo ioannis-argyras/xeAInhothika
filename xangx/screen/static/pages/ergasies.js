@@ -65,6 +65,8 @@
     var mobileLink = link(task, "");
     if (mobileLink) { sub.appendChild(document.createTextNode(" · ")); sub.appendChild(mobileLink); }
     textCell.appendChild(sub);
+    var undoNode = window.xangxUndoNode(task.undo, task.id, task.text, soon);
+    if (undoNode) textCell.appendChild(undoNode);
     var tr = el("div", "tr2" + (task.warn ? " diff" : ""));
     tr.appendChild(el("b", null, task.at));
     tr.appendChild(textCell);

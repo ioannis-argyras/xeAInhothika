@@ -354,6 +354,8 @@ function renderStory(state) {
     const text = el("span");
     richText(text, e.text);
     cell.append(tm, text);
+    const undoNode = window.xangxUndoNode(e.undo, e.id, e.text, refreshSoon);
+    if (undoNode) cell.appendChild(undoNode);
     box.appendChild(cell);
   });
 }
@@ -396,7 +398,8 @@ function renderHome(state) {
   lead.appendChild(document.createTextNode(first + " "));
   if (state.today.sales_count) {
     lead.append(document.createTextNode("Ως τώρα "), el("b", null, eur(state.today.sales_cents)),
-      document.createTextNode(" από " + plural(state.today.sales_count, "απόδειξη", "αποδείξεις") + "."));
+      document.createTextNode(" από " + plural(state.today.sales_count, "απόδειξη", "αποδείξεις") + "."),
+      el("span", "sim", "Ταμείο: προσομοίωση"));
   } else {
     lead.appendChild(document.createTextNode("Δεν υπάρχουν ακόμα πωλήσεις σήμερα."));
   }

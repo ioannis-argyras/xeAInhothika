@@ -1,0 +1,22 @@
+/* Αναίρεση: μόνο χρώματα και μεγέθη που υπάρχουν στο app.css. */
+.btn.undo{height:44px;padding:0 16px;background:transparent;color:var(--ink);border-color:var(--line);font-weight:500}
+.btn.undo:hover{background:var(--strip)}
+.ud{display:block;margin-top:8px}
+.ud-note{display:flex;align-items:center;gap:6px;margin-top:8px;min-height:24px}
+.ud-note i{font-size:16px;color:var(--ok)}
+.ud-dlg{margin:auto;border:0;border-radius:18px;padding:0;max-width:min(92vw,420px);width:100%;box-shadow:0 20px 40px rgba(2,10,22,.4);color:var(--ink);background:var(--surf)}
+.ud-dlg::backdrop{background:rgba(7,22,48,.6)}
+.ud-box{padding:22px}
+.ud-box h2{font-size:20px;letter-spacing:-.01em}
+.ud-box h2:focus{outline:none}
+.ud-text{margin:8px 0 0;color:var(--muted);overflow-wrap:anywhere}
+.ud-msg{margin:10px 0 0;color:var(--alert);font-weight:700}
+.ud-msg:empty{display:none}
+.ud-acts{display:flex;gap:10px;margin-top:18px}
+.ud-acts .btn{flex:1;height:56px;padding:0 10px}
+.ud-no{background:var(--surf);color:var(--ink);border-color:var(--line)}
+.ud-no:hover{background:var(--strip)}
+.ud-yes{background:var(--band);color:#fff}
+.ud-yes:hover{background:var(--band2)}
+/* Στη ροή του Σήμερα, κάτω από το κείμενο της εγγραφής. */
+.story .ud,.story .ud-note{margin-top:10px}
