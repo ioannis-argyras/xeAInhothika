@@ -157,6 +157,12 @@ class OrdersTest(unittest.TestCase):
 
 
 
+# When P-0318 left in the demo data (set by RepliesTest.setUp). The seed puts it at 06:50 Greek
+# time of the Greek day, so after midnight it is a few hours ahead of the clock: a default reply
+# is dated 10 minutes after it, never "before the order".
+SENT_AT = None
+
+
 def reply_email(body, frm="paraggelies.ymittou@example.com", in_reply_to="<p-0318@example.com>",
                 subject="Re: Παραγγελία P-0318", message_id="<r1@ymittou.example.com>", date=None):
     from email.utils import formatdate
@@ -165,7 +171,11 @@ def reply_email(body, frm="paraggelies.ymittou@example.com", in_reply_to="<p-031
     msg["From"] = f"Διανομές Υμηττού <{frm}>"
     msg["To"] = "orders@xangxothaika.invalid"
     msg["Subject"] = subject
-    msg["Date"] = date or formatdate(localtime=True)
+    if date is None:
+        from datetime import datetime, timedelta, timezone
+        moment = max(datetime.now(timezone.utc), (SENT_AT or datetime.now(timezone.utc)) + timedelta(minutes=10))
+        date = formatdate(moment.timestamp(), localtime=True)
+    msg["Date"] = date
     msg["Message-ID"] = message_id
     if in_reply_to:
         msg["In-Reply-To"] = in_reply_to
@@ -178,9 +188,16 @@ class RepliesTest(unittest.TestCase):
 
     setUpClass = classmethod(OrdersTest.setUpClass.__func__)
     tearDownClass = classmethod(OrdersTest.tearDownClass.__func__)
-    setUp = OrdersTest.setUp
     tearDown = OrdersTest.tearDown
     events = OrdersTest.events
+
+    def setUp(self):
+        global SENT_AT
+        from datetime import datetime, timezone
+        OrdersTest.setUp(self)
+        sent = [e for e in self.events("order.sent") if e.payload.get("order_id") == "P-0318"]
+        SENT_AT = (datetime.strptime(sent[0].at[:19], "%Y-%m-%dT%H:%M:%S").replace(tzinfo=timezone.utc)
+                   if sent else None)
 
     def test_reply_is_read_once_and_kept_as_file(self):
         from xangx.orders import replies
@@ -189,8 +206,8 @@ class RepliesTest(unittest.TestCase):
         event = replies.handle_email(self.conn, raw)
         self.assertIsNotNone(event)
         p = event.payload
-        from datetime import datetime, timedelta, timezone
-        tomorrow = (datetime.now(timezone.utc).date() + timedelta(days=1)).isoformat()
+        from datetime import timedelta
+        tomorrow = (replies._email_moment(replies.parse(raw)).date() + timedelta(days=1)).isoformat()
         self.assertEqual((p["order_id"], p["delivery_date"]), ("P-0318", tomorrow))
         self.assertEqual(event.idem_key, "email:<r1@ymittou.example.com>")
         sent = [e for e in self.events("order.sent") if e.payload["order_id"] == "P-0318"][0]
