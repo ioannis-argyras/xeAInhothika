@@ -375,7 +375,8 @@ def stock_from_invoice(conn, read_event, caused_by=None):
     for pid, qty in totals.items():
         e, created = append_event(
             conn, type="stock.moved", actor=ACTOR,
-            payload={"product_id": pid, "qty": qty, "reason": "invoice"},
+            payload={"product_id": pid, "qty": qty, "reason": "invoice",
+                     "invoice_id": p["invoice_id"]},
             subject=f"product:{pid}", idem_key=f"invoice-stock:{p['invoice_id']}:{pid}",
             caused_by=caused_by or read_event.id,
         )

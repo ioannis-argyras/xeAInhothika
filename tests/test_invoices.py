@@ -235,6 +235,8 @@ class InvoiceFlow(unittest.TestCase):
         self.assertEqual(sorted((e.payload["product_id"], e.payload["qty"]) for e in moved),
                          [("biscuit-butter-200", 12), ("pretzel-sesame", 40)])
         self.assertTrue(all(e.actor == "invoices" for e in moved))
+        iid_read = self._types("invoice.read")[0].payload["invoice_id"]
+        self.assertTrue(all(e.payload["invoice_id"] == iid_read for e in moved))
         self.assertNotIn("delivery_id", self._types("invoice.matched")[0].payload)
         core.process_invoice(self.conn, iid, reader=lambda p: data)
         core.stock_from_invoice(self.conn, self._types("invoice.read")[0])
