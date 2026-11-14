@@ -151,6 +151,54 @@ class DescribeTest(unittest.TestCase):
                       {"invoice_id": "i1", "issues": [], "delivery_id": "d1"}, 1)
         self.assertIn("ταιριάζει με την παραλαβή", describe(found))
 
+    def test_invoice_lines_use_paper_number_and_mydata_result(self):
+        names = {"invoice": {"i1": "Α-2271"}}
+
+        def ev(type_, payload):
+            return Event(1, "x", "s", "invoices", type_, None, None, None, payload, 1)
+
+        read = ev("invoice.read", {"invoice_id": "i1", "total_cents": 1000})
+        self.assertIn("Α-2271", describe(read, names))
+        own = ev("invoice.read", {"invoice_id": "i9", "series": "Β", "number": "7",
+                                  "total_cents": 1000})
+        self.assertIn("Β-7", describe(own))
+        self.assertIn("i1", describe(read))
+        same = ev("invoice.mydata_checked", {"invoice_id": "i1", "found": True,
+                                             "totals_match": True})
+        self.assertEqual(describe(same, names),
+                         "myDATA: βρέθηκε το τιμολόγιο Α-2271, ίδιο σύνολο")
+        diff = ev("invoice.mydata_checked", {"invoice_id": "i1", "found": True,
+                                             "totals_match": False})
+        self.assertIn("ΔΙΑΦΟΡΑ στο σύνολο", describe(diff, names))
+        err = ev("invoice.mydata_checked", {"invoice_id": "i1", "found": False,
+                                            "totals_match": False, "error": "timeout"})
+        self.assertEqual(describe(err, names),
+                         "Το myDATA δεν απάντησε για το τιμολόγιο Α-2271, θα ξαναδοκιμάσω")
+        missing = ev("invoice.mydata_checked", {"invoice_id": "i1", "found": False,
+                                                "totals_match": False})
+        self.assertEqual(describe(missing, names), "myDATA: δεν βρέθηκε το τιμολόγιο Α-2271")
+        two = ev("invoice.matched", {"invoice_id": "i1", "delivery_id": "d1", "issues": [
+            {"note": "Coca-Cola: τιμολογήθηκαν 10, ήρθαν 8"}, {"note": "άλλο"}]})
+        self.assertEqual(describe(two, names),
+                         "Το τιμολόγιο Α-2271: Coca-Cola: τιμολογήθηκαν 10, ήρθαν 8 και άλλες 1")
+        one = ev("invoice.matched", {"invoice_id": "i1", "delivery_id": "d1",
+                                     "issues": [{"note": "κάτι"}]})
+        self.assertEqual(describe(one, names), "Το τιμολόγιο Α-2271: κάτι")
+        nonote = ev("invoice.matched", {"invoice_id": "i1", "delivery_id": "d1",
+                                        "issues": [{"kind": "x"}]})
+        self.assertIn("έχει 1 αποκλίσεις", describe(nonote, names))
+
+    def test_load_names_reads_paper_numbers(self):
+        from xangx.screen.describe import load_names
+        conn = connect(":memory:")
+        init_db(conn)
+        append_event(conn, type="invoice.read", actor="invoices", payload={
+            "invoice_id": "i1", "supplier_afm": "1", "series": "Α", "number": "2271",
+            "date": "2026-11-14", "lines": [], "net_cents": 0, "vat_by_rate": {},
+            "total_cents": 0, "checks": {}, "confidence": "high"})
+        self.assertEqual(load_names(conn)["invoice"], {"i1": "Α-2271"})
+        conn.close()
+
     def test_taken_sentence_and_iban_mask(self):
         names = {"position": {"p": "Ψυγείο 1"}, "product": {"c": "Coca-Cola 330ml"}}
         event = Event(1, "x", "s", "camera", "shelf.items_taken", None, None, None,

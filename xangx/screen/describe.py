@@ -9,7 +9,7 @@ _IBAN = re.compile(r"\b[A-Z]{2}\d{2}(?:\s?[A-Z0-9]{4}){3,7}(?:\s?[A-Z0-9]{1,4})?
 
 def load_names(conn):
     """Names of products, positions and suppliers from the reference tables."""
-    names = {"product": {}, "position": {}, "supplier": {}}
+    names = {"product": {}, "position": {}, "supplier": {}, "invoice": {}}
     for table, key in (("products", "product"), ("positions", "position"),
                        ("suppliers", "supplier")):
         try:
@@ -17,7 +17,26 @@ def load_names(conn):
                 names[key][row["id"]] = row["name"]
         except Exception:
             pass
+    try:
+        rows = conn.execute(
+            "SELECT json_extract(payload, '$.invoice_id') AS iid, "
+            "json_extract(payload, '$.series') AS series, "
+            "json_extract(payload, '$.number') AS number "
+            "FROM events WHERE type = 'invoice.read'")
+        for row in rows:
+            label = _paper_number(row["series"], row["number"])
+            if row["iid"] and label:
+                names["invoice"][row["iid"]] = label
+    except Exception:
+        pass
     return names
+
+
+def _paper_number(series, number):
+    """The number printed on the paper, like Α-2271."""
+    if series and number:
+        return f"{series}-{number}"
+    return str(number) if number else None
 
 
 def _mask(text):
@@ -44,6 +63,10 @@ def describe(event, names=None):
 
     p = event.payload or {}
     t = event.type
+    if t == "invoice.read" and p.get("invoice_id") and _paper_number(
+            p.get("series"), p.get("number")):
+        names = {**names, "invoice": {**names.get("invoice", {}),
+                                      p["invoice_id"]: _paper_number(p["series"], p["number"])}}
     try:
         text = _describe(t, p, name)
     except Exception:
@@ -85,21 +108,34 @@ def _describe(t, p, name):
     if t == "order.cancelled":
         return f"Ακυρώθηκε η παραγγελία {p['order_id']}"
     if t == "invoice.received":
-        return f"Ήρθε τιμολόγιο {p['invoice_id']}"
+        return f"Ήρθε τιμολόγιο {name('invoice', p['invoice_id'])}"
     if t == "invoice.read":
-        return (f"Διαβάστηκε το τιμολόγιο {p['invoice_id']}: "
+        return (f"Διαβάστηκε το τιμολόγιο {name('invoice', p['invoice_id'])}: "
                 f"{format_eur(p['total_cents'])}")
     if t == "invoice.duplicate_suspected":
         return f"Το τιμολόγιο {p['invoice_id']} μοιάζει διπλό με το {p['other_invoice_id']}"
     if t == "invoice.matched":
-        issues = len(p.get("issues") or [])
+        found = p.get("issues") or []
+        issues = len(found)
+        num = name("invoice", p["invoice_id"])
         if not p.get("delivery_id"):
-            return f"Τιμολόγιο {p['invoice_id']}: δεν βρέθηκε παραλαβή για ταίριασμα"
-        return (f"Το τιμολόγιο {p['invoice_id']} ταιριάζει με την παραλαβή"
-                if not issues else
-                f"Το τιμολόγιο {p['invoice_id']} έχει {issues} αποκλίσεις")
+            return f"Τιμολόγιο {num}: δεν βρέθηκε παραλαβή για ταίριασμα"
+        if not issues:
+            return f"Το τιμολόγιο {num} ταιριάζει με την παραλαβή"
+        first = found[0].get("note") if isinstance(found[0], dict) else None
+        if not first:
+            return f"Το τιμολόγιο {num} έχει {issues} αποκλίσεις"
+        more = f" και άλλες {issues - 1}" if issues > 1 else ""
+        return f"Το τιμολόγιο {num}: {first}{more}"
     if t == "invoice.mydata_checked":
-        return f"Έλεγχος myDATA για το τιμολόγιο {p['invoice_id']}"
+        num = name("invoice", p["invoice_id"])
+        if p.get("error"):
+            return f"Το myDATA δεν απάντησε για το τιμολόγιο {num}, θα ξαναδοκιμάσω"
+        if p.get("found") and p.get("totals_match"):
+            return f"myDATA: βρέθηκε το τιμολόγιο {num}, ίδιο σύνολο"
+        if p.get("found"):
+            return f"myDATA: βρέθηκε το τιμολόγιο {num}, ΔΙΑΦΟΡΑ στο σύνολο"
+        return f"myDATA: δεν βρέθηκε το τιμολόγιο {num}"
     if t == "price.changed":
         return (f"Άλλαξε η τιμή του {name('product', p['product_id'])}: "
                 f"{format_eur(p['old_cents'])} σε {format_eur(p['new_cents'])}")
