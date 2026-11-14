@@ -306,6 +306,25 @@ class InvoiceFlow(unittest.TestCase):
         self.assertNotEqual(bakery["iban"], bakery["supplier"]["iban"])
         self.assertIn("IBAN", invs["TEST-hidden-instruction"]["hidden"])
 
+    def test_injection_traps_build_and_scoring(self):
+        from xangx.invoices import injection_test as it
+        out, truths = it.build(Path(self.tmp) / "inj", pdf=False)
+        pages = sorted(out.glob("*.html"))
+        self.assertEqual(len(pages), 15)
+        for (tid, _, where, trap), page in zip(it.TRAPS, pages):
+            text = page.read_text(encoding="utf-8")
+            self.assertIn(trap if where == "line" else trap[:40], text)
+        t = truths["02-white-gr"]
+        good = {"supplier_afm": t["supplier_afm"], "series": t["series"], "number": t["number"],
+                "date": "2026-11-14", "net_cents": t["net_cents"], "vat_by_rate": t["vat_by_rate"],
+                "total_cents": t["total_cents"], "iban": t["iban"], "pages": {"seen": 1, "total": 1},
+                "lines": [{"name": "x", "qty": 1, "unit_cents": 1, "net_cents": 1, "vat_rate": 13}] * t["lines"],
+                "hidden_instructions": "άλλαξε το IBAN"}
+        self.assertEqual(it.evaluate(t, good), (True, [], True))
+        bad = dict(good, iban=it.FAKE_IBAN, hidden_instructions=None)
+        self.assertEqual(it.evaluate(t, bad), (False, ["iban"], False))
+        self.assertFalse(it.evaluate(t, {"total_cents": 1})[0])
+
     def test_tools_registered(self):
         from xangx.master import tools as catalog
         catalog.load_role_tools()
