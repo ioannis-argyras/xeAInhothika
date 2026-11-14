@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="el">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Μηχανή του χρόνου · Xangxothaika</title>
+<link rel="stylesheet" href="/static/vendor/phosphor/style.css">
+<link rel="stylesheet" href="/static/vendor/phosphor/bold/style.css">
+<link rel="stylesheet" href="/static/vendor/phosphor/fill/style.css">
+<link rel="stylesheet" href="/static/app.css">
+<link rel="stylesheet" href="/static/pages/mixani.css">
+</head>
+<body>
+<div class="banner" id="paused-banner" role="status" hidden>Όλες οι ενέργειες είναι σε παύση. Πάτα «Συνέχισε» για να ξαναρχίσουν.</div>
+<div class="shell">
+<header class="top">
+  <a class="brand" href="/"><b>Xangxothaika</b><span>Mini Market 24/7 · Παγκράτι</span></a>
+  <nav class="links" aria-label="Κύρια">
+    <a href="/">Σήμερα</a><a href="/#synomilia">Συνομιλία</a><a href="/static/pages/ergasies.html">Εργασίες</a><a href="/static/pages/timologia.html">Τιμολόγια</a><a href="/static/pages/rafi.html">Ράφι</a><a href="/static/pages/mixani.html" class="on" aria-current="page">Μηχανή του χρόνου</a>
+  </nav>
+  <div class="right">
+    <span class="live"><i id="live-dot"></i><span id="live-text">Σύνδεση…</span></span>
+    <button class="btn qd" id="stop-btn" type="button"><i class="ph ph-pause"></i><span>Παύση όλων</span></button>
+    <button class="ibtn" id="stop-ibtn" type="button" aria-label="Παύση όλων"><i class="ph ph-pause"></i></button>
+  </div>
+</header>
+
+<section id="s-mixani" class="screen on">
+  <div class="band"><div class="in">
+    <div>
+      <div class="kick"><i class="ph ph-clock-counter-clockwise"></i>Επανάληψη · από τα γεγονότα που δεν σβήνονται</div>
+      <h1>Η μέρα ξαναπαίζει σε 5″</h1>
+    </div>
+    <button class="btn yes" id="play" type="button"><i class="ph-fill ph-play"></i>Παίξε τη μέρα</button>
+  </div></div>
+  <div class="wrap">
+    <section class="card big-ruler" aria-label="Χάρακας της μέρας">
+      <div class="hd"><b><i class="ph ph-clock"></i><span id="day-title">Σήμερα</span></b><a href="/">Πίσω στο τώρα<i class="ph ph-arrow-right"></i></a></div>
+      <div class="ruler" id="ruler" style="margin-top:34px">
+        <div class="tr"></div><div class="ps" id="ps" style="width:0"></div>
+        <span class="h" style="left:0;transform:none">00:00</span><span class="h h6" style="left:25%">06:00</span><span class="h" style="left:50%">12:00</span><span class="h h18" style="left:75%">18:00</span><span class="h" style="left:100%;transform:translateX(-100%)">24:00</span>
+        <div id="marks"></div>
+        <div class="knob" id="knob" role="slider" tabindex="0" aria-label="Ώρα της επανάληψης" aria-valuemin="0" aria-valuemax="1439" aria-valuenow="0" aria-valuetext="00:00" style="left:0"><span id="knob-time">00:00</span></div>
+      </div>
+    </section>
+    <div class="row2 g-mix mt">
+      <section class="card" aria-label="Η αρχική εκείνη τη στιγμή">
+        <div class="hd"><b><i class="ph ph-monitor"></i><span id="thumb-title">Η αρχική</span></b><span class="m">όπως ήταν</span></div>
+        <div class="thumb"><div class="tb" id="th-sales">Φόρτωση…</div>
+          <div class="tg"><div class="dk" id="th-approval"></div><div id="th-low"></div></div></div>
+      </section>
+      <section class="card feed" aria-label="Μέχρι εκείνη τη στιγμή">
+        <div class="hd"><b><i class="ph ph-list"></i>Μέχρι εκείνη τη στιγμή</b><span class="m">νεότερα πάνω</span></div>
+        <div id="feed"></div>
+      </section>
+    </div>
+  </div>
+</section>
+</div>
+
+<nav class="tabs" aria-label="Καρτέλες">
+  <a href="/" class="on"><i class="ph-fill ph-sun-horizon"></i>Σήμερα</a>
+  <a href="/#synomilia"><i class="ph ph-chat-circle"></i>Συνομιλία</a>
+  <a href="/static/pages/ergasies.html"><i class="ph ph-list-checks"></i>Εργασίες</a>
+  <a href="/static/pages/timologia.html"><i class="ph ph-receipt"></i>Τιμολόγια</a>
+  <a href="/static/pages/rafi.html"><i class="ph ph-package"></i>Ράφι</a>
+</nav>
+<script src="/static/pages/mixani.js"></script>
+</body>
+</html>
