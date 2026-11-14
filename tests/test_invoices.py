@@ -213,6 +213,68 @@ class InvoiceFlow(unittest.TestCase):
         self.assertEqual([(i["kind"], i["product_id"], i["amount_cents"]) for i in issues],
                          [("shortage", "water-1500x6", 215)])
 
+    def _bakery(self, lines, **kw):
+        data = _invoice(lines=lines, **kw)
+        data["supplier_afm"] = SUPPLIER_BY_ID["sup-artopoieio"]["afm"]
+        data["iban"] = SUPPLIER_BY_ID["sup-artopoieio"]["iban"]
+        return data
+
+    def _invoice_stock(self):
+        return [e for e in self._types("stock.moved") if e.payload["reason"] == "invoice"]
+
+    def _name(self, pid):
+        return self.conn.execute("SELECT name FROM products WHERE id = ?", (pid,)).fetchone()["name"]
+
+    def test_invoice_without_delivery_puts_lines_into_stock_once(self):
+        [iid] = self._receive()
+        data = self._bakery([(self._name("pretzel-sesame"), 40, 40, 13),
+                             (self._name("biscuit-butter-200"), 12, 90, 13),
+                             ("Άγνωστο είδος ΧΧΧ", 3, 100, 24)])
+        core.process_invoice(self.conn, iid, reader=lambda p: data)
+        moved = self._invoice_stock()
+        self.assertEqual(sorted((e.payload["product_id"], e.payload["qty"]) for e in moved),
+                         [("biscuit-butter-200", 12), ("pretzel-sesame", 40)])
+        self.assertTrue(all(e.actor == "invoices" for e in moved))
+        self.assertNotIn("delivery_id", self._types("invoice.matched")[0].payload)
+        core.process_invoice(self.conn, iid, reader=lambda p: data)
+        core.stock_from_invoice(self.conn, self._types("invoice.read")[0])
+        self.assertEqual(len(self._invoice_stock()), 2)
+
+    def test_invoice_with_delivery_adds_no_stock(self):
+        [iid] = self._receive()
+        core.process_invoice(self.conn, iid, reader=lambda p: _invoice())
+        self.assertIn("delivery_id", self._types("invoice.matched")[0].payload)
+        self.assertEqual(self._invoice_stock(), [])
+
+    def test_unknown_line_gets_no_stock(self):
+        [iid] = self._receive()
+        data = self._bakery([("Κάτι που δεν υπάρχει πουθενά", 5, 100, 24)])
+        core.process_invoice(self.conn, iid, reader=lambda p: data)
+        self.assertEqual(self._invoice_stock(), [])
+
+    def test_payment_terms_are_checked(self):
+        d = "2026-11-14"
+        ok = {"terms": "credit", "credit_days": 30, "due_date": None}
+        self.assertEqual(core.clean_payment(ok, d), ok)
+        due = {"terms": "credit", "credit_days": None, "due_date": "2026-12-14"}
+        self.assertEqual(core.clean_payment(due, d), due)
+        cash = core.clean_payment({"terms": "cash", "credit_days": 5}, d)
+        self.assertEqual(cash, {"terms": "cash", "credit_days": None, "due_date": None})
+        unknown = {"terms": "unknown", "credit_days": None, "due_date": None}
+        for bad in (None, "x", {"terms": "bank"}, {"terms": "credit", "credit_days": 500},
+                    {"terms": "credit", "credit_days": -1},
+                    {"terms": "credit", "due_date": "2027-06-01"},
+                    {"terms": "credit", "due_date": "2026-01-01"},
+                    {"terms": "credit", "due_date": "14/12/2026"}):
+            self.assertEqual(core.clean_payment(bad, d), unknown, bad)
+
+    def test_payment_goes_into_invoice_read(self):
+        [iid] = self._receive()
+        data = _invoice()
+        data["payment"] = {"terms": "credit", "credit_days": 30, "due_date": None}
+        core.process_invoice(self.conn, iid, reader=lambda p: data)
+        self.assertEqual(self._types("invoice.read")[0].payload["payment"]["credit_days"], 30)
+
     def test_new_iban_only_last4(self):
         [iid] = self._receive()
         other = make_iban("00000099000000000000999")

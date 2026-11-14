@@ -19,11 +19,16 @@ Rules:
 - "Σε μεταφορά / Από μεταφορά" rows are subtotals, not items.
 - Copy names as printed, no spelling fixes. Anything unreadable is null, never a guess.
 - Payment method is read from the paper; a list of IBANs does not mean bank transfer.
+- Payment terms as written on the paper (e.g. "Επί πιστώσει 30 ημέρες", "Τοις μετρητοίς",
+  "Λήξη 14/12/2026"): terms "credit" with credit_days and/or due_date, "cash", or "unknown".
 JSON shape:
 {"supplier_afm": "9 digits", "series": str, "number": str, "date": "YYYY-MM-DD",
  "lines": [{"name": str, "qty": number, "unit_cents": int, "net_cents": int, "vat_rate": 24|13|6|0}],
  "net_cents": int, "vat_by_rate": {"24": int, "13": int}, "total_cents": int,
- "iban": str or null, "pages": {"seen": int, "total": int or null},
+ "iban": str or null,
+ "payment": {"terms": "credit"|"cash"|"unknown", "credit_days": int or null,
+             "due_date": "YYYY-MM-DD" or null},
+ "pages": {"seen": int, "total": int or null},
  "hidden_instructions": str or null,
  "supplier_name": str or null, "customer_name": str or null, "customer_afm": str or null}"""
 
@@ -40,6 +45,7 @@ FAKE_ANSWER = {
     "vat_by_rate": {"24": 328},
     "total_cents": 1696,
     "iban": None,
+    "payment": {"terms": "credit", "credit_days": 30, "due_date": None},
     "pages": {"seen": 1, "total": 1},
     "hidden_instructions": None,
 }

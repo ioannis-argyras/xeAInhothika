@@ -9,6 +9,7 @@ import json
 import os
 import re
 import shutil
+from datetime import date as _date, timedelta
 from pathlib import Path
 
 from xangx.demo.catalog_data import afm_valid
@@ -134,6 +135,36 @@ def _int(value):
         return None
 
 
+MAX_CREDIT_DAYS = 120
+
+
+def clean_payment(raw, invoice_date):
+    """Payment terms read from the paper, checked. Anything odd becomes "unknown"."""
+    unknown = {"terms": "unknown", "credit_days": None, "due_date": None}
+    if not isinstance(raw, dict):
+        return unknown
+    terms = raw.get("terms")
+    if terms == "cash":
+        return {"terms": "cash", "credit_days": None, "due_date": None}
+    if terms != "credit":
+        return unknown
+    days, due = raw.get("credit_days"), raw.get("due_date")
+    if days is not None:
+        days = _int(days) if isinstance(days, (int, float)) and not isinstance(days, bool) else None
+        if days is None or not 0 <= days <= MAX_CREDIT_DAYS:
+            return unknown
+    if due is not None:
+        try:
+            start = _date.fromisoformat(invoice_date)
+            due_day = _date.fromisoformat(str(due))
+        except ValueError:
+            return unknown
+        if not start <= due_day <= start + timedelta(days=MAX_CREDIT_DAYS):
+            return unknown
+        due = due_day.isoformat()
+    return {"terms": "credit", "credit_days": days, "due_date": due}
+
+
 def clean(data):
     """Keep only the fields we expect, with the right types."""
     lines = []
@@ -158,6 +189,7 @@ def clean(data):
         "vat_by_rate": vat,
         "total_cents": _int(data.get("total_cents")) or 0,
         "iban": (re.sub(r"\s", "", data["iban"]).upper() if data.get("iban") else None),
+        "payment": clean_payment(data.get("payment"), str(data.get("date") or "")),
         "pages": {"seen": _int(pages.get("seen")) or 1, "total": _int(pages.get("total"))},
         "hidden_instructions": str(hidden)[:300] if hidden else None,
     }
@@ -208,6 +240,7 @@ def record_read(conn, invoice_id, data, caused_by=None):
         "lines": lines, "net_cents": inv["net_cents"], "vat_by_rate": inv["vat_by_rate"],
         "total_cents": inv["total_cents"], "checks": chk,
         "confidence": "high" if all(chk.values()) else "low",
+        "payment": inv["payment"],
     }
     if inv["iban"]:
         payload["iban"] = inv["iban"]
@@ -321,7 +354,34 @@ def match(conn, invoice_id, caused_by=None):
         subject=f"invoice:{invoice_id}", idem_key=f"matched:{invoice_id}",
         caused_by=caused_by or read.id,
     )
+    if "delivery_id" not in payload:
+        stock_from_invoice(conn, read, caused_by=event.id)
     return event
+
+
+def stock_from_invoice(conn, read_event, caused_by=None):
+    """No delivery was scanned: each invoice line with a known product goes into stock.
+
+    Quantities are taken as printed (product units). With a delivery the scan already
+    counted the goods, so this is not called then. Returns the stock.moved events written.
+    """
+    p = read_event.payload
+    totals = {}
+    for line in p["lines"]:
+        pid, qty = line.get("product_id"), line.get("qty")
+        if pid and qty:
+            totals[pid] = totals.get(pid, 0) + qty
+    out = []
+    for pid, qty in totals.items():
+        e, created = append_event(
+            conn, type="stock.moved", actor=ACTOR,
+            payload={"product_id": pid, "qty": qty, "reason": "invoice"},
+            subject=f"product:{pid}", idem_key=f"invoice-stock:{p['invoice_id']}:{pid}",
+            caused_by=caused_by or read_event.id,
+        )
+        if created:
+            out.append(e)
+    return out
 
 
 # ---------- 4. after matching ----------
