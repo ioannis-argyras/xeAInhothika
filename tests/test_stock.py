@@ -334,3 +334,68 @@ class DeliveryTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TrendsTest(unittest.TestCase):
+    """Sales trends on a small database of our own: known receipts at known Greek times."""
+
+    def setUp(self):
+        from datetime import datetime, timezone
+        self.dir = tempfile.TemporaryDirectory()
+        self.conn = connect(os.path.join(self.dir.name, "t.sqlite"))
+        init_db(self.conn)
+        self.conn.executemany("INSERT INTO products (id, name, vat_rate, sell_price_cents) VALUES (?,?,?,?)",
+                              [("cola", "Coca-Cola", 24, 100), ("water", "Νερό", 13, 50)])
+        self.conn.commit()
+        self.utc = lambda s: datetime.strptime(s, "%Y-%m-%d %H:%M").replace(tzinfo=timezone.utc)
+
+    def tearDown(self):
+        self.conn.close()
+        self.dir.cleanup()
+
+    def sale(self, n, at, lines):
+        total = sum(q * p for _, q, p in lines)
+        return append_event(self.conn, type="sale.recorded", actor="system", at=at,
+                            payload={"receipt_id": f"R-{n}", "total_cents": total, "payment": "card",
+                                     "lines": [{"product_id": pid, "qty": q, "gross_cents": q * p}
+                                               for pid, q, p in lines]})[0]
+
+    def test_days_hours_top_and_until_id(self):
+        from xangx.stock import trends
+        # 14/11 22:30 UTC = 15/11 00:30 Greek time (winter, +2): counts on 15/11, hour 0.
+        self.sale(1, "2026-11-14T22:30:00.000Z", [("cola", 2, 100)])
+        self.sale(2, "2026-11-15T08:10:00.000Z", [("water", 3, 50), ("cola", 1, 100)])
+        third = self.sale(3, "2026-11-15T08:40:00.000Z", [("water", 4, 50)])
+        self.sale(4, "2026-10-01T08:00:00.000Z", [("cola", 9, 100)])  # outside 30 days
+        late = self.sale(5, "2026-11-15T09:00:00.000Z", [("cola", 5, 100)])
+
+        t = trends.sales_trends(self.conn, until_id=third.id, days=30)
+        self.assertEqual((t["from"], t["to"], t["days"], t["until_id"]), ("17/10/2026", "15/11/2026", 30, third.id))
+        self.assertEqual(len(t["per_day"]), 30)
+        self.assertEqual(t["per_day"][-1], {"date": "15/11/2026", "total_cents": 650, "receipts": 3})
+        self.assertEqual(t["per_day"][-2], {"date": "14/11/2026", "total_cents": 0, "receipts": 0})
+        self.assertEqual(len(t["per_hour"]), 24)
+        self.assertEqual(t["per_hour"][0], {"hour": 0, "avg_total_cents": round(200 / 30), "avg_receipts": 0.0})
+        self.assertEqual(t["per_hour"][10]["avg_total_cents"], round(450 / 30))  # 08:10 and 08:40 UTC = 10:xx
+        self.assertEqual(t["top_products"], [
+            {"product_id": "water", "name": "Νερό", "qty": 7, "total_cents": 350},
+            {"product_id": "cola", "name": "Coca-Cola", "qty": 3, "total_cents": 300}])
+
+        t = trends.sales_trends(self.conn, days=30)  # without until_id: the clock decides
+        self.assertIn(late.id, [t["until_id"]])
+
+    def test_summer_time_and_route(self):
+        from xangx.stock import trends
+        # 15/07 21:30 UTC = 16/07 00:30 Greek summer time (+3).
+        e = self.sale(1, "2026-07-15T21:30:00.000Z", [("cola", 1, 100)])
+        t = trends.sales_trends(self.conn, until_id=e.id, days=1)
+        self.assertEqual((t["from"], t["per_day"][0]["receipts"], t["per_hour"][0]["avg_total_cents"]),
+                         ("16/07/2026", 1, 100))
+        with mock.patch.dict(os.environ, {"XANGX_DB": os.path.join(self.dir.name, "t.sqlite")}):
+            client = TestClient(server_app.app)
+            client.cookies.set("xangx_access", "")
+            with mock.patch.dict(os.environ, {"XANGX_ACCESS_CODE": ""}):
+                r = client.get(f"/stock/trends/sales?until_id={e.id}&days=1")
+                self.assertEqual(r.status_code, 200)
+                self.assertEqual(r.json()["top_products"][0]["qty"], 1)
+                self.assertEqual(client.get("/stock/trends/sales?days=0").status_code, 400)

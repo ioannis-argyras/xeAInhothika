@@ -8,7 +8,7 @@ from fastapi import APIRouter, Body, HTTPException
 from fastapi.responses import FileResponse
 
 from xangx.shared.db import connect, init_db
-from xangx.stock import camera, delivery
+from xangx.stock import camera, delivery, trends
 
 router = APIRouter()
 STATIC = Path(__file__).resolve().parent / "static"
@@ -18,6 +18,19 @@ MAX_B64 = camera.MAX_PHOTO_BYTES * 4 // 3 + 16
 @router.get("/stock/camera")
 def camera_page():
     return FileResponse(STATIC / "camera.html", media_type="text/html")
+
+
+@router.get("/stock/trends/sales")
+def sales_trends(until_id: int | None = None, days: int = 30):
+    """Sales per Greek day, per hour (average) and the top 10 products. Read-only."""
+    if not 1 <= days <= trends.MAX_DAYS:
+        raise HTTPException(400, f"Οι μέρες πρέπει να είναι από 1 έως {trends.MAX_DAYS}.")
+    conn = connect()
+    try:
+        init_db(conn)
+        return trends.sales_trends(conn, until_id=until_id, days=days)
+    finally:
+        conn.close()
 
 
 @router.get("/stock/style.css")
