@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="el">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ράφι · Xangxothaika</title>
+<link rel="stylesheet" href="/static/vendor/phosphor/style.css">
+<link rel="stylesheet" href="/static/vendor/phosphor/bold/style.css">
+<link rel="stylesheet" href="/static/vendor/phosphor/fill/style.css">
+<link rel="stylesheet" href="/static/app.css">
+<link rel="stylesheet" href="/static/pages/rafi.css">
+</head>
+<body>
+<header class="top">
+  <a class="brand" href="/"><b>Xangxothaika</b><span>Mini Market 24/7 · Παγκράτι</span></a>
+  <nav class="links" aria-label="Κύρια">
+    <a href="/">Σήμερα</a><a href="/#synomilia">Συνομιλία</a><a href="/static/pages/ergasies.html">Εργασίες</a><a href="/static/pages/timologia.html">Τιμολόγια</a><a class="on" href="/static/pages/rafi.html" aria-current="page">Ράφι</a><a href="/#mixani">Μηχανή του χρόνου</a>
+  </nav>
+  <div class="right">
+    <span class="live"><i id="live-dot"></i><span id="live-text">Σύνδεση…</span></span>
+    <button class="btn qd" id="stop-btn" type="button"><i class="ph ph-pause"></i><span>Παύση όλων</span></button>
+    <button class="ibtn" id="stop-ibtn" type="button" aria-label="Παύση όλων"><i class="ph ph-pause"></i></button>
+  </div>
+</header>
+
+<section id="rafi" class="screen on">
+  <div class="band"><div class="in">
+    <div>
+      <div class="kick"><i class="ph ph-camera"></i><span id="kick">Ράφι</span></div>
+      <h1>Ράφι</h1>
+      <p class="lead" id="lead" aria-live="polite"></p>
+    </div>
+    <a class="btn yes" id="cam-btn" href="/stock/camera" hidden><i class="ph ph-camera"></i>Άνοιξε την κάμερα</a>
+  </div></div>
+  <div class="wrap">
+    <div class="row2 g-raf">
+      <section class="card" aria-label="Τι είδε η κάμερα" id="photo-card" aria-busy="true">
+        <div class="hd"><b><i class="ph ph-images"></i>Τι είδε η κάμερα</b><span class="m" id="photo-sub">πριν · μετά</span></div>
+        <div id="photo-body"><div class="empty-note">Φόρτωση…</div></div>
+      </section>
+      <section class="card fr" aria-label="Οι θέσεις" id="pos-card" aria-busy="true">
+        <div class="hd"><b><i class="ph ph-rows"></i><span id="pos-title">Οι θέσεις</span></b><span class="m">πρώτες όσες είναι σε χαμηλό</span></div>
+        <div id="pos-body"><div class="empty-note">Φόρτωση…</div></div>
+      </section>
+    </div>
+  </div>
+</section>
+
+<nav class="tabs" aria-label="Καρτέλες">
+  <a href="/"><i class="ph ph-sun-horizon"></i>Σήμερα</a>
+  <a href="/#synomilia"><i class="ph ph-chat-circle"></i>Συνομιλία</a>
+  <a href="/static/pages/ergasies.html"><i class="ph ph-list-checks"></i>Εργασίες</a>
+  <a href="/static/pages/timologia.html"><i class="ph ph-receipt"></i>Τιμολόγια</a>
+  <a class="on" href="/static/pages/rafi.html" aria-current="page"><i class="ph ph-package"></i>Ράφι</a>
+</nav>
+<script src="/static/pages/rafi.js"></script>
+</body>
+</html>

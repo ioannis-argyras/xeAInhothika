@@ -1,0 +1,52 @@
+/* Σελίδα Ράφι. Οι κανόνες είναι αντιγραμμένοι από το design/kateuthynseis-v2/index.html (#rafi και κοινά):
+   ίδια ονόματα κλάσεων και τιμές. Ό,τι είναι κοινό (κάρτα, βιτρίνα, κουμπιά, πλοήγηση) έρχεται από το /static/app.css. */
+.tabs{grid-template-columns:repeat(5,1fr)}
+.back{display:none}
+
+/* ---------- φωτογραφίες πριν / μετά ---------- */
+.photo{background:var(--well);border-radius:12px;aspect-ratio:1/1;position:relative;overflow:hidden;box-shadow:inset 0 2px 8px rgba(0,0,0,.4);display:flex;flex-direction:column;justify-content:flex-end;padding:0 18px 22px}
+.photo img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.photo .ts{position:absolute;left:12px;top:10px;color:var(--n5);background:rgba(7,22,48,.8);padding:2px 8px;border-radius:6px}
+.photo .shelfrow{border-bottom-color:#3A5A86}
+.photo .shelfrow.up{opacity:.4;margin-bottom:22px}
+.photos{display:grid;grid-template-columns:1fr 1fr;gap:16px;padding:18px 22px 22px}
+.photos .cap{margin-top:8px}
+.tog{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:56px;padding:0 20px;border-top:1px solid var(--hair)}
+.tog .btn{flex-shrink:0}
+.tog .btn.q{background:var(--surf);color:var(--ink);border-color:var(--line);font-weight:500;height:40px}
+.tog .btn.q:hover{background:var(--strip)}
+.empty-note{padding:22px;color:var(--muted)}
+
+/* ---------- λίστα θέσεων ---------- */
+.fr .rw{display:grid;grid-template-columns:44px 1fr auto;gap:14px;align-items:center;padding:0 22px;min-height:64px;border-top:1px solid var(--hair)}
+.fr .rw:first-child{border-top:0}
+.fr .rw .no{width:36px;height:36px;border-radius:10px;background:var(--strip);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-weight:700}
+.fr .rw.hot{background:#FBEFEB}
+.fr .rw.hot .no{background:var(--band);color:#fff;border-color:var(--band)}
+.fr .cansm{display:flex;gap:4px;margin-top:6px}
+.fr .cansm i{width:12px;height:20px;border-radius:3px;background:linear-gradient(180deg,#5E7FAB,#16305A)}
+.fr .cansm i.g{background:transparent;border:1px dashed #8597B0}
+.fr .rw>span:nth-child(2){min-width:0}
+.fr .rw .n{text-align:right}
+.fr .more{display:flex;justify-content:center;padding:12px 22px;border-top:1px solid var(--hair);background:var(--strip)}
+.fr .more .btn{height:44px;background:var(--surf);color:var(--ink);border-color:var(--line);font-weight:500}
+.fr .more .btn:hover{background:var(--tint)}
+
+.g-raf{grid-template-columns:1fr 1fr;align-items:start}
+
+/* ---------- tablet ---------- */
+@media (max-width:1100px){
+  .g-raf{grid-template-columns:1fr}
+  .back{display:inline-flex}
+}
+/* ---------- κινητό ---------- */
+@media (max-width:720px){
+  .photos{grid-template-columns:1fr 1fr;gap:10px;padding:14px 16px 16px}
+  .photo{padding:0 10px 14px}
+  .photo .can{width:12px;height:20px}
+  .photo .shelfrow{gap:4px}
+  .fr .rw{padding:0 16px;grid-template-columns:36px 1fr auto;gap:12px}
+  .fr .rw .no{width:32px;height:32px}
+  .fr .more{padding:12px 16px}
+  .tog{padding:12px 16px}
+}
