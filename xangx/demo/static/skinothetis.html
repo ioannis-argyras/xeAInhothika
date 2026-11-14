@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="el">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Σκηνοθέτης · Xangxothaika</title>
+<link rel="stylesheet" href="/static/app.css">
+<link rel="stylesheet" href="/static/vendor/phosphor/style.css">
+<link rel="stylesheet" href="/static/vendor/phosphor/fill/style.css">
+<style>
+/* Σελίδα συσκευής: βιτρίνα πάνω, μία λευκή κάρτα με τα βήματα. Τα χρώματα είναι τα tokens του app.css. */
+body{background:var(--page,#E2E7EE);min-height:100vh}
+.sk-band{background:linear-gradient(180deg,var(--band,#0A1B33) 0%,var(--band2,#0E2444) 100%);color:#fff;
+  padding:max(20px,env(safe-area-inset-top)) 16px 96px}
+.sk-in{max-width:560px;margin:0 auto}
+.sk-kick{color:var(--n4,#A3B4CC);display:flex;align-items:center;gap:8px;min-height:44px}
+.sk-kick i{font-size:18px;color:var(--n5,#D3DBE6)}
+.sk-band h1{font-size:40px;line-height:1.06;letter-spacing:-.03em;font-weight:700;margin-top:4px}
+.sk-wrap{max-width:560px;margin:-72px auto 0;padding:0 12px max(32px,env(safe-area-inset-bottom))}
+.sk-card{background:var(--surf,#fff);border:1px solid var(--line,#C6CFDB);border-radius:18px;
+  box-shadow:var(--sh-card,0 4px 10px -4px rgba(10,27,51,.2));overflow:hidden}
+.sk-hd{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:52px;padding:0 18px;
+  background:var(--strip,#EFF2F6);border-bottom:1px solid var(--line,#C6CFDB)}
+.sk-hd b{display:flex;align-items:center;gap:10px}
+.sk-hd b i{font-size:18px;color:var(--n2,#16305A)}
+.sk-step{padding:14px 18px;border-top:1px solid var(--hair,#E2E7EE)}
+.sk-step:first-of-type{border-top:0}
+.sk-row{display:flex;align-items:center;gap:14px}
+.sk-time{flex:0 0 40px;font-weight:700;color:var(--n2,#16305A)}
+.sk-label{flex:1;min-width:0;font-weight:500;line-height:1.3;text-wrap:balance}
+.sk-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;min-width:96px;padding:0 20px;
+  border-radius:999px;font:700 14px/1 var(--f,system-ui);border:1px solid var(--line,#C6CFDB);cursor:pointer;
+  background:var(--surf,#fff);color:var(--ink,#0B1626);transition:transform .14s var(--ease,ease),background-color .16s var(--ease,ease)}
+.sk-btn:active{transform:scale(.97)}
+.sk-btn:hover{background:var(--strip,#EFF2F6)}
+.sk-btn.next{background:var(--accent,#FFC531);border-color:transparent;color:var(--on-accent,#0A1B33);
+  box-shadow:inset 0 -2px 0 rgba(10,27,51,.14)}
+.sk-btn.next:hover{background:var(--accent-h,#FFD055)}
+.sk-btn.dark{background:var(--band,#0A1B33);border-color:transparent;color:#fff}
+.sk-btn.dark:hover{background:var(--band2,#0E2444)}
+.sk-btn:disabled{opacity:.55;cursor:default}
+.sk-btn i{font-size:18px}
+.sk-res{margin:8px 0 0 54px;font-size:14px;line-height:1.4;display:flex;gap:8px;align-items:flex-start}
+.sk-res i{font-size:18px;margin-top:1px}
+.sk-res.ok{color:var(--ok,#2F7D5B)}
+.sk-res.bad{color:var(--alert,#A3351B)}
+.sk-foot{margin-top:16px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+#sk-done{color:var(--muted,#4B586B)}
+dialog{margin:auto;border:0;border-radius:18px;padding:0;max-width:min(92vw,420px);width:100%;box-shadow:var(--sh-stage,0 20px 40px rgba(2,10,22,.4));color:var(--ink,#0B1626)}
+dialog::backdrop{background:rgba(7,22,48,.6)}
+.sk-dlg{padding:22px;position:relative}
+.sk-dlg h2{font-size:20px;letter-spacing:-.01em;padding-right:44px}
+.sk-dlg h2:focus{outline:none}
+.sk-dlg p{margin:8px 0 18px;color:var(--muted,#4B586B)}
+.sk-x{position:absolute;top:10px;right:10px;width:44px;height:44px;border-radius:50%;border:0;background:transparent;cursor:pointer;color:var(--ink,#0B1626)}
+.sk-x:hover{background:var(--strip,#EFF2F6)}
+.sk-x i{font-size:20px}
+.sk-acts{display:flex;gap:10px}
+.sk-acts .sk-btn{flex:1;min-height:56px;padding:0 10px;white-space:nowrap}
+@media (prefers-reduced-motion:reduce){.sk-btn{transition:none}}
+</style>
+</head>
+<body>
+<header class="sk-band"><div class="sk-in">
+  <div class="sk-kick"><i class="ph ph-film-slate"></i><span>Πρόβα και εφεδρεία, δεν φαίνεται στον προβολέα</span></div>
+  <h1>Σκηνοθέτης</h1>
+</div></header>
+<main class="sk-wrap">
+  <section class="sk-card" aria-label="Τα βήματα του σεναρίου">
+    <div class="sk-hd"><b><i class="ph ph-list-checks"></i>Τα βήματα του σεναρίου</b><span class="m" id="sk-count"></span></div>
+    <div id="sk-steps" aria-live="polite"></div>
+  </section>
+  <div class="sk-foot">
+    <button class="sk-btn" id="sk-reset" type="button"><i class="ph ph-arrow-counter-clockwise"></i>Επαναφορά demo</button>
+    <span id="sk-done"></span>
+  </div>
+</main>
+<dialog id="sk-dlg" aria-labelledby="sk-dlg-t">
+  <div class="sk-dlg">
+    <button class="sk-x" id="sk-x" type="button" aria-label="Κλείσε"><i class="ph ph-x"></i></button>
+    <h2 id="sk-dlg-t" tabindex="-1">Είσαι σίγουρος;</h2>
+    <p>Ξαναστήνει το μαγαζί από το πρωί.</p>
+    <div class="sk-acts">
+      <button class="sk-btn" id="sk-no" type="button">Όχι</button>
+      <button class="sk-btn dark" id="sk-yes" type="button">Ναι, ξανάστησέ το</button>
+    </div>
+  </div>
+</dialog>
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var steps = [], played = {}, busy = false;
+  try { played = JSON.parse(sessionStorage.getItem("sk-played") || "{}"); } catch (e) { played = {}; }
+  function save() { try { sessionStorage.setItem("sk-played", JSON.stringify(played)); } catch (e) {} }
+
+  function nextKey() {
+    for (var i = 0; i < steps.length; i++) if (!played[steps[i].key]) return steps[i].key;
+    return null;
+  }
+  function el(tag, cls, text) {
+    var n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (text != null) n.textContent = text;
+    return n;
+  }
+  function render() {
+    var box = $("sk-steps"), next = nextKey();
+    box.textContent = "";
+    steps.forEach(function (s) {
+      var wrap = el("div", "sk-step"), row = el("div", "sk-row");
+      row.appendChild(el("span", "sk-time", s.time));
+      row.appendChild(el("span", "sk-label", s.label.replace(/-/g, "‑")));
+      var b = el("button", "sk-btn" + (s.key === next ? " next" : ""));
+      b.type = "button";
+      b.disabled = busy;
+      var ic = el("i", "ph ph-play"); b.appendChild(ic);
+      b.appendChild(document.createTextNode(played[s.key] ? "Ξανά" : "Παίξε"));
+      b.addEventListener("click", function () { play(s.key); });
+      row.appendChild(b);
+      wrap.appendChild(row);
+      var r = played[s.key];
+      if (r) {
+        var res = el("div", "sk-res " + (r.ok ? "ok" : "bad"));
+        res.appendChild(el("i", r.ok ? "ph-fill ph-check-circle" : "ph-fill ph-warning-circle"));
+        res.appendChild(el("span", null, r.summary));
+        wrap.appendChild(res);
+      }
+      box.appendChild(wrap);
+    });
+    var n = steps.filter(function (s) { return played[s.key] && played[s.key].ok; }).length;
+    $("sk-count").textContent = n + " από " + steps.length;
+    $("sk-reset").disabled = busy;
+  }
+  function post(url) {
+    return fetch(url, { method: "POST", credentials: "same-origin" }).then(function (r) {
+      return r.json().then(function (j) { if (!r.ok) throw new Error(j.detail || "Σφάλμα"); return j; });
+    });
+  }
+  function play(key) {
+    if (busy) return;
+    busy = true; render();
+    post("/demo/step/" + key).then(function (j) {
+      played[key] = { ok: !!j.ok, summary: j.summary || "" };
+    }).catch(function (e) {
+      played[key] = { ok: false, summary: "Δεν έγινε: " + e.message };
+    }).then(function () { busy = false; save(); render(); });
+  }
+  function reset() {
+    $("sk-dlg").close();
+    if (busy) return;
+    busy = true; $("sk-done").textContent = "Ξαναστήνω το μαγαζί…"; render();
+    post("/demo/reset").then(function (j) {
+      if (j.ok === false) { $("sk-done").textContent = j.summary; return; }
+      played = {}; save();
+      $("sk-done").textContent = "Έγινε σε " + (j.ms / 1000).toFixed(1).replace(".", ",") + "″";
+    }).catch(function (e) {
+      $("sk-done").textContent = "Δεν έγινε: " + e.message;
+    }).then(function () { busy = false; render(); });
+  }
+  $("sk-reset").addEventListener("click", function () { $("sk-done").textContent = ""; $("sk-dlg").showModal(); $("sk-dlg-t").focus(); });
+  $("sk-no").addEventListener("click", function () { $("sk-dlg").close(); });
+  $("sk-x").addEventListener("click", function () { $("sk-dlg").close(); });
+  $("sk-yes").addEventListener("click", reset);
+  $("sk-dlg").addEventListener("click", function (e) { if (e.target === this) this.close(); });
+
+  fetch("/demo/steps", { credentials: "same-origin" }).then(function (r) { return r.json(); })
+    .then(function (list) { steps = list; render(); })
+    .catch(function () { $("sk-steps").textContent = "Δεν μπόρεσα να φορτώσω τα βήματα. Ξαναδοκίμασε."; });
+})();
+</script>
+</body>
+</html>
