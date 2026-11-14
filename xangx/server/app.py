@@ -12,13 +12,15 @@ from fastapi.staticfiles import StaticFiles
 from starlette.concurrency import run_in_threadpool
 
 from xangx.screen.describe import describe, load_names
+from xangx.server.access import access_middleware
 from xangx.shared import views
 from xangx.shared.db import connect, init_db
 from xangx.shared.events import EventError, append_event, read_events
 
 STATIC_DIR = Path(__file__).resolve().parent.parent / "screen" / "static"
 
-app = FastAPI(title="Xangxothaika")
+# No public API docs: nothing about the API is published through the tunnel.
+app = FastAPI(title="Xangxothaika", docs_url=None, redoc_url=None, openapi_url=None)
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
 
@@ -57,6 +59,9 @@ def include_role_routes(target):
 
 
 include_role_routes(app)
+
+# Added last, so it runs first: the team access code covers every route above.
+app.middleware("http")(access_middleware)
 
 NO_MASTER = "Ο συνεργάτης δεν είναι ακόμα διαθέσιμος. Δοκίμασε ξανά σε λίγο."
 
