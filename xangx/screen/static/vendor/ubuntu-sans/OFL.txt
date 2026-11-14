@@ -1,0 +1,8 @@
+Ubuntu Sans, SIL Open Font License, Version 1.1 (OFL-1.1).
+Full text: https://openfontlicense.org/open-font-license-official-text/
+Source of the font files: https://fonts.googleapis.com/css2?family=Ubuntu+Sans (Google Fonts).
+
+NOTE: the full licence text could not be downloaded in this build (the Google Fonts
+repository path returned 404 and no other download was allowed), so this file only
+names the licence and its official address. Replace it with the full OFL.txt of the
+Ubuntu Sans project before the repository is made public.

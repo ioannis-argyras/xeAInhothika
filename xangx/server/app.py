@@ -3,6 +3,7 @@
 import asyncio
 import importlib
 import json
+import re
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
@@ -14,6 +15,7 @@ from starlette.concurrency import run_in_threadpool
 from xangx.screen.describe import describe, load_names
 from xangx.server.access import access_middleware
 from xangx.shared import views
+from xangx.shared.catalog import CATALOG
 from xangx.shared.db import connect, init_db
 from xangx.shared.events import EventError, append_event, read_events
 
@@ -64,6 +66,25 @@ include_role_routes(app)
 app.middleware("http")(access_middleware)
 
 NO_MASTER = "Ο συνεργάτης δεν είναι ακόμα διαθέσιμος. Δοκίμασε ξανά σε λίγο."
+
+# What counts as "a job done on its own" on the home screen.
+TASK_TYPES = {
+    "check.morning_done", "stock.low_detected", "order.proposed", "order.sent",
+    "order.reply_received", "delivery.completed", "invoice.read", "invoice.matched",
+    "invoice.mydata_checked", "price.changed", "supplier.new_iban_seen",
+    "payment.reminder_set", "credit.requested", "report.daily_created",
+    "exception.flagged",
+}
+TEAM = (
+    {"key": "stock", "name": "Αποθήκη", "actors": ["camera", "stock", "scanner"]},
+    {"key": "orders", "name": "Παραγγελίες", "actors": ["orders"]},
+    {"key": "invoices", "name": "Τιμολόγια", "actors": ["invoices"]},
+    {"key": "accountant", "name": "Λογιστής", "actors": ["accountant"]},
+)
+TIMELINE_ACTORS = {"camera", "stock", "scanner", "orders", "invoices", "accountant", "master"}
+WEEKDAYS = ("Δευτέρα", "Τρίτη", "Τετάρτη", "Πέμπτη", "Παρασκευή", "Σάββατο", "Κυριακή")
+ACTIVE_MINUTES = 15
+TIMELINE_MAX = 60
 
 
 def _db():
@@ -139,6 +160,128 @@ def _last_id(conn, until_id=None):
     return row["m"]
 
 
+_LINE = re.compile(r"^(?:(\d+(?:[.,]\d+)?)\s+)?(.+?)\s+×\s+[^×]+$")
+
+
+def exact_lines(exact):
+    """The lines of an order's `exact` text as {qty, text}, without the price. [] if it is not that shape."""
+    if not exact:
+        return []
+    lines = []
+    for raw in str(exact).split("\n"):
+        raw = raw.strip()
+        if not raw:
+            continue
+        m = _LINE.match(raw)
+        if not m:
+            return []
+        q = m.group(1)
+        qty = None if q is None else (int(q) if q.isdigit() else float(q.replace(",", ".")))
+        lines.append({"qty": qty, "text": m.group(2)})
+    return lines
+
+
+def _parse_utc(at):
+    return datetime.strptime(at[:19], "%Y-%m-%dT%H:%M:%S").replace(tzinfo=timezone.utc)
+
+
+def _local(utc_dt):
+    return utc_dt + athens_offset(utc_dt)
+
+
+def _reference_time(conn, until_id):
+    """"Now" for the home screen: the real clock, or the last event up to `until_id`."""
+    if until_id is not None:
+        row = conn.execute(
+            "SELECT at FROM events WHERE id <= ? ORDER BY id DESC LIMIT 1", (until_id,)
+        ).fetchone()
+        if row:
+            return _parse_utc(row["at"])
+    return datetime.now(timezone.utc)
+
+
+def _today_events(conn, day_start, until_id):
+    """Today's events except till sales, oldest first."""
+    row = conn.execute("SELECT MIN(id) AS m FROM events WHERE at >= ?", (day_start,)).fetchone()
+    if row["m"] is None:
+        return []
+    types = [t for t in CATALOG if t != "sale.recorded"]
+    return [e for e in read_events(conn, after_id=row["m"] - 1, until_id=until_id, types=types)
+            if e.at >= day_start]
+
+
+def _minute_of_day(at):
+    local = _local(_parse_utc(at))
+    return local.hour * 60 + local.minute
+
+
+def _home_sections(conn, until_id, names, low):
+    """Day, tasks, team, timeline and shelf focus for the home screen."""
+    now_utc = _reference_time(conn, until_id)
+    day_start = athens_day_start_utc(now_utc)
+    events = _today_events(conn, day_start, until_id)
+    local = _local(now_utc)
+
+    morning = next((e for e in events if e.type == "check.morning_done"), None)
+    day = {
+        "date": local.strftime("%d/%m/%Y"),
+        "weekday": WEEKDAYS[local.weekday()],
+        "now": local.strftime("%H:%M"),
+        "morning_done_at": (
+            _local(_parse_utc(morning.at)).strftime("%H:%M") if morning else None),
+    }
+
+    tasks = {
+        "done": sum(1 for e in events if e.type in TASK_TYPES),
+        "with_yes": sum(1 for e in events
+                        if e.type == "approval.decided" and e.payload.get("decision") == "yes"),
+        "errors": sum(1 for e in events
+                      if e.type == "agent.tool_ran" and not e.payload.get("ok")),
+    }
+
+    team = []
+    team_of = {}
+    for t in TEAM:
+        for actor in t["actors"]:
+            team_of[actor] = t["key"]
+        last = None
+        for e in events:
+            if e.actor in t["actors"] and not is_quiet(e):
+                last = e
+        active = bool(last) and (
+            now_utc - _parse_utc(last.at) <= timedelta(minutes=ACTIVE_MINUTES))
+        team.append({"key": t["key"], "name": t["name"], "actors": list(t["actors"]),
+                     "last": event_dict(last, names) if last else None, "active": active})
+
+    timeline = [
+        {"id": e.id, "at": e.at, "minute": _minute_of_day(e.at),
+         "team": team_of.get(e.actor, "master"), "text": describe(e, names)}
+        for e in events
+        if e.actor in TIMELINE_ACTORS and not is_quiet(e)
+        and (e.type in TASK_TYPES or e.type == "approval.requested")
+    ][-TIMELINE_MAX:]
+
+    shelf_focus = None
+    for item in low:
+        taken = [e for e in events
+                 if e.type == "shelf.items_taken" and e.payload.get("product_id") == item["product_id"]]
+        if not taken:
+            continue
+        e = taken[-1]
+        t = e.payload.get("taken") or 0
+        pos = e.payload.get("position_id")
+        shelf_focus = {
+            "position_name": names["position"].get(pos) or pos,
+            "product_name": item["name"],
+            "at": _local(_parse_utc(e.at)).strftime("%H:%M"),
+            "taken": t,
+            "left": item["on_hand"],
+            "before": item["on_hand"] + t,
+        }
+        break
+    return day, tasks, team, timeline, shelf_focus
+
+
 def build_state(conn, until_id=None):
     names = load_names(conn)
     last_id = _last_id(conn, until_id)
@@ -152,6 +295,7 @@ def build_state(conn, until_id=None):
             "exact": p.get("exact"),
             "why": p.get("why"),
             "action": p.get("action"),
+            "lines": exact_lines(p.get("exact")),
         })
 
     shelves = {}
@@ -199,6 +343,8 @@ def build_state(conn, until_id=None):
     ][-30:]
     recent = [event_dict(e, names) for e in reversed(recent_events)]
 
+    day, tasks, team, timeline, shelf_focus = _home_sections(conn, until_id, names, low)
+
     return {
         "pending_approvals": approvals,
         "shelves": shelf_list,
@@ -207,6 +353,11 @@ def build_state(conn, until_id=None):
         "recent": recent,
         "paused": views.is_paused(conn, until_id=until_id),
         "last_id": last_id,
+        "day": day,
+        "tasks": tasks,
+        "team": team,
+        "timeline": timeline,
+        "shelf_focus": shelf_focus,
     }
 
 
