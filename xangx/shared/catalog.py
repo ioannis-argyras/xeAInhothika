@@ -44,6 +44,7 @@ CATALOG = {
     "stock.moved": _spec(
         ["stock", "pos-sim", "invoices"], "product_id", "qty", "reason"
     ),
+    "stock.expiring": _spec(["stock"], "product_id", "qty", "expires_on"),
     "stock.low_detected": _spec(
         ["stock"], "product_id", "on_hand", "per_day", "days_left", "source"
     ),
@@ -77,6 +78,10 @@ CATALOG = {
     ),
     "price.changed": _spec(
         ["invoices"], "product_id", "supplier_id", "old_cents", "new_cents", "pct"
+    ),
+    "supplier.cheaper_found": _spec(
+        ["orders"], "product_id", "from_supplier_id", "from_cents", "to_supplier_id",
+        "to_cents", "pct_change", "caused_by_invoice_id",
     ),
     "supplier.new_iban_seen": _spec(
         ["invoices"], "supplier_id", "invoice_id", "iban_last4"

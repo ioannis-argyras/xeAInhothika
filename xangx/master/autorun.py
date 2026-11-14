@@ -21,7 +21,8 @@ from xangx.shared.cursors import consume, set_cursor
 from xangx.shared.db import connect, init_db
 
 ACTOR = "autorun"
-TRIGGER_TYPES = ["stock.low_detected", "invoice.matched", "supplier.new_iban_seen", "price.changed"]
+TRIGGER_TYPES = ["stock.low_detected", "invoice.matched", "supplier.new_iban_seen", "price.changed",
+                 "supplier.cheaper_found"]
 MORNING_HOUR = 7          # Greek time
 QUIET_SECONDS = 45        # no new trigger for this long, then the round starts
 MIN_GAP_SECONDS = 180     # at least this long between the end of one round and the start of the next

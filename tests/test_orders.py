@@ -243,7 +243,10 @@ class RepliesTest(unittest.TestCase):
 
     def test_poll_and_worker_without_mailbox(self):
         from xangx.orders import replies, worker
-        self.assertIsNone(worker.start())  # no IMAP_HOST: nothing starts
+        with mock.patch.object(worker.threading, "Thread") as thread:
+            worker.start()  # no IMAP_HOST: only the price comparison runs, no mailbox polling
+        thread.assert_called_once()
+        self.assertIsNone(thread.call_args.kwargs["args"][1])
         self.assertEqual(replies.poll(self.conn), [])
         with mock.patch.object(replies, "fetch_recent", return_value=[reply_email("Αύριο.")]):
             got = replies.poll(self.conn, settings={"host": "imap.example.com"})

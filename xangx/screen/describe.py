@@ -52,6 +52,17 @@ def _qty(value):
     return str(int(number)) if number == int(number) else str(number).replace(".", ",")
 
 
+def _expiry_when(expires_on, at):
+    """«Λήγει αύριο», counted from the day the event was written."""
+    from datetime import date
+    from xangx.stock.expiry import _greek_day
+
+    left = (date.fromisoformat(expires_on) - _greek_day(at)).days
+    if left < 0:
+        return "Έχει λήξει"
+    return {0: "Λήγει σήμερα", 1: "Λήγει αύριο"}.get(left, f"Λήγει σε {left} μέρες")
+
+
 def describe(event, names=None):
     """A short Greek sentence for the event. Unknown types give the type itself."""
     names = names or {}
@@ -68,7 +79,11 @@ def describe(event, names=None):
         names = {**names, "invoice": {**names.get("invoice", {}),
                                       p["invoice_id"]: _paper_number(p["series"], p["number"])}}
     try:
-        text = _describe(t, p, name)
+        if t == "stock.expiring":
+            text = (f"{_expiry_when(p['expires_on'], event.at)}: {_qty(p['qty'])} "
+                    f"{name('product', p['product_id'])}")
+        else:
+            text = _describe(t, p, name)
     except Exception:
         text = None
     return _mask(str(text) if text else t)
@@ -143,6 +158,10 @@ def _describe(t, p, name):
     if t == "price.changed":
         return (f"Άλλαξε η τιμή του {name('product', p['product_id'])}: "
                 f"{format_eur(p['old_cents'])} σε {format_eur(p['new_cents'])}")
+    if t == "supplier.cheaper_found":
+        return (f"Η {name('product', p['product_id'])} ακρίβυνε {str(p['pct_change']).replace('.', ',')}% στον "
+                f"{name('supplier', p['from_supplier_id'])}. "
+                f"Ο {name('supplier', p['to_supplier_id'])} την έχει {format_eur(p['to_cents'])}.")
     if t == "supplier.new_iban_seen":
         return (f"Νέο IBAN (…{p['iban_last4']}) στον προμηθευτή "
                 f"{name('supplier', p['supplier_id'])}")

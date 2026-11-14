@@ -69,6 +69,46 @@ def _names(conn):
     return {r["id"]: r["name"] for r in conn.execute("SELECT id, name FROM products")}
 
 
+def supplier_prices(conn, product_id):
+    """[(supplier_id, supplier name, unit_cents)] for every supplier of the product that has a
+    known price (the last invoice line of that supplier), cheapest first."""
+    out = []
+    rows = conn.execute(
+        "SELECT s.id, s.name, s.afm FROM supplier_products sp JOIN suppliers s ON s.id = sp.supplier_id "
+        "WHERE sp.product_id = ? ORDER BY s.id", (product_id,)).fetchall()
+    for r in rows:
+        unit = views.last_unit_price_cents(conn, product_id, supplier_afm=r["afm"])
+        if unit:
+            out.append((r["id"], r["name"], unit))
+    return sorted(out, key=lambda x: (x[2], x[0]))
+
+
+@tool(
+    name="compare_suppliers",
+    description=(
+        "Compare the price of one product across the suppliers that carry it (last invoice price "
+        "of each). Read only: it changes nothing and needs no approval."
+    ),
+    input_schema={
+        "type": "object",
+        "properties": {"product_id": {"type": "string", "description": "e.g. cola-330"}},
+        "required": ["product_id"],
+    },
+)
+def compare_suppliers(conn, product_id):
+    name = _names(conn).get(product_id)
+    if name is None:
+        return {"summary": "Δεν ξέρω αυτό το προϊόν.", "event_ids": []}
+    prices = supplier_prices(conn, product_id)
+    if not prices:
+        return {"summary": f"{name}: δεν έχω τιμές από προμηθευτές.", "event_ids": [], "suppliers": []}
+    by_name = sorted(prices, key=lambda x: x[0])
+    text = ", ".join(f"{n} {format_eur(c)}" for _, n, c in by_name)
+    return {"summary": f"{name}: {text}", "event_ids": [],
+            "cheapest_supplier_id": prices[0][0],
+            "suppliers": [{"supplier_id": i, "name": n, "unit_cents": c} for i, n, c in prices]}
+
+
 def _needs(conn, supplier_id, now):
     """Lines to order from this supplier: products in low today, with quantity and price."""
     sup = _supplier(conn, supplier_id)
