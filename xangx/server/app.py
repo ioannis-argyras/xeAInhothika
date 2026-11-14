@@ -21,6 +21,34 @@ STATIC_DIR = Path(__file__).resolve().parent.parent / "screen" / "static"
 app = FastAPI(title="Xangxothaika")
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
+# Each role may add pages and API routes in `xangx/<role>/routes.py`, exposing
+# `router = fastapi.APIRouter()`. Paths start with the role name (/stock/..., /invoices/...).
+ROLE_ROUTE_MODULES = (
+    "xangx.stock.routes",
+    "xangx.orders.routes",
+    "xangx.invoices.routes",
+    "xangx.accountant.routes",
+)
+
+
+def include_role_routes(target):
+    """Include the routers of the role modules that exist. Returns their names."""
+    included = []
+    for module in ROLE_ROUTE_MODULES:
+        try:
+            mod = importlib.import_module(module)
+        except ModuleNotFoundError as exc:
+            # Only a missing role module is fine; a broken import inside one is not.
+            if exc.name and module.startswith(exc.name):
+                continue
+            raise
+        target.include_router(mod.router)
+        included.append(module)
+    return included
+
+
+include_role_routes(app)
+
 NO_MASTER = "Ο συνεργάτης δεν είναι ακόμα διαθέσιμος. Δοκίμασε ξανά σε λίγο."
 
 

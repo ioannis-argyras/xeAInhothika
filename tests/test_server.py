@@ -66,6 +66,17 @@ class ServerTest(unittest.TestCase):
             r = self.client.post("/api/approvals/A-1", json={"decision": "maybe"})
             self.assertEqual(r.status_code, 400)
 
+    def test_role_routes_are_included(self):
+        from fastapi import APIRouter, FastAPI
+
+        fake = types.ModuleType("xangx.stock.routes")
+        fake.router = APIRouter()
+        fake.router.get("/stock/ping")(lambda: {"ok": True})
+        target = FastAPI()
+        with mock.patch.dict(sys.modules, {"xangx.stock.routes": fake}):
+            self.assertIn("xangx.stock.routes", server_app.include_role_routes(target))
+        self.assertTrue(TestClient(target).get("/stock/ping").json()["ok"])
+
     def test_chat_without_master_is_503(self):
         with mock.patch.dict(sys.modules, {"xangx.master.agent": None}):
             r = self.client.post("/api/chat", json={"text": "γεια"})
