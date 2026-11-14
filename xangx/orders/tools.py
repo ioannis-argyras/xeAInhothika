@@ -146,8 +146,15 @@ def propose_order(conn, supplier_id):
                  "why": {"per_day": first["_per_day"], "on_hand": _qty(first["_on_hand"]),
                          "lead_days": LEAD_DAYS}},
     )
+    names = _names(conn)
     return {"summary": f"Ετοίμασα παραγγελία {order_id}: {format_eur(net)} στον {sup['name']}",
-            "event_ids": [event.id], "order_id": order_id}
+            "event_ids": [event.id], "order_id": order_id, "net": format_eur(net),
+            "lines": [{"product": names.get(l["product_id"], l["product_id"]), "qty": l["qty"],
+                       "unit_price": format_eur(l["unit_cents"]), "on_hand": _qty(l["_on_hand"]),
+                       "sold_per_day": l["_per_day"]} for l in lines],
+            "next": ("Call send_order with this order_id now. It does not send anything by itself: "
+                     "it shows the owner an approval card, and the email leaves only after the "
+                     "owner's yes there. Do not ask for a yes in the chat first.")}
 
 
 def _proposal(conn, order_id):
