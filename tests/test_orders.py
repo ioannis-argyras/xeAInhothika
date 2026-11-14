@@ -141,6 +141,13 @@ class OrdersTest(unittest.TestCase):
                               "unknown_barcodes": []})
         self.assertNotIn("cola-330", tools._on_order(self.conn))
 
+    def test_sent_by_smtp_message_has_one_full_stop(self):
+        from xangx.orders import mail
+        order_id = tools.propose_order(self.conn, "sup-ymittou")["order_id"]
+        with mock.patch.object(mail, "send", return_value=("<x@y>", "smtp")):
+            result = self.ask_and_approve(order_id)
+        self.assertTrue(result["message"].endswith("Υμηττού Α.Ε."), result["message"])
+
     def test_demo_address_wins(self):
         order_id = tools.propose_order(self.conn, "sup-ymittou")["order_id"]
         with mock.patch.dict(os.environ, {"XANGX_DEMO_SUPPLIER_EMAIL": "supplier-demo@example.com"}):

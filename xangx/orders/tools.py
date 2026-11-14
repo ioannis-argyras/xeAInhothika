@@ -267,5 +267,5 @@ def send_order(conn, order_id):
         payload={"order_id": order_id, "to": to, "message_id": message_id},
     )
     where = "" if how == "smtp" else " (δοκιμή: το email γράφτηκε σε αρχείο)"
-    return {"summary": f"Στάλθηκε η παραγγελία {order_id} στον {sup['name']}{where}.",
-            "event_ids": [event.id]}
+    text = f"Στάλθηκε η παραγγελία {order_id} στον {sup['name']}{where}"
+    return {"summary": text if text.endswith(".") else text + ".", "event_ids": [event.id]}
