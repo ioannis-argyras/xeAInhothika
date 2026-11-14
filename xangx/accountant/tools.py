@@ -67,3 +67,26 @@ def daily_report(conn, date_str=None, **kwargs):
     except (TypeError, ValueError):
         return {"summary": "Η ημερομηνία θέλει μορφή ΕΕΕΕ-ΜΜ-ΗΗ.", "event_ids": []}
     return core.daily_report(conn, day)
+
+
+@tool(
+    name="monthly_folder",
+    description=(
+        "The month's folder for the accountant: a ZIP with the month's invoice files and a "
+        "summary (CSV and printable page): numbers, suppliers, VAT per rate, myDATA, payments, "
+        "discrepancies, credit notes. Writes files only, sends nothing."
+    ),
+    input_schema={
+        "type": "object",
+        "properties": {"month": {"type": "string", "description": "YYYY-MM, e.g. 2026-11"}},
+        "required": ["month"],
+    },
+)
+def monthly_folder(conn, **kwargs):
+    from xangx.accountant import month as month_mod
+
+    value = kwargs.get("month")
+    if not month_mod.valid_month(value):
+        return {"summary": "Ο μήνας θέλει μορφή ΕΕΕΕ-ΜΜ, π.χ. 2026-11.", "event_ids": []}
+    data, _ref, _sha, event = month_mod.build(conn, value)
+    return {"summary": month_mod.summary_text(data) + ".", "event_ids": [event.id] if event else []}

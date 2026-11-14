@@ -89,6 +89,9 @@ CATALOG = {
         ["accountant"],
         "date", "sales_cents", "purchases_cents", "gross_profit_cents", "exceptions",
     ),
+    "report.month_created": _spec(
+        ["accountant"], "month", "invoice_count", "total_cents", "file_ref"
+    ),
     "exception.flagged": _spec(["accountant"], "kind", "ref", "note"),
     "payment.reminder_set": _spec(
         ["accountant"], "supplier_id", "invoice_id", "due_on", "amount_cents"
