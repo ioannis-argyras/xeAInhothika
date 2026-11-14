@@ -1,0 +1,44 @@
+/* Φωτογραφία τιμολογίου. Οι κανόνες είναι αντιγραμμένοι κατά λέξη από το design/kateuthynseis-v2/index.html (#timologio-foto). */
+.btn.q{background:var(--surf);color:var(--ink);border-color:var(--line);font-weight:500}
+.btn.q:hover{background:var(--strip)}
+.btn.wide{width:100%}
+.checks .ck{display:grid;grid-template-columns:24px 1fr;gap:10px;padding:12px 22px;border-top:1px solid var(--hair);align-items:start}
+.checks .ck:first-child{border-top:0}
+.checks .ck i{font-size:20px;color:var(--ok);margin-top:1px}
+.checks .ck.x i{color:var(--alert)}
+.only-m{display:none!important}
+body.bare .band{padding-top:48px}
+.drop{margin:20px 22px 22px;border:2px dashed #9FB0C7;border-radius:14px;background:var(--strip);min-height:300px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;text-align:center;padding:24px}
+.drop>i{font-size:44px;color:var(--n2)}
+.drop b{font-size:var(--l)}
+.shot{background:var(--well);border-radius:18px;padding:28px 26px;position:relative;box-shadow:inset 0 2px 8px rgba(0,0,0,.4)}
+.shot:before,.shot:after{content:"";position:absolute;width:30px;height:30px;border:2px solid rgba(211,219,230,.6)}
+.shot:before{left:12px;top:12px;border-right:0;border-bottom:0;border-radius:8px 0 0 0}
+.shot:after{right:12px;bottom:12px;border-left:0;border-top:0;border-radius:0 0 8px 0}
+.paper{background:#F7F5EF;color:#2A2F38;border-radius:4px;padding:18px 18px 16px;transform:rotate(-1.6deg);box-shadow:0 12px 28px -10px rgba(0,0,0,.6);font-size:12px;line-height:1.4}
+.paper .ph1{display:flex;justify-content:space-between;font-weight:700;border-bottom:1px solid #C9C4B6;padding-bottom:8px}
+.paper .ln{display:grid;grid-template-columns:1fr 34px 54px;gap:8px;padding:5px 0;border-bottom:1px dotted #CFCABD}
+.paper .ln span{height:7px;border-radius:2px;background:#C9C4B6;margin-top:5px}
+.paper .tot{display:flex;justify-content:space-between;font-weight:700;padding-top:8px;font-size:14px}
+.res2 .big{font-size:var(--xl);font-weight:700;letter-spacing:-.03em;line-height:1.05}
+body.bare .tabs{display:none!important}
+body.bare .back{display:inline-flex}
+.back{display:none}
+.g-par{grid-template-columns:1fr 1fr;align-items:start;max-width:1040px;margin:0 auto}
+@media (max-width:1100px){
+  .g-cam,.g-par{grid-template-columns:1fr}
+  .g-par>.col{display:contents}
+  .only-m{display:flex!important}
+  body.bare .band{padding-top:20px}
+  .only-pc{display:none!important}
+  .back{display:inline-flex}
+}
+/* δικά της: προεπισκόπηση και κρυφά στοιχεία (μόνο χρώματα του design) */
+[hidden]{display:none!important}
+.shot .pv{display:block;width:100%;max-height:56vh;object-fit:contain;border-radius:4px;background:var(--well)}
+.shot .pdf{display:flex;flex-direction:column;align-items:center;gap:8px;padding:28px 12px;color:var(--n5);text-align:center}
+.shot .pdf i{font-size:44px}
+.drop .fname{font-weight:700;word-break:break-all}
+.res2 .msg{padding:0 22px 12px}
+.res2 .ck .spin{color:var(--n3)}
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:12px}

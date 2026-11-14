@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="el">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Φωτογραφία τιμολογίου · Xangxothaika</title>
+<link rel="stylesheet" href="/static/vendor/phosphor/style.css">
+<link rel="stylesheet" href="/static/vendor/phosphor/bold/style.css">
+<link rel="stylesheet" href="/static/vendor/phosphor/fill/style.css">
+<link rel="stylesheet" href="/static/app.css">
+<link rel="stylesheet" href="/invoices/photo/assets/photo.css">
+</head>
+<body class="bare">
+<section id="foto" class="screen on">
+  <div class="band"><div class="in w1040">
+    <div>
+      <div class="kick"><a class="back" href="/static/pages/timologia.html" style="align-items:center;gap:6px;min-height:44px"><i class="ph ph-caret-left"></i>Πίσω</a><span><i class="ph ph-receipt"></i> Τιμολόγιο από την παράδοση</span></div>
+      <h1>Φωτογραφία τιμολογίου</h1>
+    </div>
+  </div></div>
+  <div class="wrap">
+    <div class="row2 g-par">
+      <section class="card only-pc" id="pc-card">
+        <div class="hd"><b><i class="ph ph-file-arrow-up"></i>Νέο τιμολόγιο</b><span class="m">φωτογραφία ή PDF</span></div>
+        <div class="drop" id="drop"><i class="ph ph-file-arrow-up"></i><b>Σύρε εδώ το αρχείο</b><span class="m" id="drop-hint">ή πάρε φωτογραφία από το κινητό σου</span><span class="fname" id="fname" hidden></span><button class="btn yes" id="pc-pick" type="button"><i class="ph ph-folder-open"></i>Επίλεξε αρχείο</button><button class="btn yes" id="pc-send" type="button" hidden><i class="ph ph-paper-plane-tilt"></i>Στείλε για έλεγχο</button><p class="warn" id="pc-err" role="alert" hidden></p></div>
+      </section>
+      <div class="col only-m" id="m-col">
+        <div class="shot" id="shot" hidden><img class="pv" id="pv" alt="Η φωτογραφία του τιμολογίου" hidden><div class="pdf" id="pdf" hidden><i class="ph ph-file-pdf"></i><span id="pdf-name"></span></div></div>
+        <button class="btn yes wide" id="cam" type="button" style="height:56px"><i class="ph ph-camera"></i>Τράβηξε φωτογραφία</button>
+        <button class="btn q wide" id="gal" type="button" style="height:56px"><i class="ph ph-image"></i>Από τη συλλογή</button>
+        <button class="btn yes wide" id="send" type="button" style="height:56px" hidden><i class="ph ph-paper-plane-tilt"></i>Στείλε για έλεγχο</button>
+        <div class="pair" id="pair" hidden><button class="btn q" id="again" type="button"><i class="ph ph-camera-rotate"></i>Ξανά</button><button class="btn q" id="gal2" type="button"><i class="ph ph-image"></i>Από τη συλλογή</button></div>
+        <p class="warn" id="m-err" role="alert" hidden></p>
+        <p class="m" style="text-align:center">Θα το διαβάσει ο Agent Τιμολογίων και θα το ψάξει στο myDATA.</p>
+      </div>
+      <section class="card res2" id="res" aria-live="polite" aria-busy="false" hidden>
+        <div class="hd"><b id="res-title"><i class="ph ph-hourglass"></i>Διαβάζεται…</b><span class="m" id="res-at"></span></div>
+        <div id="res-head" style="padding:18px 22px 6px" hidden><span class="m" id="res-who"></span><div class="big" id="res-big"></div></div>
+        <div class="checks" id="res-checks"></div>
+        <p class="m msg" id="res-late" hidden>Δεν το διάβασα ακόμα. Δες στα <a href="/static/pages/timologia.html"><b>Τιμολόγια</b></a> σε λίγο.</p>
+        <div style="padding:6px 22px 22px"><a class="btn q wide" id="res-link" href="/static/pages/timologia.html" hidden>Δες το τιμολόγιο<i class="ph ph-arrow-right"></i></a></div>
+      </section>
+    </div>
+  </div>
+</section>
+<input type="file" id="in-cam" accept="image/*,application/pdf" capture="environment" hidden>
+<input type="file" id="in-gal" accept="image/*,application/pdf" hidden>
+<script src="/invoices/photo/assets/photo.js"></script>
+</body>
+</html>
