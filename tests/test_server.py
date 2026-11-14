@@ -91,7 +91,10 @@ class ServerTest(unittest.TestCase):
         self.assertEqual(data["shelves"][0]["position_name"], "Ψυγείο 1")
         self.assertEqual(data["today"]["sales_count"], 1)
         self.assertEqual(data["today"]["sales_cents"], 250)
-        self.assertIn("Ψυγείο 1: πήραν 5 Coca-Cola 330ml", data["recent"][1]["text"])
+        # The till sale counts in "today" but is not listed in the feed.
+        self.assertEqual([e["type"] for e in data["recent"]],
+                         ["shelf.items_taken", "stock.moved"])
+        self.assertIn("Ψυγείο 1: πήραν 5 Coca-Cola 330ml", data["recent"][0]["text"])
         self.assertEqual(self.client.get("/api/state?until_id=1").json()["last_id"], 1)
 
     def test_new_events_for_stream(self):

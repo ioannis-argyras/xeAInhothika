@@ -1,5 +1,6 @@
 import json
 import unittest
+from datetime import datetime
 
 from xangx.demo.catalog_data import (
     POSITIONS,
@@ -22,7 +23,7 @@ class DemoSeedTests(unittest.TestCase):
     def setUpClass(cls):
         cls.conn = connect(":memory:")
         init_db(cls.conn)
-        seed_all(cls.conn)
+        seed_all(cls.conn, now=datetime(2026, 11, 14, 6, 55))
 
     @classmethod
     def tearDownClass(cls):
@@ -83,6 +84,33 @@ class DemoSeedTests(unittest.TestCase):
         self.assertEqual(row["actors"], 1)
         self.assertTrue(row["first"].startswith("2026-10-14"))
         self.assertTrue(row["last"].startswith("2026-11-14"))
+
+
+class DemoTodayTests(unittest.TestCase):
+    """Seeded in the afternoon: today has sales, the story's products are untouched."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.conn = connect(":memory:")
+        init_db(cls.conn)
+        seed_all(cls.conn, now=datetime(2026, 11, 15, 17, 30))
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.conn.close()
+
+    def test_sales_today_and_story_intact(self):
+        today = self.conn.execute(
+            "SELECT COUNT(*) FROM events WHERE type='sale.recorded' AND at >= '2026-11-14T22:00'"
+        ).fetchone()[0]
+        self.assertGreater(today, 40)
+        last = self.conn.execute("SELECT MAX(at) FROM events").fetchone()[0]
+        self.assertLess(last, "2026-11-15T15:30")
+        levels = stock_levels(self.conn)
+        self.assertEqual(levels["cola-330"], 8)
+        low = [p["id"] for p in PRODUCTS if levels.get(p["id"], 0) <= p["low_threshold"]]
+        self.assertLessEqual(len(low), 3)
+        self.assertEqual(order_status(self.conn, "P-0318"), "order.sent")
 
 
 if __name__ == "__main__":

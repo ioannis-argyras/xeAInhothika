@@ -57,8 +57,16 @@ def athens_day_start_utc(utc_now=None):
     return start.strftime("%Y-%m-%dT%H:%M:%S.000Z")
 
 
+def is_quiet(event):
+    """Till sales and their stock moves: counted in "today", not listed in the feed."""
+    return event.type == "sale.recorded" or (
+        event.type == "stock.moved" and event.payload.get("reason") == "sale"
+    )
+
+
 def event_dict(event, names):
     return {
+        "quiet": is_quiet(event),
         "id": event.id,
         "at": event.at,
         "actor": event.actor,
@@ -143,8 +151,10 @@ def build_state(conn, until_id=None):
         params.append(until_id)
     sales = conn.execute(sql, params).fetchone()
 
-    after = max(0, last_id - 30)
-    recent_events = read_events(conn, after_id=after, until_id=until_id)[-30:]
+    after = max(0, last_id - 1500)
+    recent_events = [
+        e for e in read_events(conn, after_id=after, until_id=until_id) if not is_quiet(e)
+    ][-30:]
     recent = [event_dict(e, names) for e in reversed(recent_events)]
 
     return {

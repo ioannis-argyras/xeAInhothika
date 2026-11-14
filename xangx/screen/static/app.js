@@ -20,7 +20,7 @@ function eur(cents) {
 function clock(iso) {
   const d = new Date(iso);
   if (isNaN(d)) return "";
-  return d.toLocaleTimeString("el-GR", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Athens" });
+  return d.toLocaleTimeString("el-GR", { hour: "2-digit", minute: "2-digit", hourCycle: "h23", timeZone: "Europe/Athens" });
 }
 
 async function api(path, options) {
@@ -77,7 +77,12 @@ function renderNeeds(state) {
       yes.disabled = no.disabled = true;
       try {
         const r = await post("/api/approvals/" + encodeURIComponent(a.approval_id), { decision });
-        if (r && r.ok === false) msg.textContent = r.message || "Δεν έγινε.";
+        if (r && r.ok === false) {
+          // Keep the card as it is so the owner can read why nothing happened.
+          msg.textContent = r.message || "Δεν έγινε.";
+          yes.disabled = no.disabled = false;
+          return;
+        }
         refreshSoon();
       } catch (e) {
         msg.textContent = e.message;
@@ -86,8 +91,8 @@ function renderNeeds(state) {
     };
     yes.addEventListener("click", decide("yes"));
     no.addEventListener("click", decide("no"));
-    act.append(msg, no, yes);
-    row.append(text, act);
+    act.append(no, yes);
+    row.append(text, act, msg);
     box.appendChild(row);
   });
 }
@@ -195,6 +200,7 @@ function connectStream() {
   es.onmessage = (msg) => {
     let e;
     try { e = JSON.parse(msg.data); } catch (err) { return; }
+    if (e.quiet) { refreshSoon(); return; }  // till sales: only the totals change
     const box = $("feed");
     const empty = box.querySelector(".empty");
     if (empty) empty.remove();
