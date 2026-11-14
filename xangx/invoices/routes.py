@@ -97,6 +97,23 @@ def _supplier_name(conn, afm):
     return row["name"] if row else None
 
 
+def _items(lines):
+    """What the invoice says, line by line, with the amounts already in Greek format."""
+    out = []
+    for line in lines:
+        qty = line.get("qty")
+        if isinstance(qty, float) and qty.is_integer():
+            qty = int(qty)
+        unit = line.get("unit_cents")
+        out.append({
+            "name": str(line.get("name") or ""),
+            "qty": qty,
+            "unit": format_eur(unit) if unit is not None else "",
+            "net": format_eur(line.get("net_cents") or 0),
+        })
+    return out
+
+
 @router.get("/invoices/photo/status")
 def photo_status(invoice_id: str = ""):
     if not invoice_id or len(invoice_id) > 40 or not all(c.isalnum() or c == "-" for c in invoice_id):
@@ -117,6 +134,7 @@ def photo_status(invoice_id: str = ""):
                 "supplier": _supplier_name(conn, p["supplier_afm"]),
                 "total": format_eur(p["total_cents"]),
                 "lines": len(p.get("lines") or []),
+                "items": _items(p.get("lines") or []),
                 "checks_ok": all((p.get("checks") or {}).values()),
             }
             if not all((p.get("checks") or {}).values()):

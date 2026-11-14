@@ -9,7 +9,7 @@ from unittest import mock
 from fastapi.testclient import TestClient
 
 from xangx.server import app as server_app
-from xangx.shared import connect, init_db, read_events
+from xangx.shared import append_event, connect, init_db, read_events
 
 JPEG = b"\xff\xd8\xff\xe0" + b"\x00" * 64 + b"jpeg-test-bytes"
 
@@ -67,6 +67,25 @@ class PhotoTest(unittest.TestCase):
         s = self.client.get("/invoices/photo/status", params={"invoice_id": invoice_id}).json()
         self.assertFalse(s["done"])
         self.assertIsNone(s["read"])
+
+    def test_status_lists_what_the_invoice_says(self):
+        invoice_id = self.client.post("/invoices/photo", content=JPEG).json()["invoice_id"]
+        conn = connect()
+        init_db(conn)
+        append_event(conn, type="invoice.read", actor="system", subject=invoice_id, payload={
+            "invoice_id": invoice_id, "series": "A", "number": "2271", "supplier_afm": "111111111",
+            "total_cents": 4886, "net_cents": 3638, "date": "2026-11-14", "vat_by_rate": {"24": 357, "13": 280},
+            "confidence": 0.9, "checks": {"sums": True},
+            "lines": [
+                {"name": "Coca-Cola 330ml κουτί", "qty": 24, "unit_cents": 62, "net_cents": 1488, "vat_rate": 24},
+                {"name": "Νερό 1,5L εξάδα", "qty": 10, "unit_cents": 215, "net_cents": 2150, "vat_rate": 13}]})
+        conn.close()
+        s = self.client.get("/invoices/photo/status", params={"invoice_id": invoice_id}).json()
+        self.assertEqual(s["read"]["lines"], 2)
+        self.assertEqual(len(s["read"]["items"]), 2)
+        self.assertEqual(s["read"]["items"][0], {
+            "name": "Coca-Cola 330ml κουτί", "qty": 24, "unit": "0,62 €", "net": "14,88 €"})
+        self.assertEqual(s["read"]["items"][1]["net"], "21,50 €")
 
     def test_status_unknown_and_bad_id(self):
         self.assertEqual(self.client.get("/invoices/photo/status", params={"invoice_id": "INV-00000000"}).status_code, 404)

@@ -124,10 +124,41 @@
     tick();
   }
 
+  function renderItems(box, items) {
+    var sec = $("res-items");
+    if (!sec) {
+      sec = el("div", "items"); sec.id = "res-items";
+      box.parentNode.insertBefore(sec, box);
+    }
+    sec.textContent = "";
+    sec.hidden = !items || !items.length;
+    if (sec.hidden) return;
+    sec.appendChild(el("div", "items-hd", "Τι γράφει το τιμολόγιο"));
+    items.slice(0, 12).forEach(function (it) {
+      var row = el("div", "it");
+      var name = el("span", "nm", it.name);
+      name.title = it.name;
+      row.appendChild(name);
+      row.appendChild(el("span", "q", "× " + it.qty));
+      row.appendChild(el("span", "v", it.net));
+      sec.appendChild(row);
+    });
+    if (items.length > 12) {
+      var more = el("div", "it more");
+      more.appendChild(document.createTextNode("και άλλες " + (items.length - 12) + " · "));
+      var a = el("a", null, "Δες το τιμολόγιο");
+      a.href = $("res-link").href;
+      more.appendChild(a);
+      sec.appendChild(more);
+    }
+    sec.appendChild(el("p", "items-note", "Αυτά μπαίνουν στην αποθήκη μόλις ελεγχθεί η παραλαβή."));
+  }
+
   function render(s) {
     var box = $("res-checks");
     box.textContent = "";
     if (s.read) {
+      renderItems(box, s.read.items);
       $("res-head").hidden = false;
       $("res-who").textContent = s.read.number + (s.read.supplier ? " · " + s.read.supplier : "");
       $("res-big").textContent = s.read.total;
