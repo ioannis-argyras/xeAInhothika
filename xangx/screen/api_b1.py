@@ -27,7 +27,7 @@ TASK_TYPES = (
     "order.reply_received", "delivery.completed", "invoice.read", "invoice.matched",
     "invoice.mydata_checked", "price.changed", "supplier.new_iban_seen",
     "payment.reminder_set", "credit.requested", "report.daily_created",
-    "exception.flagged",
+    "exception.flagged", "agent.woke",
 )
 # key, name, actors. Same mapping as the home screen; the partner's own jobs come last.
 TEAMS = (
@@ -36,6 +36,7 @@ TEAMS = (
     ("invoices", "Τιμολόγια", ("invoices",)),
     ("accountant", "Λογιστής", ("accountant",)),
     ("master", "Συνεργάτης", ("master",)),
+    ("agent", "Άλλος agent", ()),
 )
 TEAM_OF = {actor: (key, name) for key, name, actors in TEAMS for actor in actors}
 # Seeded and system events have the actor "system": the type tells which team the job belongs to.
@@ -48,7 +49,17 @@ TEAM_BY_PREFIX = (
 TEAM_NAME = {key: name for key, name, _ in TEAMS}
 
 
+def _is_mcp_call(event):
+    return event.type == "agent.planned" and (event.payload or {}).get("via") == "mcp"
+
+
+def _is_task(event):
+    return event.type in TASK_TYPES or _is_mcp_call(event)
+
+
 def _team(event):
+    if _is_mcp_call(event):
+        return "agent", TEAM_NAME["agent"]
     if event.actor in TEAM_OF:
         return TEAM_OF[event.actor]
     for prefix, key in TEAM_BY_PREFIX:
@@ -418,7 +429,7 @@ def tasks_today(until_id: int | None = None):
         now = _reference(conn, until_id)
         day_start = greek_day_start_utc(now)
         events = _since(conn, day_start, until_id, TASK_TYPES + (
-            "approval.decided", "agent.tool_ran"))
+            "approval.decided", "agent.tool_ran", "agent.planned"))
         names = load_names(conn)
         bundles = _bundles(conn, until_id)
         labels = {iid: _label(b, iid) for iid, b in bundles.items()}
@@ -429,7 +440,7 @@ def tasks_today(until_id: int | None = None):
         groups = {}
         done = 0
         for e in events:
-            if e.type not in TASK_TYPES:
+            if not _is_task(e):
                 continue
             done += 1
             key, name = _team(e)

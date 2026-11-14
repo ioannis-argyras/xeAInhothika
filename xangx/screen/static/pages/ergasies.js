@@ -3,7 +3,7 @@
 (function () {
   "use strict";
   var TEAM_ICON = {orders: "truck", stock: "package", invoices: "receipt",
-                   accountant: "calculator", master: "circles-three"};
+                   accountant: "calculator", master: "circles-three", agent: "plugs-connected"};
   var paused = false, timer = null, loading = false, again = false;
 
   function $(id) { return document.getElementById(id); }

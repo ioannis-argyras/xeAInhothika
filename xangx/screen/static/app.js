@@ -49,8 +49,8 @@ const post = (path, body) => api(path, {
 });
 
 /* ---------- ομάδες και εγκρίσεις ---------- */
-const TEAM_ICON = { stock: "package", orders: "truck", invoices: "receipt", accountant: "calculator", master: "circles-three" };
-const TEAM_NAME = { stock: "Αποθήκη", orders: "Παραγγελίες", invoices: "Τιμολόγια", accountant: "Λογιστής", master: "Συνεργάτης" };
+const TEAM_ICON = { stock: "package", orders: "truck", invoices: "receipt", accountant: "calculator", master: "circles-three", agent: "plugs-connected" };
+const TEAM_NAME = { stock: "Αποθήκη", orders: "Παραγγελίες", invoices: "Τιμολόγια", accountant: "Λογιστής", master: "Συνεργάτης", agent: "Άλλος agent" };
 
 function approvalInfo(action) {
   if (action === "send_order") return { team: "orders", ask: "Οι Παραγγελίες σε ρωτούν", yes: "Ναι, στείλ' τη" };
@@ -355,6 +355,7 @@ function render(state) {
   renderTeam(state);
   renderRuler(state);
   renderStory(state);
+  renderRounds(state.rounds || []);
   renderPaused();
   renderLive();
 }
@@ -439,8 +440,48 @@ function stepNode(text, waiting) {
 function addMsg(node) {
   const empty = $("conv-empty");
   if (empty) empty.remove();
+  node.dataset.at = String(Date.now());
   $("conv").appendChild(node);
   node.scrollIntoView({ block: "end" });
+}
+
+// Rounds the partner did not start for the owner: the clock's and another agent's MCP calls.
+// They sit in the conversation in order of time, with a small label above.
+const roundNodes = new Map();  // round id -> { node, sig }
+
+function roundNode(r) {
+  const node = el("div", "cm ai auto");
+  node.dataset.at = String(Date.parse(r.at) || Date.now());
+  node.appendChild(el("span", "m who2", r.label + " · " + r.hhmm));
+  const body = el("p");
+  if (r.text) richText(body, r.text);
+  else { body.className = "working"; body.textContent = "δουλεύω…"; }
+  node.appendChild(body);
+  if (r.steps.length) {
+    const box = el("div", "steps");
+    r.steps.forEach((s) => box.appendChild(stepNode(s.text, s.waiting)));
+    node.appendChild(box);
+  }
+  return node;
+}
+
+function renderRounds(rounds) {
+  const conv = $("conv");
+  rounds.forEach((r) => {
+    const sig = JSON.stringify([r.text, r.steps]);
+    const known = roundNodes.get(r.id);
+    if (known && known.sig === sig) return;
+    const node = roundNode(r);
+    if (known) known.node.replaceWith(node);
+    else {
+      const empty = $("conv-empty");
+      if (empty) empty.remove();
+      const at = Number(node.dataset.at);
+      const after = Array.from(conv.children).find((c) => Number(c.dataset.at) > at);
+      conv.insertBefore(node, after || null);
+    }
+    roundNodes.set(r.id, { node, sig });
+  });
 }
 
 function nowClock() {

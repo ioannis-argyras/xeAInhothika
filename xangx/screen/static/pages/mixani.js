@@ -8,10 +8,10 @@
   var CLUSTER_PX = 34;   // markers of different teams closer than this many pixels share one marker
   var GROUP_MIN = 20;    // events of one team closer than this make one marker
   var TEAM_ICON = {stock: "package", orders: "truck", invoices: "receipt",
-                   accountant: "calculator", master: "circles-three", owner: "user"};
+                   accountant: "calculator", master: "circles-three", owner: "user", agent: "plugs-connected"};
   var TEAM_NAME = {stock: "Αποθήκη", orders: "Παραγγελίες", invoices: "Τιμολόγια",
-                   accountant: "Λογιστής", master: "Συνεργάτης", owner: "Ιδιοκτήτης"};
-  var TEAM_ORDER = ["stock", "orders", "invoices", "accountant", "master", "owner"];
+                   accountant: "Λογιστής", master: "Συνεργάτης", owner: "Ιδιοκτήτης", agent: "Άλλος agent"};
+  var TEAM_ORDER = ["stock", "orders", "invoices", "accountant", "master", "agent", "owner"];
 
   function $(id) { return document.getElementById(id); }
   var ruler = $("ruler"), knob = $("knob");

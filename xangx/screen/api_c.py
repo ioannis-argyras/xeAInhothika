@@ -16,6 +16,7 @@ REPLAY_TYPES = (
     "invoice.mydata_checked", "price.changed", "supplier.new_iban_seen",
     "payment.reminder_set", "credit.requested", "report.daily_created",
     "exception.flagged", "approval.requested", "approval.decided", "shelf.items_taken",
+    "agent.woke", "agent.planned",
 )
 TEAM_OF_ACTOR = {
     "camera": "stock", "stock": "stock", "scanner": "stock",
@@ -26,6 +27,11 @@ TEAM_OF_ACTOR = {
 
 def team_of(actor):
     return TEAM_OF_ACTOR.get(actor, "master")
+
+
+def _wanted(event):
+    """agent.planned counts only when another agent asked through MCP (via "mcp")."""
+    return event.type != "agent.planned" or (event.payload or {}).get("via") == "mcp"
 
 
 def replay_sync():
@@ -45,14 +51,14 @@ def replay_sync():
                     "date": day.strftime("%d/%m/%Y"), "weekday": server.WEEKDAYS[day.weekday()]}
         events = []
         for e in read_events(conn, after_id=row["m"] - 1, types=REPLAY_TYPES):
-            if e.at < day_start or server.is_quiet(e):
+            if e.at < day_start or server.is_quiet(e) or not _wanted(e):
                 continue
             local = server._local(server._parse_utc(e.at))
             events.append({
                 "id": e.id,
                 "minute": local.hour * 60 + local.minute,
                 "hhmm": local.strftime("%H:%M"),
-                "team": team_of(e.actor),
+                "team": "agent" if e.type == "agent.planned" else team_of(e.actor),
                 "text": describe(e, names),
             })
         day = server._local(server._parse_utc(day_start))

@@ -16,7 +16,7 @@ from starlette.concurrency import run_in_threadpool
 from xangx.screen.api_b1 import router as api_b1_router
 from xangx.screen.api_b2 import router as api_b2_router
 from xangx.screen.api_c import router as api_c_router
-from xangx.screen.describe import describe, load_names
+from xangx.screen.describe import _mask, describe, load_names
 from xangx.server.access import access_middleware
 from xangx.server.mcp import router as mcp_router
 from xangx.shared import views
@@ -86,7 +86,7 @@ TASK_TYPES = {
     "order.reply_received", "delivery.completed", "invoice.read", "invoice.matched",
     "invoice.mydata_checked", "price.changed", "supplier.new_iban_seen",
     "payment.reminder_set", "credit.requested", "report.daily_created",
-    "exception.flagged",
+    "exception.flagged", "agent.woke",
 }
 TEAM = (
     {"key": "stock", "name": "Αποθήκη", "actors": ["camera", "stock", "scanner"]},
@@ -98,6 +98,17 @@ TIMELINE_ACTORS = {"camera", "stock", "scanner", "orders", "invoices", "accounta
 WEEKDAYS = ("Δευτέρα", "Τρίτη", "Τετάρτη", "Πέμπτη", "Παρασκευή", "Σάββατο", "Κυριακή")
 ACTIVE_MINUTES = 15
 TIMELINE_MAX = 60
+ROUNDS_MAX = 20
+
+
+def is_mcp_call(event):
+    """The marker another agent's MCP call leaves behind (agent.planned with via "mcp")."""
+    return event.type == "agent.planned" and (event.payload or {}).get("via") == "mcp"
+
+
+def is_task(event):
+    """A job done on its own: the usual kinds, the partner's own start, or an MCP request."""
+    return event.type in TASK_TYPES or is_mcp_call(event)
 
 
 def _db():
@@ -245,7 +256,7 @@ def _home_sections(conn, until_id, names, low):
     }
 
     tasks = {
-        "done": sum(1 for e in events if e.type in TASK_TYPES),
+        "done": sum(1 for e in events if is_task(e)),
         "with_yes": sum(1 for e in events
                         if e.type == "approval.decided" and e.payload.get("decision") == "yes"),
         "errors": sum(1 for e in events
@@ -268,10 +279,11 @@ def _home_sections(conn, until_id, names, low):
 
     timeline = [
         {"id": e.id, "at": e.at, "minute": _minute_of_day(e.at),
-         "team": team_of.get(e.actor, "master"), "text": describe(e, names)}
+         "team": "agent" if is_mcp_call(e) else team_of.get(e.actor, "master"),
+         "text": describe(e, names)}
         for e in events
         if e.actor in TIMELINE_ACTORS and not is_quiet(e)
-        and (e.type in TASK_TYPES or e.type == "approval.requested")
+        and (is_task(e) or e.type == "approval.requested")
     ][-TIMELINE_MAX:]
 
     shelf_focus = None
@@ -293,6 +305,44 @@ def _home_sections(conn, until_id, names, low):
         }
         break
     return day, tasks, team, timeline, shelf_focus
+
+
+def _rounds(conn, until_id, names):
+    """Today's rounds the partner did not start for the owner: the clock's (agent.woke) and
+    another agent's MCP calls, each with its answer and steps, oldest first."""
+    day_start = athens_day_start_utc(_reference_time(conn, until_id))
+    events = _today_events(conn, day_start, until_id)
+    pending = {e.payload.get("approval_id") for e in views.pending_approvals(conn, until_id=until_id)}
+    by_cause = {}
+    for e in events:
+        if e.caused_by is not None:
+            by_cause.setdefault(e.caused_by, []).append(e)
+    rounds = []
+    for e in events:
+        if e.type == "agent.woke":
+            kind, label = "clock", "Μόνος του · " + str(e.payload.get("reason") or "")
+        elif is_mcp_call(e):
+            kind, label = "mcp", "Άλλος agent μέσω MCP"
+        else:
+            continue
+        text, steps = None, []
+        if kind == "mcp":
+            first = (e.payload.get("steps") or [{}])[0]
+            text = "Ζήτησε: " + str(first.get("summary") or first.get("tool") or "εργαλείο")
+        for x in by_cause.get(e.id, []):
+            if x.type == "agent.said":
+                text = x.payload.get("text")
+            elif x.type == "agent.tool_ran":
+                steps.append({"text": _mask(str(x.payload.get("summary") or "")), "waiting": False})
+            elif x.type == "approval.requested":
+                steps.append({"text": _mask(str(x.payload.get("summary") or "")),
+                              "waiting": x.payload.get("approval_id") in pending})
+        rounds.append({
+            "id": e.id, "at": e.at, "kind": kind, "label": _mask(label),
+            "hhmm": _local(_parse_utc(e.at)).strftime("%H:%M"),
+            "text": _mask(str(text)) if text else None, "steps": steps,
+        })
+    return rounds[-ROUNDS_MAX:]
 
 
 def build_state(conn, until_id=None):
@@ -371,6 +421,7 @@ def build_state(conn, until_id=None):
         "team": team,
         "timeline": timeline,
         "shelf_focus": shelf_focus,
+        "rounds": _rounds(conn, until_id, names),
     }
 
 

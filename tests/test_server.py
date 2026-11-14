@@ -257,6 +257,75 @@ class HomeStateTest(unittest.TestCase):
         self.assertTrue(all(t["last"] is None and not t["active"] for t in data["team"]))
 
 
+class AutoRoundsTest(unittest.TestCase):
+    """The partner's own start (clock) and another agent's MCP call show on the screens."""
+
+    def setUp(self):
+        self.dir = tempfile.TemporaryDirectory()
+        self.db = os.path.join(self.dir.name, "t.sqlite")
+        self.env = mock.patch.dict(os.environ, {"XANGX_DB": self.db})
+        self.env.start()
+        self.client = TestClient(server_app.app)
+        self.conn = connect(self.db)
+        init_db(self.conn)
+
+    def tearDown(self):
+        self.conn.close()
+        self.env.stop()
+        try:
+            self.dir.cleanup()
+        except OSError:
+            pass
+
+    def _woke(self):
+        woke, _ = append_event(self.conn, type="agent.woke", actor="master", payload={
+            "reason": "Coca-Cola σε χαμηλό", "trigger_ids": [1]})
+        append_event(self.conn, type="agent.tool_ran", actor="master", caused_by=woke.id, payload={
+            "tool": "x", "summary": "Έλεγξα το απόθεμα", "ok": True, "ms": 1, "result_event_ids": []})
+        append_event(self.conn, type="agent.said", actor="master", caused_by=woke.id, payload={
+            "text": "Δες την πρόταση παραγγελίας.", "channel": "auto"})
+        return woke
+
+    def test_woke_is_a_task_in_timeline_and_count(self):
+        woke = self._woke()
+        data = self.client.get("/api/state").json()
+        self.assertEqual(data["tasks"]["done"], 1)
+        self.assertEqual([t["id"] for t in data["timeline"]], [woke.id])
+        self.assertEqual(data["timeline"][0]["team"], "master")
+        self.assertIn("ξεκίνησε μόνος του", data["timeline"][0]["text"])
+
+    def test_planned_shows_only_with_via_mcp(self):
+        append_event(self.conn, type="agent.planned", actor="master", payload={
+            "steps": [{"tool": "get_store_status", "summary": "x"}]})
+        data = self.client.get("/api/state").json()
+        self.assertEqual(data["tasks"]["done"], 0)
+        self.assertEqual(data["timeline"], [])
+        self.assertEqual(data["rounds"], [])
+        mcp, _ = append_event(self.conn, type="agent.planned", actor="master", payload={
+            "steps": [{"tool": "get_store_status", "summary": "Δείχνει την κατάσταση"}], "via": "mcp"})
+        data = self.client.get("/api/state").json()
+        self.assertEqual(data["tasks"]["done"], 1)
+        self.assertEqual([(t["id"], t["team"]) for t in data["timeline"]], [(mcp.id, "agent")])
+        tasks = self.client.get("/api/screen/tasks").json()
+        self.assertEqual(tasks["totals"]["done"], 1)
+        self.assertEqual([g["key"] for g in tasks["groups"]], ["agent"])
+        self.assertEqual(tasks["groups"][0]["name"], "Άλλος agent")
+        replay = self.client.get("/api/screen/replay").json()
+        self.assertEqual([(e["id"], e["team"]) for e in replay["events"]], [(mcp.id, "agent")])
+
+    def test_rounds_for_the_conversation(self):
+        woke = self._woke()
+        mcp, _ = append_event(self.conn, type="agent.planned", actor="master", payload={
+            "steps": [{"tool": "get_store_status", "summary": "Δείχνει την κατάσταση"}], "via": "mcp"})
+        rounds = self.client.get("/api/state").json()["rounds"]
+        self.assertEqual([(r["id"], r["kind"]) for r in rounds], [(woke.id, "clock"), (mcp.id, "mcp")])
+        self.assertEqual(rounds[0]["label"], "Μόνος του · Coca-Cola σε χαμηλό")
+        self.assertEqual(rounds[0]["text"], "Δες την πρόταση παραγγελίας.")
+        self.assertEqual([s["text"] for s in rounds[0]["steps"]], ["Έλεγξα το απόθεμα"])
+        self.assertEqual(rounds[1]["label"], "Άλλος agent μέσω MCP")
+        self.assertEqual(rounds[1]["text"], "Ζήτησε: Δείχνει την κατάσταση")
+
+
 class LoginPageTest(unittest.TestCase):
     """The login page is self-contained and its font files are the only static files open before login."""
 
