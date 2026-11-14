@@ -174,6 +174,59 @@ function stageNode(stage, a, state, opts) {
   }
 }
 
+const PAY_BUTTONS = [["cash", "Μετρητά"], ["card", "Κάρτα"], ["bank", "Τράπεζα"]];
+
+// "Did you pay? How?": same card as an approval, asked by the accountant.
+function payStage(stage, state) {
+  const list = state.pending_payments;
+  const p = list[0];
+  stage.replaceChildren();
+  stage.classList.remove("low");
+
+  const shd = el("div", "shd");
+  const lead = el("span");
+  lead.append(icon(TEAM_ICON.accountant), document.createTextNode("Ο Λογιστής σε ρωτά"));
+  shd.append(lead, el("span", null, "1 από " + list.length));
+
+  const body = el("div", "body one");
+  const left = el("div");
+  const title = el("h2", null, p.title);
+  title.id = "stage-title";
+  stage.setAttribute("aria-labelledby", "stage-title");
+  left.append(title, el("p", "why", p.text));
+
+  const acts = el("div", "acts pay");
+  const msg = el("span", "msg");
+  const buttons = PAY_BUTTONS.map((b) => el("button", "btn yes", b[1]));
+  const later = el("button", "btn no", "Όχι ακόμα");
+  const all = buttons.concat([later]);
+  all.forEach((b) => { b.type = "button"; });
+  const answer = (method) => async () => {
+    all.forEach((b) => { b.disabled = true; });
+    msg.textContent = "";
+    try {
+      await post("/api/payments/" + encodeURIComponent(p.invoice_id), { method });
+      refreshSoon();
+    } catch (e) {
+      msg.textContent = e.message;
+      all.forEach((b) => { b.disabled = false; });
+    }
+  };
+  buttons.forEach((b, i) => b.addEventListener("click", answer(PAY_BUTTONS[i][0])));
+  later.addEventListener("click", answer("not_yet"));
+  acts.append(...all, msg);
+  left.appendChild(acts);
+  body.appendChild(left);
+  stage.append(shd, body);
+
+  if (list.length > 1) {
+    const sft = el("div", "sft");
+    sft.appendChild(icon(TEAM_ICON.accountant));
+    sft.appendChild(el("span", null, "Μετά: " + list[1].title));
+    stage.appendChild(sft);
+  }
+}
+
 function idleStage(stage, state) {
   stage.replaceChildren();
   stage.classList.add("low");
@@ -190,13 +243,15 @@ function idleStage(stage, state) {
 }
 
 function renderStages(state) {
-  const sig = JSON.stringify([state.pending_approvals, state.shelf_focus,
-    state.pending_approvals.length ? null : state.tasks]);
+  const payments = state.pending_payments || [];
+  const sig = JSON.stringify([state.pending_approvals, payments, state.shelf_focus,
+    state.pending_approvals.length || payments.length ? null : state.tasks]);
   if (signatures.stages === sig) return;
   signatures.stages = sig;
   const first = state.pending_approvals[0];
   const home = $("home-stage");
   if (first) stageNode(home, first, state, { chat: false, titleId: "stage-title" });
+  else if (payments.length) payStage(home, Object.assign({}, state, { pending_payments: payments }));
   else idleStage(home, state);
   const chat = $("chat-stage");
   chat.hidden = !first;

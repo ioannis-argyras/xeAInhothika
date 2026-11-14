@@ -19,7 +19,7 @@ from xangx.screen.api_c import router as api_c_router
 from xangx.screen.describe import _mask, describe, load_names
 from xangx.server.access import access_middleware
 from xangx.server.mcp import router as mcp_router
-from xangx.shared import views
+from xangx.shared import payments, views
 from xangx.shared.catalog import CATALOG
 from xangx.shared.db import connect, init_db
 from xangx.shared.events import EventError, append_event, read_events
@@ -408,8 +408,17 @@ def build_state(conn, until_id=None):
 
     day, tasks, team, timeline, shelf_focus = _home_sections(conn, until_id, names, low)
 
+    ref = _reference_time(conn, until_id)
+    pending_payments = []
+    for item in payments.open_payments(
+            conn, athens_day_start_utc(ref), _local(ref).strftime("%Y-%m-%d"), until_id=until_id):
+        title, line = payments.card_texts(item, names)
+        pending_payments.append({"invoice_id": item["invoice_id"], "kind": item["kind"],
+                                 "title": _mask(title), "text": _mask(line)})
+
     return {
         "pending_approvals": approvals,
+        "pending_payments": pending_payments,
         "shelves": shelf_list,
         "stock": low,
         "today": {"sales_cents": sales["s"], "sales_count": sales["n"]},
@@ -525,6 +534,28 @@ async def api_approval(approval_id: str, body: dict = Body(...)):
         return await run_in_threadpool(_approval_sync, approval_id, decision)
     except ImportError:
         return JSONResponse({"detail": NO_MASTER}, status_code=503)
+
+
+def _payment_sync(invoice_id, method):
+    conn = _db()
+    try:
+        today = _local(datetime.now(timezone.utc)).strftime("%Y-%m-%d")
+        event = payments.record_payment(conn, invoice_id, method, today)
+        if event is None:
+            raise HTTPException(404, "Δεν έχω ρωτήσει για αυτό το τιμολόγιο.")
+        return {"ok": True, "event_id": event.id}
+    except EventError as exc:
+        return {"ok": False, "message": str(exc)}
+    finally:
+        conn.close()
+
+
+@app.post("/api/payments/{invoice_id}")
+async def api_payment(invoice_id: str, body: dict = Body(...)):
+    method = body.get("method")
+    if method not in payments.METHODS:
+        raise HTTPException(400, "Η απάντηση είναι cash, card, bank ή not_yet.")
+    return await run_in_threadpool(_payment_sync, invoice_id, method)
 
 
 def _pause_sync(kind):

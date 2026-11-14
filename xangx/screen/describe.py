@@ -81,6 +81,10 @@ def _describe(t, p, name):
     if t == "shelf.items_added":
         return (f"{name('position', p['position_id'])}: γέμισαν "
                 f"{_qty(p['added'])} {name('product', p['product_id'])}")
+    if t == "stock.moved" and p.get("reason") == "invoice":
+        source = p.get("invoice_id") or p.get("ref")
+        tail = f" από το τιμολόγιο {name('invoice', source)}" if source else " από τιμολόγιο"
+        return f"Μπήκαν στην αποθήκη {_qty(p['qty'])} {name('product', p['product_id'])}{tail}"
     if t == "stock.moved":
         reasons = {"delivery": "παραλαβή", "sale": "πώληση", "waste": "φθορά",
                    "count": "καταμέτρηση", "correction": "διόρθωση"}
@@ -148,6 +152,15 @@ def _describe(t, p, name):
         return f"Ημερήσια αναφορά {p['date']}: πωλήσεις {format_eur(p['sales_cents'])}"
     if t == "exception.flagged":
         return f"Προσοχή: {p['note']}"
+    if t == "payment.asked":
+        return (f"Ρωτώ αν πληρώθηκε το {name('invoice', p['invoice_id'])} "
+                f"({format_eur(p['amount_cents'])}, τοις μετρητοίς)")
+    if t == "payment.recorded":
+        num = name("invoice", p["invoice_id"])
+        if p["method"] == "not_yet":
+            return f"Το {num} δεν πληρώθηκε ακόμα, θα ξαναρωτήσω αύριο"
+        how = {"cash": "μετρητά", "card": "κάρτα", "bank": "τράπεζα"}.get(p["method"], p["method"])
+        return f"Πληρώθηκε το {num} με {how}"
     if t == "payment.reminder_set":
         return f"Υπενθύμιση πληρωμής για το τιμολόγιο {p['invoice_id']}"
     if t == "sale.recorded":

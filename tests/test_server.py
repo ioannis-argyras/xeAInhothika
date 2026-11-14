@@ -12,7 +12,7 @@ from xangx.screen.describe import describe
 from xangx.server import app as server_app
 from xangx.shared.catalog import CATALOG
 from xangx.shared.db import connect, init_db
-from xangx.shared.events import Event, append_event
+from xangx.shared.events import Event, append_event, read_events
 
 
 class ServerTest(unittest.TestCase):
@@ -436,6 +436,104 @@ class ScreenPagesAccessTest(unittest.TestCase):
         self.assertEqual(self.client.post("/login", data={"code": "test-1234"}).status_code, 303)
         for path in self.PATHS:
             self.assertEqual(self.client.get(path).status_code, 200, path)
+
+
+class PaymentCardTest(unittest.TestCase):
+    """The "Did you pay? How?" card: shown for payment.asked, closed by one answer."""
+
+    def setUp(self):
+        self.dir = tempfile.TemporaryDirectory()
+        self.db = os.path.join(self.dir.name, "t.sqlite")
+        self.env = mock.patch.dict(os.environ, {"XANGX_DB": self.db})
+        self.env.start()
+        self.client = TestClient(server_app.app)
+        self.conn = connect(self.db)
+        init_db(self.conn)
+        self.conn.execute("INSERT INTO suppliers (id, name) VALUES ('sup-a', 'Αρτοποιία')")
+        self.conn.commit()
+
+    def tearDown(self):
+        self.conn.close()
+        self.env.stop()
+        try:
+            self.dir.cleanup()
+        except OSError:
+            pass
+
+    def ask(self, invoice_id="B-512", cents=5170):
+        append_event(self.conn, type="payment.asked", actor="accountant", payload={
+            "invoice_id": invoice_id, "supplier_id": "sup-a", "amount_cents": cents,
+            "invoice_date": "2026-11-14"})
+
+    def cards(self):
+        return self.client.get("/api/state").json()["pending_payments"]
+
+    def recorded(self):
+        return [e for e in read_events(self.conn) if e.type == "payment.recorded"]
+
+    def test_no_card_without_a_question(self):
+        self.assertEqual(self.cards(), [])
+
+    def test_card_for_asked_invoice(self):
+        self.ask()
+        cards = self.cards()
+        self.assertEqual(len(cards), 1)
+        self.assertEqual(cards[0]["title"], "Πλήρωσες το τιμολόγιο B-512;")
+        self.assertEqual(cards[0]["text"], "Αρτοποιία, 51,70 €, τοις μετρητοίς")
+
+    def test_answer_writes_one_event_and_closes_the_card(self):
+        self.ask()
+        for _ in range(2):  # a double click
+            r = self.client.post("/api/payments/B-512", json={"method": "card"})
+            self.assertEqual(r.status_code, 200)
+            self.assertTrue(r.json()["ok"])
+        recorded = self.recorded()
+        self.assertEqual(len(recorded), 1)
+        self.assertEqual(recorded[0].payload, {"invoice_id": "B-512", "method": "card", "amount_cents": 5170})
+        self.assertEqual(self.cards(), [])
+        feed = self.client.get("/api/state").json()["recent"][0]["text"]
+        self.assertEqual(feed, "Πληρώθηκε το B-512 με κάρτα")
+
+    def test_not_yet_hides_it_today_but_not_tomorrow(self):
+        from xangx.shared import payments
+        self.ask()
+        self.client.post("/api/payments/B-512", json={"method": "not_yet"})
+        self.assertEqual(self.cards(), [])
+        # The same events seen from tomorrow morning: the question comes back.
+        self.assertEqual(len(payments.open_payments(self.conn, "2999-01-01T00:00:00.000Z", "2999-01-01")), 1)
+
+    def test_due_reminder_gives_a_card_only_from_its_day(self):
+        for iid, due in (("A-1", "2026-11-10"), ("A-2", "2999-01-01")):
+            append_event(self.conn, type="payment.reminder_set", actor="accountant", payload={
+                "supplier_id": "sup-a", "invoice_id": iid, "due_on": due, "amount_cents": 15929})
+        cards = self.cards()
+        self.assertEqual([c["invoice_id"] for c in cards], ["A-1"])
+        self.assertEqual(cards[0]["text"], "Αρτοποιία, 159,29 €, λήγει 10/11/2026")
+
+    def test_bad_input(self):
+        self.ask()
+        self.assertEqual(self.client.post("/api/payments/B-512", json={"method": "gold"}).status_code, 400)
+        self.assertEqual(self.client.post("/api/payments/X-9", json={"method": "cash"}).status_code, 404)
+        self.assertEqual(self.recorded(), [])
+
+    def test_describe_texts(self):
+        def ev(type_, payload):
+            return Event(1, "2026-11-14T10:00:00.000Z", "store-1", "system", type_, None, None, None, payload, 1)
+        names = {"invoice": {"B-512": "Β-512", "G-318": "Γ-318"}, "product": {"milk": "Γάλα 1L"}}
+        self.assertEqual(
+            describe(ev("payment.asked", {"invoice_id": "B-512", "supplier_id": "s", "amount_cents": 5170,
+                                          "invoice_date": "x"}), names),
+            "Ρωτώ αν πληρώθηκε το Β-512 (51,70 €, τοις μετρητοίς)")
+        self.assertEqual(
+            describe(ev("payment.recorded", {"invoice_id": "B-512", "method": "cash", "amount_cents": 1}), names),
+            "Πληρώθηκε το Β-512 με μετρητά")
+        self.assertEqual(
+            describe(ev("payment.recorded", {"invoice_id": "B-512", "method": "not_yet", "amount_cents": 1}), names),
+            "Το Β-512 δεν πληρώθηκε ακόμα, θα ξαναρωτήσω αύριο")
+        self.assertEqual(
+            describe(ev("stock.moved", {"product_id": "milk", "qty": 12, "reason": "invoice",
+                                        "invoice_id": "G-318"}), names),
+            "Μπήκαν στην αποθήκη 12 Γάλα 1L από το τιμολόγιο Γ-318")
 
 
 if __name__ == "__main__":

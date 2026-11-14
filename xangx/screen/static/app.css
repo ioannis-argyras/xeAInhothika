@@ -223,6 +223,9 @@ i.ph,i.ph-bold,i.ph-fill{line-height:1}
   .stage .body>div:first-child{display:contents}
   .stage .body>div:nth-child(2){order:2}
   .stage .acts .btn{height:52px;padding:0 12px}
+  .stage .acts.pay{grid-template-columns:repeat(3,1fr);gap:10px}
+  .stage .acts.pay .btn{padding:0 8px}
+  .stage .acts.pay .btn.no{order:4;grid-column:1/-1}
   .can{width:18px;height:30px}
   .who{padding:0 16px;min-height:68px;gap:12px}
   .ruler{display:none}
