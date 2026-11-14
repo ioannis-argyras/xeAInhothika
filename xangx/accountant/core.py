@@ -65,6 +65,14 @@ def _vat_rate(conn, product_id):
     return row["vat_rate"] if row else 0
 
 
+def _greek_date(iso):
+    """2026-11-14 -> 14/11/2026 (the owner and the supplier read DD/MM/YYYY)."""
+    try:
+        return date.fromisoformat(iso).strftime("%d/%m/%Y")
+    except (TypeError, ValueError):
+        return iso or ""
+
+
 def credit_details(conn, invoice_id):
     """What the credit request would say. Shortages only, amounts with VAT."""
     read = _read(conn, invoice_id)
@@ -85,7 +93,7 @@ def credit_details(conn, invoice_id):
     reasons = "; ".join(i["note"] for i in shortages)
     to = os.environ.get("XANGX_DEMO_SUPPLIER_EMAIL") or supplier["email"]
     body = (
-        f"Καλησπέρα σας,\n\nστο τιμολόγιο {number} της {p['date']} χρεώθηκαν είδη που δεν "
+        f"Καλησπέρα σας,\n\nστο τιμολόγιο {number} της {_greek_date(p['date'])} χρεώθηκαν είδη που δεν "
         f"παραλάβαμε: {reasons}.\nΠαρακαλούμε για πιστωτικό τιμολόγιο "
         f"{format_eur(amount)} (με ΦΠΑ).\n\nΕυχαριστούμε,\nMini Market 24/7"
     )
@@ -153,7 +161,7 @@ def request_credit(conn, invoice_id):
         subject=f"invoice:{invoice_id}", idem_key=f"credit:{invoice_id}",
         caused_by=d["read"].id,
     )
-    where = "με email" if how in ("email", "smtp") else "στο φάκελο εξερχομένων (data/outbox)"
+    where = "με email" if how in ("email", "smtp") else "στα εξερχόμενα (δεν έχει ρυθμιστεί email)"
     return {"summary": f"Στάλθηκε αίτημα πιστωτικού {format_eur(d['amount_cents'])} στον "
                        f"{d['supplier']['name']} {where}.",
             "event_ids": [event.id]}

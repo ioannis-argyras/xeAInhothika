@@ -98,7 +98,9 @@ class Accountant(unittest.TestCase):
         files = list((Path(self.tmp) / "outbox").glob("*.*"))
         self.assertEqual(len(files), 1)
         self.assertIn(Y["email"], files[0].read_bytes().decode("utf-8", "ignore"))
-        self.assertIn("outbox", out["summary"])
+        self.assertIn("εξερχόμενα", out["summary"])
+        self.assertNotIn("data/", out["summary"])
+        self.assertIn("της 14/11/2026", acc.credit_details(self.conn, iid)["body"])
 
     def test_daily_report(self):
         today = date(2026, 11, 14)
