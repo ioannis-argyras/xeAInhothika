@@ -101,7 +101,22 @@ def match_order(conn, msg):
     # Only the address we sent the order to may answer it.
     if (found.payload.get("to") or "").strip().lower() not in _addresses(msg.get("From")):
         return None
+    # Only an email written after the order left (an older reply to the same P-number,
+    # e.g. after a demo reset, is not an answer to this order). 5 minutes for clock drift.
+    sent_at = datetime.strptime(found.at[:19], "%Y-%m-%dT%H:%M:%S").replace(tzinfo=timezone.utc)
+    if _email_moment(msg) < sent_at - timedelta(minutes=5):
+        return None
     return found
+
+
+def _email_moment(msg):
+    try:
+        moment = parsedate_to_datetime(str(msg.get("Date")))
+    except (TypeError, ValueError, IndexError):
+        return datetime.now(timezone.utc)
+    if moment.tzinfo is None:
+        moment = moment.replace(tzinfo=timezone.utc)
+    return moment.astimezone(timezone.utc)
 
 
 # --- Claude ----------------------------------------------------------------------
@@ -168,10 +183,7 @@ def save_email(raw):
 
 
 def _email_date(msg):
-    try:
-        return parsedate_to_datetime(str(msg.get("Date"))).astimezone(timezone.utc).date()
-    except (TypeError, ValueError, IndexError):
-        return datetime.now(timezone.utc).date()
+    return _email_moment(msg).date()
 
 
 def handle_email(conn, raw, client=None):
