@@ -1,5 +1,6 @@
 import os
 import unittest
+from datetime import datetime, timedelta, timezone
 from types import SimpleNamespace
 from unittest import mock
 
@@ -281,6 +282,64 @@ class ToolsTest(MasterTestCase):
 
     def test_load_role_tools_ignores_missing_modules(self):
         tool_catalog.load_role_tools()
+
+
+class SalesVsUsualTest(MasterTestCase):
+    NOW = datetime(2026, 11, 15, 5, 0, tzinfo=timezone.utc)  # Sunday morning, Greece
+
+    def sell(self, days_ago, cents, hour=10):
+        at = (self.NOW - timedelta(days=days_ago)).replace(hour=hour)
+        append_event(self.conn, type="sale.recorded", actor="system", at=at.strftime("%Y-%m-%dT%H:%M:%S.000Z"),
+                     payload={"receipt_id": f"R{days_ago}-{cents}", "lines": [], "total_cents": cents, "payment": "cash"},
+                     idem_key=f"t:{days_ago}:{cents}:{hour}")
+
+    def history(self, usual_cents):
+        for weeks in (1, 2, 3, 4):
+            self.sell(7 * weeks + 1, usual_cents)
+
+    def test_up(self):
+        self.history(40000)
+        self.sell(1, 42400)
+        out = tool_catalog.sales_vs_usual(self.conn, self.NOW)
+        self.assertEqual(out["state"], "up")
+        self.assertEqual(out["pct"], 6)
+        self.assertEqual(out["text"], "Χθες πούλησες 424,00 €, 6% πάνω από τα συνηθισμένα Σάββατα")
+
+    def test_down(self):
+        self.history(40000)
+        self.sell(1, 30000)
+        out = tool_catalog.sales_vs_usual(self.conn, self.NOW)
+        self.assertEqual((out["state"], out["pct"]), ("down", -25))
+        self.assertIn("25% κάτω από τα συνηθισμένα Σάββατα", out["text"])
+
+    def test_same_when_under_two_percent(self):
+        self.history(40000)
+        self.sell(1, 40500)
+        out = tool_catalog.sales_vs_usual(self.conn, self.NOW)
+        self.assertEqual(out["state"], "same")
+        self.assertEqual(out["text"], "Χθες πούλησες 405,00 €, όπως συνήθως τα Σάββατα")
+
+    def test_no_history(self):
+        self.sell(8, 40000)
+        self.sell(1, 42400)
+        out = tool_catalog.sales_vs_usual(self.conn, self.NOW)
+        self.assertEqual(out["state"], "no_history")
+        self.assertEqual(out["text"], "Δεν υπάρχει ακόμα αρκετό ιστορικό για σύγκριση")
+
+    def test_morning_check_writes_finding_and_one_notification(self):
+        self.history(40000)
+        self.sell(1, 42400)
+        real = tool_catalog.sales_vs_usual
+        with mock.patch.object(tool_catalog, "sales_vs_usual", lambda conn: real(conn, self.NOW)):
+            agent.morning_check(self.conn)
+        findings = read_events(self.conn, types=["check.morning_done"])[0].payload["findings"]
+        line = [f for f in findings if f["type"] == "sales_vs_usual"][0]
+        self.assertEqual((line["state"], line["pct"]), ("up", 6))
+        told = [e.payload["text"] for e in read_events(self.conn, types=["notification.sent"])]
+        self.assertEqual(told, [line["text"]])
+
+    def test_store_status_has_sales_vs_usual(self):
+        self.assertIn("sales_vs_usual", tool_catalog.store_status(self.conn))
 
 
 class MorningCheckTest(MasterTestCase):

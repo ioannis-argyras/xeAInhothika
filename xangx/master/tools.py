@@ -16,6 +16,7 @@ from typing import Callable
 
 from xangx.shared import append_event, read_events
 from xangx.shared import views
+from xangx.shared.money import format_eur
 
 ROLE_TOOL_MODULES = (
     "xangx.stock.tools",
@@ -223,6 +224,66 @@ def sales_today(conn):
     return {"sales_count": row["n"], "sales_cents": int(row["total"])}
 
 
+_WEEKDAYS_PLURAL = [
+    "Δευτέρες", "Τρίτες", "Τετάρτες", "Πέμπτες", "Παρασκευές", "Σάββατα", "Κυριακές",
+]
+_USUAL_WEEKS = 4
+_MIN_HISTORY_WEEKS = 2
+
+
+def _sales_between(conn, start, end):
+    row = conn.execute(
+        "SELECT COALESCE(SUM(json_extract(payload, '$.total_cents')), 0) AS total "
+        "FROM events WHERE type = 'sale.recorded' AND at >= ? AND at < ?",
+        (start, end),
+    ).fetchone()
+    return int(row["total"])
+
+
+def _parse_day_start(day_start):
+    return datetime.strptime(day_start[:19], "%Y-%m-%dT%H:%M:%S").replace(tzinfo=timezone.utc)
+
+
+def sales_vs_usual(conn, now=None):
+    """Yesterday's sales (Greek day) against the average of the same weekday in the
+    4 weeks before. Needs at least 2 of those weeks with sales, otherwise no comparison."""
+    now = now or datetime.now(timezone.utc)
+    today_start = _parse_day_start(greek_day_start_utc(now))
+    yesterday_start = greek_day_start_utc(today_start - timedelta(hours=1))
+    yesterday_cents = _sales_between(conn, yesterday_start, greek_day_start_utc(now))
+    y_dt = _parse_day_start(yesterday_start)
+    weekday = (y_dt + greek_offset(y_dt) + timedelta(hours=12)).weekday()
+    plural = _WEEKDAYS_PLURAL[weekday]
+    weeks = []
+    for k in range(1, _USUAL_WEEKS + 1):
+        start = greek_day_start_utc(y_dt - timedelta(days=7 * k) + timedelta(hours=12))
+        end = greek_day_start_utc(_parse_day_start(start) + timedelta(hours=36))
+        total = _sales_between(conn, start, end)
+        if total > 0:
+            weeks.append(total)
+    out = {"yesterday_cents": yesterday_cents, "weekday": plural}
+    if len(weeks) < _MIN_HISTORY_WEEKS:
+        out.update(
+            state="no_history", pct=None, usual_cents=None,
+            text="Δεν υπάρχει ακόμα αρκετό ιστορικό για σύγκριση",
+        )
+        return out
+    usual = sum(weeks) / len(weeks)
+    pct = round((yesterday_cents - usual) / usual * 100)
+    amount = format_eur(yesterday_cents)
+    if abs(yesterday_cents - usual) / usual * 100 < 2:
+        state = "same"
+        text = f"Χθες πούλησες {amount}, όπως συνήθως τα {plural}"
+    elif yesterday_cents > usual:
+        state = "up"
+        text = f"Χθες πούλησες {amount}, {abs(pct)}% πάνω από τα συνηθισμένα {plural}"
+    else:
+        state = "down"
+        text = f"Χθες πούλησες {amount}, {abs(pct)}% κάτω από τα συνηθισμένα {plural}"
+    out.update(state=state, pct=pct, usual_cents=int(round(usual)), text=text)
+    return out
+
+
 def store_status(conn):
     pending = views.pending_approvals(conn)
     return {
@@ -235,6 +296,7 @@ def store_status(conn):
         ],
         "low_products": low_products(conn),
         "sales_today": sales_today(conn),
+        "sales_vs_usual": sales_vs_usual(conn),
         "paused": views.is_paused(conn),
     }
 

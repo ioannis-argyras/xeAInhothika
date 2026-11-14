@@ -421,6 +421,18 @@ def _tell_payments_due(conn, findings, day_start, today):
             idem_key=f"payment-due:{item['invoice_id']}:{today}")
 
 
+def _tell_sales(conn, findings, today):
+    """One line about yesterday's sales against the usual same weekday."""
+    usual = tool_catalog.sales_vs_usual(conn)
+    findings.append({"type": "sales_vs_usual", "state": usual["state"],
+                     "pct": usual["pct"], "text": usual["text"]})
+    if usual["state"] != "no_history":
+        append_event(
+            conn, type="notification.sent", actor="master",
+            payload={"channel": "all", "text": usual["text"]},
+            idem_key=f"sales-vs-usual:{today}")
+
+
 def morning_check(conn):
     """No LLM: collect what needs attention today and write check.morning_done."""
     findings = [
@@ -435,6 +447,7 @@ def morning_check(conn):
         if e.at >= day_start:
             findings.append({"type": "exception", "ref": e.payload.get("ref")})
     _tell_payments_due(conn, findings, day_start, greek_today())
+    _tell_sales(conn, findings, greek_today())
     event, _ = append_event(
         conn, type="check.morning_done", actor="master", payload={"findings": findings}
     )
