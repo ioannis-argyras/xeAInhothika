@@ -41,7 +41,9 @@ CATALOG = {
     "shelf.items_added": _spec(
         ["camera"], "position_id", "product_id", "added", "confidence", "file_ref"
     ),
-    "stock.moved": _spec(["stock", "pos-sim"], "product_id", "qty", "reason"),
+    "stock.moved": _spec(
+        ["stock", "pos-sim", "invoices"], "product_id", "qty", "reason"
+    ),
     "stock.low_detected": _spec(
         ["stock"], "product_id", "on_hand", "per_day", "days_left", "source"
     ),
@@ -90,6 +92,12 @@ CATALOG = {
     "exception.flagged": _spec(["accountant"], "kind", "ref", "note"),
     "payment.reminder_set": _spec(
         ["accountant"], "supplier_id", "invoice_id", "due_on", "amount_cents"
+    ),
+    "payment.asked": _spec(
+        ["accountant"], "invoice_id", "supplier_id", "amount_cents", "invoice_date"
+    ),
+    "payment.recorded": _spec(
+        ["owner", "accountant"], "invoice_id", "method", "amount_cents"
     ),
     # Point of sale (simulation)
     "sale.recorded": _spec(
