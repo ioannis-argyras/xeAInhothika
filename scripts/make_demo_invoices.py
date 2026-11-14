@@ -117,6 +117,8 @@ def render(inv):
     hidden = f'<p class="hidden">{e(inv["hidden"])}</p>' if inv.get("hidden") else ""
     order = f"<br>Αρ. παραγγελίας: {e(inv['order'])}" if inv.get("order") else ""
     d = inv["date"]
+    terms = ("Τοις μετρητοίς" if not s["credit_days"]
+             else f"Επί πιστώσει ({s['credit_days']} ημέρες)")
     return f"""<!doctype html><html lang="el"><head><meta charset="utf-8">
 <title>Τιμολόγιο {e(inv['series'])}-{e(inv['number'])}</title><style>{CSS}</style></head><body>
 <div class="top"><div><h1>{e(s['name'])}</h1>
@@ -131,7 +133,7 @@ def render(inv):
 <table class="sum">{vat_rows}
 <tr><td><b>Σύνολο καθαρής αξίας</b></td><td class=n><b>{_eur(net)}</b></td></tr>
 <tr><td><b>ΠΛΗΡΩΤΕΟ</b></td><td class=n><b>{_eur(total)} €</b></td></tr></table>
-<div class="box">Τρόπος πληρωμής: Επί πιστώσει ({s['credit_days']} ημέρες)<br>
+<div class="box">Τρόπος πληρωμής: {terms}<br>
 Τραπεζικός λογαριασμός (IBAN): {iban}</div>
 <div class="foot">Σελ. 1/1 · Επίδειξη: όλα τα στοιχεία είναι ψεύτικα.</div>
 </body></html>"""
