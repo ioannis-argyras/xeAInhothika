@@ -1,14 +1,16 @@
-"""Background work for invoices: every 5 s, take files from data/inbox/ and process them."""
+"""Background work for invoices: every 5 s, take files from data/inbox/ and process them.
+Every 30 s, also invoices attached to supplier emails (only with IMAP_HOST in .env)."""
 
 import threading
 import time
 import traceback
 
-from xangx.invoices import core
+from xangx.invoices import core, email_in
 from xangx.shared import connect, init_db
 from xangx.shared import views
 
 INTERVAL_S = 5
+EMAIL_INTERVAL_S = 30
 MAX_TRIES = 3
 
 
@@ -32,11 +34,25 @@ def run_once(conn, failures):
     return done
 
 
+def poll_email(conn):
+    """Invoices attached to supplier emails (only with IMAP_HOST in .env)."""
+    if views.is_paused(conn) or email_in.replies.imap_settings() is None:
+        return []
+    return email_in.poll(conn)
+
+
 def _loop(db_path):
     conn = connect(db_path)
     init_db(conn)
     failures = {}
+    last_email = 0.0
     while True:
+        if time.monotonic() - last_email >= EMAIL_INTERVAL_S:
+            last_email = time.monotonic()
+            try:
+                poll_email(conn)
+            except Exception:  # mailbox down or slow: try again next time
+                traceback.print_exc()
         try:
             run_once(conn, failures)
         except Exception:

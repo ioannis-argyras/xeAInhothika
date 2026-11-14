@@ -336,6 +336,86 @@ class InvoiceFlow(unittest.TestCase):
         self.assertIn("summary", lst)
 
 
+class EmailIntake(unittest.TestCase):
+    """Invoices attached to supplier emails. No network: raw emails are built here."""
+
+    PDF = b"%PDF-1.4 fake invoice"
+
+    def setUp(self):
+        from xangx.invoices import email_in
+        self.ei = email_in
+        self.tmp = tempfile.mkdtemp()
+        self.env = mock.patch.dict(os.environ, {"XANGX_DATA_DIR": self.tmp, "XANGX_FAKE_LLM": "1",
+                                                "XANGX_DEMO_SUPPLIER_EMAIL": ""})
+        self.env.start()
+        self.conn = connect(":memory:")
+        init_db(self.conn)
+        seed_reference(self.conn)
+
+    def tearDown(self):
+        self.conn.close()
+        self.env.stop()
+        shutil.rmtree(self.tmp, ignore_errors=True)
+
+    def _raw(self, sender, attachments=(("A-2271.pdf", "application/pdf", PDF),), msg_id="<m1@x>"):
+        from email.message import EmailMessage
+        m = EmailMessage()
+        m["From"], m["To"], m["Subject"], m["Message-ID"] = sender, "shop@example.com", "Τιμολόγιο", msg_id
+        m.set_content("Καλησπέρα, σας στέλνουμε το τιμολόγιο.")
+        for name, ctype, data in attachments:
+            maintype, subtype = ctype.split("/")
+            m.add_attachment(data, maintype=maintype, subtype=subtype, filename=name)
+        return m.as_bytes()
+
+    def _received(self):
+        return read_events(self.conn, types=["invoice.received"])
+
+    def test_supplier_pdf_becomes_invoice_received(self):
+        new = self.ei.handle_email(self.conn, self._raw("Υμηττού <paraggelies.ymittou@example.com>"))
+        self.assertEqual(len(new), 1)
+        [e] = self._received()
+        self.assertEqual(e.payload["source"], "email")
+        self.assertEqual(e.payload["from"], "paraggelies.ymittou@example.com")
+        self.assertTrue((Path(self.tmp) / e.payload["file_ref"]).exists())
+        self.assertEqual(list((Path(self.tmp) / "email_in").iterdir()), [])  # nothing left behind
+
+    def test_same_email_twice_gives_one_invoice(self):
+        raw = self._raw("paraggelies.ymittou@example.com")
+        self.ei.handle_email(self.conn, raw)
+        self.assertEqual(self.ei.handle_email(self.conn, raw), [])
+        self.assertEqual(len(self._received()), 1)
+
+    def test_unknown_sender_is_ignored(self):
+        self.assertEqual(self.ei.handle_email(self.conn, self._raw("someone@spam.example")), [])
+        self.assertEqual(self._received(), [])
+
+    def test_demo_sender_is_allowed(self):
+        with mock.patch.dict(os.environ, {"XANGX_DEMO_SUPPLIER_EMAIL": "Demo@Example.com"}):
+            self.assertEqual(len(self.ei.handle_email(self.conn, self._raw("demo@example.com"))), 1)
+
+    def test_only_invoice_files_are_taken(self):
+        raw = self._raw("paraggelies.galakto@example.com", attachments=(
+            ("notes.txt", "text/plain", b"hello"), ("scan.jpg", "image/jpeg", b"\xff\xd8jpeg"),
+            ("invoice", "application/pdf", self.PDF)))
+        self.assertEqual(len(self.ei.handle_email(self.conn, raw)), 2)
+        self.assertEqual(sorted(e.payload["file_ref"][-4:] for e in self._received()), [".jpg", ".pdf"])
+
+    def test_email_without_attachment_writes_nothing(self):
+        self.assertEqual(self.ei.handle_email(self.conn, self._raw(
+            "paraggelies.ymittou@example.com", attachments=())), [])
+
+    def test_email_invoice_goes_through_the_normal_flow(self):
+        from xangx.invoices import worker
+        self.ei.handle_email(self.conn, self._raw("paraggelies.ymittou@example.com"))
+        worker.run_once(self.conn, {})
+        self.assertEqual(len(read_events(self.conn, types=["invoice.read"])), 1)
+
+    def test_no_mailbox_settings_no_poll(self):
+        from xangx.invoices import worker
+        with mock.patch.dict(os.environ, {"IMAP_HOST": ""}):
+            self.assertEqual(worker.poll_email(self.conn), [])
+
+
 class SendDemo(unittest.TestCase):
     """The script that puts the 3 demo invoices in myDATA dev. No network."""
 

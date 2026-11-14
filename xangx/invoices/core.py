@@ -83,9 +83,10 @@ def guess_product(conn, supplier_id, name):
 
 # ---------- 1. file in ----------
 
-def ingest_file(conn, path):
+def ingest_file(conn, path, source=None, sender=None):
     """Move one inbox file to data/files/<sha256>.<ext> and write invoice.received.
 
+    source/sender: set by the email intake ("email", the From address).
     Returns (event, created). The same file twice gives one event.
     """
     path = Path(path)
@@ -101,10 +102,12 @@ def ingest_file(conn, path):
     else:
         shutil.move(str(path), str(target))
     invoice_id = f"INV-{sha[:8]}"
+    payload = {"invoice_id": invoice_id, "source": source or INBOX_EXT[ext],
+               "file_ref": f"files/{sha}{ext}", "sha256": sha}
+    if sender:
+        payload["from"] = sender
     return append_event(
-        conn, type="invoice.received", actor=ACTOR,
-        payload={"invoice_id": invoice_id, "source": INBOX_EXT[ext],
-                 "file_ref": f"files/{sha}{ext}", "sha256": sha},
+        conn, type="invoice.received", actor=ACTOR, payload=payload,
         subject=f"invoice:{invoice_id}", idem_key=f"file:{sha}",
     )
 
