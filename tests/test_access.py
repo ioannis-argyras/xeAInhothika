@@ -103,7 +103,23 @@ class AccessTest(unittest.TestCase):
         # Locked even with the right code, until the window passes.
         self.assertEqual(self.login().status_code, 429)
         # Another client is not locked.
-        self.assertEqual(self.login(headers={"x-forwarded-for": "203.0.113.9"}).status_code, 303)
+        self.assertEqual(self.login(headers={"cf-connecting-ip": "203.0.113.9"}).status_code, 303)
+
+    def test_spoofed_forwarded_for_does_not_dodge_the_limit(self):
+        self.with_code()
+        for i in range(5):
+            r = self.login("nope", headers={"x-forwarded-for": f"198.51.100.{i}"})
+            self.assertEqual(r.status_code, 401)
+        r = self.login(headers={"x-forwarded-for": "198.51.100.99"})
+        self.assertEqual(r.status_code, 429)
+
+    def test_each_cf_connecting_ip_counts_separately(self):
+        self.with_code()
+        for _ in range(5):
+            r = self.login("nope", headers={"cf-connecting-ip": "203.0.113.1"})
+            self.assertEqual(r.status_code, 401)
+        self.assertEqual(self.login(headers={"cf-connecting-ip": "203.0.113.1"}).status_code, 429)
+        self.assertEqual(self.login(headers={"cf-connecting-ip": "203.0.113.2"}).status_code, 303)
 
     def test_link_login_sets_cookie_and_drops_code(self):
         self.with_code()

@@ -49,9 +49,12 @@ def _is_logged_in(request, code):
 
 
 def _client_ip(request):
-    forwarded = request.headers.get("x-forwarded-for", "")
-    if forwarded.strip():
-        return forwarded.split(",")[0].strip()
+    # Never read X-Forwarded-For here: the visitor writes it, so it can be changed
+    # on every request to dodge the limit. Cloudflare always overwrites
+    # CF-Connecting-IP; otherwise uvicorn already put the real IP in client.host.
+    cf_ip = request.headers.get("cf-connecting-ip", "").strip()
+    if cf_ip:
+        return cf_ip
     return request.client.host if request.client else "unknown"
 
 
