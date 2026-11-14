@@ -1,11 +1,16 @@
-"""Download of the month's folder for the accountant: GET /accountant/month?month=2026-11 (without month: this month)."""
+"""Accountant pages and API.
+
+GET /accountant/month?month=2026-11 : the month's folder (without month: this month).
+GET /accountant/trends?days=30      : sales per day, prices, purchases (read only, JSON).
+"""
 
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, HTTPException
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 
 from xangx.accountant import month as month_mod
+from xangx.accountant import trends as trends_mod
 from xangx.invoices import core as invoices
 from xangx.shared import connect, init_db
 
@@ -28,3 +33,15 @@ def month_folder(month: str = ""):
         conn.close()
     return FileResponse(invoices.data_dir() / file_ref, media_type="application/zip",
                         filename=f"fakelos-{month}.zip", headers={"Cache-Control": "no-store"})
+
+
+@router.get("/accountant/trends")
+def trends(days: int = trends_mod.DEFAULT_DAYS):
+    conn = connect()
+    try:
+        init_db(conn)
+        data = trends_mod.trends(conn, days)
+    finally:
+        conn.close()
+    data["summary"] = trends_mod.summary_text(data)
+    return JSONResponse(data, headers={"Cache-Control": "no-store"})
