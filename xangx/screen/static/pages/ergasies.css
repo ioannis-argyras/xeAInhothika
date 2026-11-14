@@ -1,0 +1,28 @@
+/* Εργασίες: οι κανόνες του πίνακα είναι από το design/kateuthynseis-v2/index.html (#ergasies). */
+/* ---------- λίστες σαν πίνακας ---------- */
+.tbl .tr2{display:grid;align-items:center;gap:16px;padding:0 22px;min-height:50px;border-top:1px solid var(--hair)}
+.tbl .th{min-height:44px;background:var(--strip);color:var(--muted);font-weight:700;border-top:0;border-bottom:1px solid var(--line)}
+.tbl .grp{padding:0 22px;min-height:40px;background:var(--tint);font-weight:700;border-top:1px solid var(--line);border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px}
+.tbl .grp i{font-size:18px;color:var(--n2)}
+.tbl .grp span{margin-left:auto;font-weight:400;color:var(--muted)}
+.tbl .n{text-align:right}
+.tbl a.n{color:var(--n2);font-weight:700;text-decoration:underline;text-underline-offset:4px;text-decoration-color:#9FB0C7;min-height:44px;display:flex;align-items:center;justify-content:flex-end}
+.tbl .diff{background:#FBEFEB}
+.tbl .sub{display:none}
+.how{display:flex;align-items:center;gap:6px}
+.how i{font-size:16px;color:var(--n3)}
+.how.yes i{color:var(--ink)}
+.tasks .tr2{grid-template-columns:72px 1fr 260px 140px}
+.tasks .tr2>span:nth-child(2){min-width:0;overflow-wrap:anywhere}
+.tasks .sub a{color:var(--n2);font-weight:700;text-decoration:underline;text-underline-offset:4px;text-decoration-color:#9FB0C7}
+.tbl .retry{margin:0 22px 18px;color:var(--ink);border-color:var(--line)}
+.tabs{grid-template-columns:repeat(5,1fr)}
+.tabs a.on{color:var(--band);font-weight:700}
+
+@media (max-width:720px){
+  .tbl .tr2{padding:0 16px}
+  .tbl .th{display:none}
+  .tbl .sub{display:block}
+  .tasks .tr2{grid-template-columns:48px 1fr!important;padding:12px 16px;align-items:start}
+  .tasks .tr2 .c{display:none}
+}

@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="el">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Τιμολόγια · Xangxothaika</title>
+<link rel="stylesheet" href="/static/vendor/phosphor/style.css">
+<link rel="stylesheet" href="/static/vendor/phosphor/bold/style.css">
+<link rel="stylesheet" href="/static/vendor/phosphor/fill/style.css">
+<link rel="stylesheet" href="/static/app.css">
+<link rel="stylesheet" href="/static/pages/timologia.css">
+</head>
+<body>
+<div class="banner" id="paused-banner" role="status" hidden>Όλες οι ενέργειες είναι σε παύση. Πάτα «Συνέχισε» για να ξαναρχίσουν.</div>
+<div class="shell">
+<header class="top">
+  <a class="brand" href="/"><b>Xangxothaika</b><span>Mini Market 24/7 · Παγκράτι</span></a>
+  <nav class="links" aria-label="Κύρια">
+    <a href="/">Σήμερα</a><a href="/#synomilia">Συνομιλία</a><a href="/static/pages/ergasies.html">Εργασίες</a><a class="on" href="/static/pages/timologia.html" aria-current="page">Τιμολόγια</a><a href="/static/pages/rafi.html">Ράφι</a><a href="/#mixani">Μηχανή του χρόνου</a>
+  </nav>
+  <div class="right">
+    <span class="live"><i id="live-dot"></i><span id="live-text">Σύνδεση…</span></span>
+    <button class="btn qd" id="stop-btn" type="button"><i class="ph ph-pause"></i><span>Παύση όλων</span></button>
+    <button class="ibtn" id="stop-ibtn" type="button" aria-label="Παύση όλων"><i class="ph ph-pause"></i></button>
+  </div>
+</header>
+
+<section id="timologia" class="screen on">
+  <div class="band"><div class="in">
+    <div>
+      <div class="kick"><i class="ph ph-receipt"></i><span id="kick">Τιμολόγια</span></div>
+      <h1 id="title" aria-live="polite">Φόρτωση…</h1>
+      <p class="lead" id="lead" aria-live="polite" hidden></p>
+    </div>
+    <div class="sum-top" id="sum-top" hidden><div class="kick">Σύνολο</div><div class="huge" id="sum-big"></div></div>
+  </div></div>
+  <div class="wrap" id="wrap" aria-busy="true">
+    <section class="card tbl list" id="list" aria-label="Τιμολόγια σήμερα" hidden>
+      <div class="tr2 th"><span>Προμηθευτής</span><span>Τιμολόγιο</span><span class="n">Σύνολο</span><span>Κατάσταση</span></div>
+      <div id="list-body"></div>
+    </section>
+    <div class="row2 g-inv" id="detail" hidden>
+      <div class="col">
+        <section class="card tbl inv" id="lines-card" aria-label="Γραμμές τιμολογίου">
+          <div class="hd"><b><i class="ph ph-list-dashes"></i><span id="lines-title">Γραμμές του τιμολογίου</span></b><span class="m" id="lines-count"></span></div>
+          <div class="tr2 th" id="lines-th"></div>
+          <div id="lines-body"></div>
+          <div class="total"><div class="tr2 th" id="lines-total"></div></div>
+        </section>
+        <section class="card checks" id="checks-card" aria-label="Έλεγχοι">
+          <div class="hd"><b><i class="ph ph-seal-check"></i>Έλεγχοι</b><span class="m">χωρίς AI, με κανόνες</span></div>
+          <div id="checks-body"></div>
+        </section>
+      </div>
+      <div class="col" id="credit-col" hidden>
+        <article class="stage" aria-labelledby="credit-q">
+          <div class="shd"><span><i class="ph ph-receipt"></i>Θέλει εσένα</span><span id="credit-at"></span></div>
+          <div class="body one">
+            <div>
+              <h2 id="credit-q"></h2>
+              <p class="why" id="credit-why"></p>
+              <div class="will" id="credit-will"></div>
+              <div class="acts">
+                <button class="btn yes" id="credit-yes" type="button"><i class="ph ph-paper-plane-tilt"></i>Ναι, στείλε το αίτημα</button>
+                <button class="btn no" id="credit-no" type="button">Όχι</button>
+                <p class="msg" id="credit-msg" role="status"></p>
+              </div>
+            </div>
+          </div>
+        </article>
+      </div>
+    </div>
+    <section class="card" id="problem" hidden>
+      <p class="empty" id="problem-text"></p>
+      <p class="empty"><a class="back-link" href="/static/pages/timologia.html">Όλα τα τιμολόγια</a></p>
+    </section>
+  </div>
+</section>
+</div>
+
+<nav class="tabs" aria-label="Καρτέλες">
+  <a href="/"><i class="ph ph-sun-horizon"></i>Σήμερα</a>
+  <a href="/#synomilia"><i class="ph ph-chat-circle"></i>Συνομιλία</a>
+  <a href="/static/pages/ergasies.html"><i class="ph ph-list-checks"></i>Εργασίες</a>
+  <a class="on" href="/static/pages/timologia.html" aria-current="page"><i class="ph-fill ph-receipt"></i>Τιμολόγια</a>
+  <a href="/static/pages/rafi.html"><i class="ph ph-package"></i>Ράφι</a>
+</nav>
+<script src="/static/pages/timologia.js"></script>
+</body>
+</html>

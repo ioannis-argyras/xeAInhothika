@@ -1,0 +1,62 @@
+/* Τιμολόγια: οι κανόνες του πίνακα, των ελέγχων και της σκηνής είναι από το
+   design/kateuthynseis-v2/index.html (#timologio). */
+/* ---------- λίστες σαν πίνακας ---------- */
+.tbl .tr2{display:grid;align-items:center;gap:16px;padding:0 22px;min-height:50px;border-top:1px solid var(--hair)}
+.tbl .th{min-height:44px;background:var(--strip);color:var(--muted);font-weight:700;border-top:0;border-bottom:1px solid var(--line)}
+.tbl .n{text-align:right}
+.tbl .diff{background:#FBEFEB}
+.tbl .sub{display:none}
+
+/* ---------- τιμολόγιο ---------- */
+.inv .tr2{grid-template-columns:1fr 120px 90px 110px 150px}
+.inv.noorder .tr2{grid-template-columns:1fr 110px 150px}
+.total .tr2{min-height:48px}
+.inv .total .tr2{border-top:1px solid var(--line);border-bottom:0;grid-template-columns:1fr auto}
+.total .sum{color:var(--ink)}
+.total .sum b{font-size:var(--l)}
+.checks .ck{display:grid;grid-template-columns:24px 1fr;gap:10px;padding:12px 22px;border-top:1px solid var(--hair);align-items:start}
+.checks .ck:first-child{border-top:0}
+.checks .ck i{font-size:20px;color:var(--ok);margin-top:1px}
+.checks .ck.x i{color:var(--alert)}
+.up{display:inline-flex;align-items:center;gap:2px;color:var(--alert);font-weight:700}
+.up.down{color:var(--ok)}
+.was{display:block}
+.huge{font-size:var(--xl);font-weight:700;letter-spacing:-.03em;line-height:1}
+.sum-top{text-align:right}
+.sum-top .kick{justify-content:flex-end}
+.stage h2{font-size:min(var(--xl),40px)}
+.will{margin-top:16px}
+.will div{display:grid;grid-template-columns:28px 1fr;gap:8px;padding:12px 0;border-top:1px solid rgba(211,219,230,.12);color:var(--n5)}
+.will i{font-size:18px;color:#fff;margin-top:1px}
+.g-inv{grid-template-columns:minmax(0,1fr) 400px;align-items:start}
+.g-inv.solo{grid-template-columns:minmax(0,1fr)}
+.acts .msg{flex-basis:100%;color:var(--n5)}
+.acts .msg:empty{display:none}
+
+/* ---------- λίστα τιμολογίων ---------- */
+.list .tr2{grid-template-columns:minmax(0,1.1fr) 150px 130px minmax(0,1.4fr)}
+.list a.tr2{color:var(--ink)}
+.list a.tr2:hover{background:var(--strip)}
+.list a.tr2>span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.list a.tr2 .st{white-space:normal}
+.list .tr2 .go{font-weight:700}
+.back-link{color:var(--n2);font-weight:700;text-decoration:underline;text-underline-offset:4px;text-decoration-color:#9FB0C7}
+.kick a{text-decoration:underline;text-underline-offset:4px;text-decoration-color:rgba(163,180,204,.5)}
+.tbl .retry{margin:0 22px 18px;color:var(--ink);border-color:var(--line)}
+.tabs{grid-template-columns:repeat(5,1fr)}
+.tabs a.on{color:var(--band);font-weight:700}
+
+@media (max-width:1100px){
+  .g-inv{grid-template-columns:minmax(0,1fr)}
+}
+@media (max-width:720px){
+  .tbl .tr2{padding:0 16px}
+  .tbl .th{display:none}
+  .tbl .sub{display:block}
+  .inv .tr2{grid-template-columns:1fr auto;padding:12px 16px;gap:2px 12px}
+  .inv .tr2 .c{display:none}
+  .g-inv>.col:last-child{order:-1}
+  .list .tr2,.list a.tr2{grid-template-columns:minmax(0,1fr) auto;padding:12px 16px;gap:2px 12px}
+  .list .tr2 .c{display:none}
+  .list a.tr2 .st{grid-column:1/-1;white-space:normal}
+}
