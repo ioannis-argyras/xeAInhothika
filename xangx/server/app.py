@@ -3,6 +3,7 @@
 import asyncio
 import importlib
 import json
+import mimetypes
 import re
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -18,6 +19,9 @@ from xangx.shared import views
 from xangx.shared.catalog import CATALOG
 from xangx.shared.db import connect, init_db
 from xangx.shared.events import EventError, append_event, read_events
+
+# Windows has no font types in its registry: without this the .woff2 files go out as octet-stream.
+mimetypes.add_type("font/woff2", ".woff2")
 
 STATIC_DIR = Path(__file__).resolve().parent.parent / "screen" / "static"
 

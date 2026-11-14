@@ -4,77 +4,83 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Xangxothaika</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fira+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap&subset=greek" rel="stylesheet">
+<link rel="stylesheet" href="/static/vendor/phosphor/style.css">
+<link rel="stylesheet" href="/static/vendor/phosphor/bold/style.css">
+<link rel="stylesheet" href="/static/vendor/phosphor/fill/style.css">
 <link rel="stylesheet" href="/static/app.css">
 </head>
 <body>
-<div class="app">
-  <aside class="side">
-    <div class="brand">
-      <svg width="26" height="26" viewBox="0 0 26 26" aria-hidden="true"><path d="M3 6.5a2 2 0 0 1 2-2h10.6a2 2 0 0 1 1.5.7l5.6 6.6a2 2 0 0 1 0 2.6l-5.6 6.6a2 2 0 0 1-1.5.7H5a2 2 0 0 1-2-2z" fill="#F5C518"/><circle cx="16.6" cy="13" r="2" fill="#072E33"/></svg>
-      <b>Xangxothaika</b>
+<div class="banner" id="paused-banner" role="status" hidden>Όλες οι ενέργειες είναι σε παύση. Πάτα «Συνέχισε» για να ξαναρχίσουν.</div>
+<div class="shell">
+<header class="top">
+  <a class="brand" href="#arxiki"><b>Xangxothaika</b><span>Mini Market 24/7 · Παγκράτι</span></a>
+  <nav class="links" aria-label="Κύρια">
+    <a href="#arxiki" data-k="arxiki">Σήμερα</a><a href="#synomilia" data-k="synomilia">Συνομιλία</a>
+  </nav>
+  <div class="right">
+    <span class="live"><i id="live-dot"></i><span id="live-text">Σύνδεση…</span></span>
+    <button class="btn qd" id="stop-btn" type="button"><i class="ph ph-pause"></i><span>Παύση όλων</span></button>
+    <button class="ibtn" id="stop-ibtn" type="button" aria-label="Παύση όλων"><i class="ph ph-pause"></i></button>
+  </div>
+</header>
+
+<!-- ΣΗΜΕΡΑ -->
+<section id="s-arxiki" class="screen">
+  <div class="band"><div class="in">
+    <div>
+      <div class="kick"><i class="ph ph-sun-horizon"></i><span id="home-kick">Σήμερα</span></div>
+      <p class="lead" id="home-lead"></p>
     </div>
-    <div class="store"><b>Mini Market 24/7</b><span>Παγκράτι · ανοιχτό 24 ώρες</span></div>
-    <nav class="nav">
-      <a href="#arxiki" data-k="arxiki">Αρχική<span class="cnt" id="nav-cnt"></span></a>
-      <a href="#synomilia" data-k="synomilia">Συνομιλία</a>
-    </nav>
-    <div class="foot"><div><span class="dot" id="live-dot"></span><span id="live-text">Σύνδεση…</span></div></div>
-  </aside>
-
-  <main class="main">
-    <section class="screen" id="s-arxiki">
-      <div class="top">
-        <div><h1 id="today-title">Αρχική</h1><p id="today-sub"></p></div>
-        <button class="stop" id="stop-btn" type="button">Σταμάτα όλες τις ενέργειες</button>
-      </div>
-      <div class="banner" id="paused-banner" hidden>Όλες οι ενέργειες είναι σε παύση. Πάτα «Συνέχισε» για να ξαναρχίσουν.</div>
-      <div class="body">
-        <div class="dash">
-          <div class="focus">
-            <div class="hd"><h2>Θέλουν εσένα</h2><span id="need-count"></span></div>
-            <div id="needs"></div>
-          </div>
-          <div class="panel">
-            <div class="ph-head"><h2>Σήμερα</h2><span>από το ταμείο (προσομοίωση)</span></div>
-            <div class="kpis">
-              <div class="kpi"><small>Πωλήσεις</small><strong class="num" id="k-sales">0,00 €</strong><div class="d" id="k-count"></div></div>
-              <div class="kpi"><small>Προϊόντα σε χαμηλό</small><strong class="num" id="k-low">0</strong><div class="d">θέλουν παραγγελία</div></div>
-            </div>
-          </div>
-        </div>
-        <div class="row2">
-          <div class="panel">
-            <div class="ph-head"><h2>Ράφια</h2><span>τελευταίες κινήσεις</span></div>
-            <div id="shelves"></div>
-          </div>
-          <div class="panel">
-            <div class="ph-head"><h2>Τι έκανα σήμερα</h2><span>ζωντανά</span></div>
-            <div class="feed" id="feed"></div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <section class="screen" id="s-synomilia">
-      <div class="top">
-        <div><h1>Συνομιλία</h1><p>Ρώτα ή ζήτα κάτι από το Xangxothaika.</p></div>
-      </div>
-      <div class="body">
-        <div class="panel conv" id="conv">
-          <p class="empty" id="conv-empty">Δεν υπάρχει ακόμα κάποια συνομιλία. Γράψε κάτω, π.χ. «Πώς πάμε σήμερα;».</p>
-        </div>
-      </div>
-    </section>
-
-    <form class="ask" id="ask" autocomplete="off">
-      <input id="ask-input" type="text" placeholder="Πες στο Xangxothaika…" aria-label="Μήνυμα προς το Xangxothaika">
-      <button class="send" type="submit" aria-label="Στείλε">Στείλε</button>
+    <form class="ask" id="ask-home" autocomplete="off">
+      <input id="ask-home-input" type="text" placeholder="Ζήτα κάτι, π.χ. «Τακτοποίησε τις εκκρεμότητες»" aria-label="Ζήτα κάτι από τον συνεργάτη">
+      <button class="send" type="submit" aria-label="Στείλε στον συνεργάτη"><i class="ph-bold ph-arrow-up"></i></button>
     </form>
-  </main>
+  </div></div>
+  <div class="wrap">
+    <div class="row2 g-home">
+      <article class="stage" id="home-stage"></article>
+      <aside class="card" id="home-team" aria-label="Η ομάδα"></aside>
+    </div>
+    <section class="card mt" aria-label="Η μέρα του μαγαζιού">
+      <div class="hd"><b><i class="ph ph-clock"></i>Η μέρα του μαγαζιού</b></div>
+      <div class="ruler" id="ruler"></div>
+      <div class="story" id="story"></div>
+    </section>
+  </div>
+</section>
+
+<!-- ΣΥΝΟΜΙΛΙΑ -->
+<section id="s-synomilia" class="screen">
+  <div class="band"><div class="in">
+    <div>
+      <div class="kick"><i class="ph ph-user"></i><span id="chat-kick">Συνομιλία</span></div>
+      <h1 id="chat-title">Ρώτα ή ζήτα κάτι</h1>
+    </div>
+  </div></div>
+  <div class="wrap">
+    <div class="row2 g-chat solo" id="chat-grid">
+      <div class="col">
+        <section class="card" aria-label="Συνομιλία">
+          <div class="hd"><b><i class="ph ph-circles-three"></i>Συνεργάτης</b></div>
+          <div id="conv">
+            <p class="empty" id="conv-empty">Δεν υπάρχει ακόμα κάποια συνομιλία. Γράψε κάτω, π.χ. «Πώς πάμε σήμερα;».</p>
+          </div>
+        </section>
+        <form class="ask full" id="ask-chat" autocomplete="off">
+          <input id="ask-chat-input" type="text" placeholder="Γράψε στον συνεργάτη…" aria-label="Μήνυμα προς τον συνεργάτη">
+          <button class="send" type="submit" aria-label="Στείλε στον συνεργάτη"><i class="ph-bold ph-arrow-up"></i></button>
+        </form>
+      </div>
+      <article class="stage chat" id="chat-stage" hidden></article>
+    </div>
+  </div>
+</section>
 </div>
+
+<nav class="tabs" aria-label="Καρτέλες">
+  <a href="#arxiki" data-k="arxiki" data-i="sun-horizon"><i class="ph ph-sun-horizon"></i>Σήμερα</a>
+  <a href="#synomilia" data-k="synomilia" data-i="chat-circle"><i class="ph ph-chat-circle"></i>Συνομιλία</a>
+</nav>
 <script src="/static/app.js"></script>
 </body>
 </html>
