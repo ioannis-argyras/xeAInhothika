@@ -42,3 +42,4 @@ body.bare .back{display:inline-flex}
 .res2 .msg{padding:0 22px 12px}
 .res2 .ck .spin{color:var(--n3)}
 .pair{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.band .in.w820{max-width:820px}.band .in.w1040{max-width:1040px}
