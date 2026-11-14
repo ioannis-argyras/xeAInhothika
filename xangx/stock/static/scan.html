@@ -4,58 +4,58 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Παραλαβή · Xangxothaika</title>
-<style>
-  :root{--bg:#111;--panel:#1c1c1c;--ink:#eee;--muted:#a8a8a8;--ok:#2e9e6b;--warn:#e0a63a;--line:#333}
-  body{font:17px system-ui,sans-serif;margin:0;padding:12px 12px calc(12px + env(safe-area-inset-bottom));background:var(--bg);color:var(--ink)}
-  h1{font-size:19px;margin:4px 0 8px}
-  #count{font-size:56px;font-weight:700;line-height:1.1;font-variant-numeric:tabular-nums}
-  #unit{color:var(--muted);margin-top:-2px}
-  #last{min-height:1.5em;font-size:19px;font-weight:600;margin:6px 0}
-  #last.ok{color:var(--ok)} #last.warn{color:var(--warn)}
-  video{width:100%;border-radius:10px;background:#000;max-height:38vh;object-fit:cover;margin:6px 0}
-  label{display:block;margin:10px 0 4px;color:var(--muted)}
-  .row{display:flex;gap:8px}
-  input{flex:1;min-width:0;font-size:20px;padding:12px;border-radius:10px;border:1px solid var(--line);background:var(--panel);color:var(--ink)}
-  button{min-height:48px;padding:12px 16px;font-size:18px;border:0;border-radius:12px;background:#3a3a3a;color:#fff}
-  button.main{display:block;width:100%;margin:14px 0 8px;background:var(--ok);font-size:20px;padding:16px}
-  button:disabled{background:#333;color:#888}
-  button:focus-visible,input:focus-visible{outline:3px solid #7fc8a9;outline-offset:2px}
-  #st{min-height:1.4em;color:var(--muted);font-size:15px}
-  #st a{color:#7fc8a9}
-  [hidden]{display:none!important}
-  #trial{background:var(--warn);color:#111;font-weight:700;border-radius:10px;padding:8px 12px;margin:0 0 8px}
-  section{background:var(--panel);border-radius:12px;padding:10px 12px;margin:10px 0}
-  section h2{font-size:16px;margin:0 0 6px;color:var(--muted);font-weight:600}
-  ul{margin:0;padding-left:20px;line-height:1.6}
-  dialog{background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:14px;padding:16px;width:min(92vw,420px)}
-  dialog::backdrop{background:rgba(0,0,0,.6)}
-  dialog .row button{flex:1}
-</style>
+<link rel="stylesheet" href="/static/vendor/phosphor/style.css">
+<link rel="stylesheet" href="/static/vendor/phosphor/fill/style.css">
+<link rel="stylesheet" href="/static/app.css">
+<link rel="stylesheet" href="/stock/style.css">
 </head>
 <body>
-<h1 id="title">Παραλαβή</h1>
-<p id="trial" hidden>Δοκιμή · δεν αποθηκεύεται τίποτα</p>
-<div id="count">…</div>
-<div id="unit">τεμάχια ήρθαν από όσα παραγγείλαμε</div>
-<div id="last" aria-live="polite"></div>
-<video id="v" autoplay playsinline muted hidden></video>
-<p id="st">Ξεκινώ…</p>
-
-<label for="man">Με το χέρι ή σκάνερ USB</label>
-<div class="row">
-  <input id="man" inputmode="numeric" autocomplete="off" enterkeyhint="done" placeholder="π.χ. 5449000000996">
-  <button id="add">Πρόσθεσε</button>
+<div class="page">
+  <div class="band"><div class="in w1040">
+    <div style="flex:1">
+      <div class="kick"><a class="back" href="/"><i class="ph ph-caret-left"></i>Πίσω</a><span><i class="ph ph-barcode"></i> <span id="title">Παραλαβή</span></span></div>
+      <h1><span class="huge" id="count">…</span></h1>
+      <p class="lead">τεμάχια ήρθαν από όσα παραγγείλαμε</p>
+      <div class="prog" id="prog" aria-hidden="true"><i id="bar"></i></div>
+      <p class="trial" id="trial" hidden>Δοκιμή · δεν αποθηκεύεται τίποτα</p>
+    </div>
+  </div></div>
+  <div class="wrap">
+    <div class="row2 g-par">
+      <div class="col">
+        <section class="card">
+          <div class="hd" aria-live="polite"><b id="last"><i class="ph ph-barcode"></i>Στόχευσε το barcode</b><span class="m" id="lastOf"></span></div>
+          <video class="scanvid" id="v" autoplay playsinline muted hidden></video>
+          <div class="fld">
+            <label for="man">Με το χέρι ή σκάνερ USB</label>
+            <div class="inp"><span class="box"><i class="ph ph-barcode"></i><input id="man" inputmode="numeric" autocomplete="off" enterkeyhint="done" placeholder="π.χ. 5449000000996"></span><button class="btn q" id="add" style="height:52px">Πρόσθεσε</button></div>
+            <p class="m" id="st" style="margin-top:8px">Ξεκινώ…</p>
+          </div>
+        </section>
+        <section class="card got miss" id="got" hidden>
+          <div class="hd"><b><i class="ph ph-check-square"></i>Ήρθαν όλα</b><span class="m" id="gotOf"></span></div>
+          <div id="gotList"></div>
+        </section>
+      </div>
+      <div class="col">
+        <section class="card miss" id="miss" hidden>
+          <div class="hd" style="background:#FBEFEB"><b><i class="ph ph-warning-circle" style="color:var(--alert)"></i>Λείπουν</b><span class="warn" id="missOf"></span></div>
+          <div id="missList"></div>
+        </section>
+        <section class="card miss" id="extra" hidden>
+          <div class="hd"><b><i class="ph ph-question"></i>Δεν ήταν στην παραγγελία</b></div>
+          <div id="extraList"></div>
+        </section>
+        <button class="btn yes wide" id="done" style="height:56px"><i class="ph ph-check"></i>Κλείσε την παραλαβή</button>
+      </div>
+    </div>
+  </div>
 </div>
 
-<section id="miss" hidden><h2>Λείπουν</h2><ul id="missList"></ul></section>
-<section id="extra" hidden><h2>Δεν ήταν στην παραγγελία</h2><ul id="extraList"></ul></section>
-
-<button class="main" id="done">Κλείσε την παραλαβή</button>
-
 <dialog id="ask" aria-labelledby="askTitle">
-  <h2 id="askTitle" tabindex="-1" style="font-size:19px;margin:0 0 8px">Να κλείσει η παραλαβή;</h2>
-  <p id="askText"></p>
-  <div class="row"><button id="no">Όχι, συνεχίζω</button><button id="yes" style="background:var(--ok)">Ναι, κλείσε</button></div>
+  <h2 id="askTitle" tabindex="-1">Να κλείσει η παραλαβή;</h2>
+  <p id="askText" class="m"></p>
+  <div class="acts"><button class="btn q" id="no">Όχι, συνεχίζω</button><button class="btn yes" id="yes">Ναι, κλείσε</button></div>
 </dialog>
 
 <script>
@@ -76,6 +76,7 @@ function closedNote(s) {
   const a = document.createElement('a');
   a.href = '?order=' + encodeURIComponent(order) + '&dokimi=1';
   a.textContent = 'Άνοιξε τη δοκιμή';
+  a.style.cssText = 'font-weight:700;text-decoration:underline';
   st.appendChild(a);
 }
 
@@ -87,20 +88,51 @@ async function post(path, body) {
   return j;
 }
 
-function list(el, box, items, text) {
-  el.innerHTML = '';
-  for (const it of items) { const li = document.createElement('li'); li.textContent = text(it); el.appendChild(li); }
-  box.hidden = !items.length;
+// One row: number, name (with an optional muted second line), optional icon.
+function row(num, name, sub, cls, icon) {
+  const d = document.createElement('div'); d.className = 'ms';
+  const b = document.createElement('b'); b.textContent = num; if (cls) b.className = cls;
+  const t = document.createElement('span');
+  if (sub) {
+    const n = document.createElement('b'); n.textContent = name;
+    const m = document.createElement('span'); m.className = 'm'; m.style.display = 'block'; m.textContent = sub;
+    t.append(n, m);
+  } else t.textContent = name;
+  d.append(b, t);
+  if (icon) { const i = document.createElement('i'); i.className = 'ph ' + icon; d.appendChild(i); } else d.appendChild(document.createElement('span'));
+  return d;
 }
+function fill(box, list, rows) { list.replaceChildren(...rows); box.hidden = !rows.length; }
+const plural = (n, one, many) => n + ' ' + (n === 1 ? one : many);
 
 function show(s) {
   closed = s.completed;
   $('count').textContent = s.scanned + ' από ' + s.expected;
-  list($('missList'), $('miss'), s.missing, m => m.qty + ' ' + m.name);
-  const extra = s.extra.map(e => e.scanned + ' ' + e.name).concat(s.unknown_barcodes.map(b => 'άγνωστο barcode ' + b));
-  list($('extraList'), $('extra'), extra, t => t);
+  $('bar').style.width = (s.expected ? Math.min(100, 100 * s.scanned / s.expected) : 0).toFixed(1) + '%';
+  const full = s.lines.filter(l => l.scanned >= l.expected);
+  fill($('got'), $('gotList'), full.map(l => row(String(l.expected), l.name, null, null, 'ph-check')));
+  $('gotOf').textContent = full.length + ' από ' + s.lines.length + ' γραμμές';
+  const gone = s.missing.reduce((n, m) => n + m.qty, 0);
+  const byId = Object.fromEntries(s.lines.map(l => [l.product_id, l]));
+  fill($('miss'), $('missList'), s.missing.map(m => {
+    const l = byId[m.product_id];
+    return row(String(m.qty), m.name, l ? 'ήρθαν ' + l.scanned + ' από ' + l.expected : null, 'q warn');
+  }));
+  $('missOf').textContent = plural(gone, 'τεμάχιο', 'τεμάχια');
+  const extra = s.extra.map(e => row(String(e.scanned), e.name))
+    .concat(s.unknown_barcodes.map(b => row('?', 'άγνωστο barcode ' + b)));
+  fill($('extra'), $('extraList'), extra);
   $('done').disabled = closed; $('man').disabled = closed; $('add').disabled = closed;
   if (closed) closedNote(s);
+}
+
+function setLast(ok, text, of) {
+  const l = $('last'); l.replaceChildren();
+  const i = document.createElement('i');
+  i.className = ok ? 'ph-fill ph-check-circle' : 'ph ph-warning-circle';
+  i.style.color = ok ? 'var(--ok)' : 'var(--alert)';
+  l.append(i, document.createTextNode(text));
+  $('lastOf').textContent = of || '';
 }
 
 function scan(code) {
@@ -114,11 +146,13 @@ function scan(code) {
         catch (e) { codes.pop(); throw e; }
       } else s = await post('/stock/delivery/scan', {delivery_id: deliveryId, barcode: code});
       show(s);
-      const l = $('last');
-      if (s.last.product_id) { l.className = 'ok'; l.textContent = 'Μετρήθηκε: ' + (s.last.units > 1 ? 'κιβώτιο ' + s.last.units + ' × ' : '') + s.last.name; }
-      else { l.className = 'warn'; l.textContent = 'Άγνωστο barcode: ' + code; }
+      if (s.last.product_id) {
+        const l = s.lines.find(x => x.product_id === s.last.product_id);
+        setLast(true, 'Μετρήθηκε: ' + (s.last.units > 1 ? 'κιβώτιο ' + s.last.units + ' × ' : '') + s.last.name,
+                l ? l.scanned + ' από ' + l.expected : '');
+      } else setLast(false, 'Άγνωστο barcode: ' + code);
       if (navigator.vibrate) navigator.vibrate(60);
-    } catch (e) { $('last').className = 'warn'; $('last').textContent = e.message; }
+    } catch (e) { setLast(false, e.message); }
   });
 }
 
@@ -131,8 +165,8 @@ $('add').onclick = manual;
 $('man').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); manual(); } });
 
 $('done').onclick = () => {
-  const n = $('missList').children.length;
-  $('askText').textContent = n ? 'Λείπουν ακόμα ' + [...$('missList').children].map(li => li.textContent).join(', ') + '. Θα γραφτούν ως λείψη.' : 'Ήρθαν όλα.';
+  const missing = [...$('missList').children].map(d => d.children[0].textContent + ' ' + d.children[1].firstChild.textContent);
+  $('askText').textContent = missing.length ? 'Λείπουν ακόμα ' + missing.join(', ') + '. Θα γραφτούν ως λείψη.' : 'Ήρθαν όλα.';
   $('ask').showModal(); $('askTitle').focus();
 };
 $('no').onclick = () => $('ask').close();

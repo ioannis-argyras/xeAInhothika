@@ -20,6 +20,25 @@ def camera_page():
     return FileResponse(STATIC / "camera.html", media_type="text/html")
 
 
+@router.get("/stock/style.css")
+def stock_style():
+    return FileResponse(STATIC / "stock.css", media_type="text/css; charset=utf-8")
+
+
+@router.get("/stock/camera/shelf")
+def camera_shelf(cam: str = ""):
+    """The shelf this camera looks at, for the page title (e.g. «Ψυγείο 1»)."""
+    conn = connect()
+    try:
+        init_db(conn)
+        positions = camera.camera_positions(conn, cam)
+    finally:
+        conn.close()
+    if not positions:
+        raise HTTPException(404, f"Δεν ξέρω την κάμερα {cam!r}.")
+    return {"camera_id": cam, "name": positions[0]["name"].split(" · ")[0], "positions": len(positions)}
+
+
 @router.post("/stock/camera/photo")
 def camera_photo(body: dict = Body(...)):
     camera_id = body.get("camera_id") if isinstance(body, dict) else None

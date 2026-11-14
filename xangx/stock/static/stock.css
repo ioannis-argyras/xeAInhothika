@@ -1,0 +1,58 @@
+/* Camera and delivery pages: the rules of design/kateuthynseis-v2 (#kamera, #paralavi) that
+   /static/app.css does not have. Loaded after app.css; no new colours, only its tokens. */
+.btn.q{background:var(--surf);color:var(--ink);border-color:var(--line);font-weight:500}
+.btn.q:hover{background:var(--strip)}
+.btn.wide{width:100%}
+.band .in.w820{max-width:820px}.band .in.w1040{max-width:1040px}
+.back{display:inline-flex;align-items:center;gap:6px;min-height:44px;color:var(--n4)}
+.page{padding-bottom:40px}
+
+/* viewfinder */
+.vf{background:#050E1E;border-radius:18px;aspect-ratio:4/5;position:relative;overflow:hidden;box-shadow:inset 0 0 0 1px rgba(211,219,230,.12)}
+.vf video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.vf:before,.vf:after{content:"";position:absolute;width:34px;height:34px;border:2px solid rgba(211,219,230,.55);z-index:1}
+.vf:before{left:16px;top:16px;border-right:0;border-bottom:0;border-radius:8px 0 0 0}
+.vf:after{right:16px;bottom:16px;border-left:0;border-top:0;border-radius:0 0 8px 0}
+.vf .ts{position:absolute;left:18px;top:60px;right:18px;color:var(--n5);z-index:1;text-shadow:0 1px 2px rgba(0,0,0,.6)}
+.tog{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:56px;padding:0 20px;border-top:1px solid var(--hair)}
+.sw{width:50px;height:30px;border-radius:999px;background:var(--ok);position:relative;flex-shrink:0;border:0;cursor:pointer}
+.sw:after{content:"";position:absolute;right:3px;top:3px;width:24px;height:24px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25)}
+.sw[aria-checked="false"]{background:var(--n4)}
+.sw[aria-checked="false"]:after{right:auto;left:3px}
+.res{padding:16px 20px;border-top:1px solid var(--hair)}
+.res:first-of-type{border-top:0}
+.res b{font-size:var(--l);display:block;line-height:1.3}
+
+/* delivery */
+.huge{font-size:var(--xl);font-weight:700;letter-spacing:-.03em;line-height:1}
+.prog{height:10px;border-radius:999px;background:rgba(211,219,230,.16);margin-top:16px;overflow:hidden}
+.prog i{display:block;height:100%;width:0;background:var(--n5);border-radius:999px;transition:width .3s var(--ease)}
+.fld{padding:18px 20px 20px}
+.fld label{display:block;font-weight:700;margin-bottom:8px}
+.fld .inp{display:flex;gap:10px}
+.fld .box{flex:1;min-width:0;height:52px;border:1px solid var(--line);border-radius:12px;background:var(--surf);display:flex;align-items:center;padding:0 14px;box-shadow:inset 0 1px 2px rgba(10,27,51,.06)}
+.fld .box i{font-size:20px;margin-right:10px;color:var(--n3)}
+.fld .box input{flex:1;min-width:0;border:0;outline:0;background:transparent;font:16px var(--f);color:var(--ink)}
+.fld .box:focus-within{box-shadow:inset 0 0 0 2px var(--accent)}
+.scanvid{display:block;width:100%;max-height:34vh;object-fit:cover;background:#050E1E}
+.miss .ms{display:grid;grid-template-columns:auto 1fr auto;gap:14px;align-items:center;padding:0 20px;min-height:60px;border-top:1px solid var(--hair)}
+.miss .ms:first-of-type{border-top:0}
+.miss .ms b.q{font-size:var(--l)}
+.got .ms{color:var(--muted)}
+.trial{background:var(--accent);color:var(--on-accent);font-weight:700;border-radius:12px;padding:8px 14px;margin-top:14px;display:inline-block}
+.g-cam{grid-template-columns:360px 1fr;align-items:start;max-width:820px;margin:0 auto}
+.g-par{grid-template-columns:1fr 1fr;align-items:start;max-width:1040px;margin:0 auto}
+dialog{border:1px solid var(--line);border-radius:18px;padding:22px;width:min(92vw,420px);box-shadow:var(--sh-stage);font-family:var(--f);color:var(--ink)}
+dialog::backdrop{background:rgba(10,27,51,.55)}
+dialog h2{font-size:var(--l);margin-bottom:8px}
+dialog .acts{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:18px}
+
+@media (max-width:1100px){.g-cam{grid-template-columns:300px 1fr}}
+@media (max-width:720px){
+  .g-cam,.g-par{grid-template-columns:1fr}
+  .fld{padding:16px}
+  .miss .ms{padding:0 16px}
+  .g-par>.col{display:contents}
+  .g-par .got{order:5}
+  .band{padding-top:20px}
+}
