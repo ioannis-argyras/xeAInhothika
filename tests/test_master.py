@@ -245,6 +245,40 @@ class ToolsTest(MasterTestCase):
         only = tool_catalog.TOOLS["list_recent_events"].fn(self.conn, types=["sale.recorded"])
         self.assertEqual(only["events"], [])
 
+    def test_store_status_sees_camera_low_and_lists_suppliers(self):
+        add_product(self.conn, "cola", "Coca-Cola", 5)
+        add_product(self.conn, "water", "Νερό", 5)
+        add_product(self.conn, "chips", "Chips", 5)
+        stock(self.conn, "cola", 8)
+        stock(self.conn, "water", 30)
+        stock(self.conn, "chips", 2)
+        append_event(
+            self.conn, type="stock.low_detected", actor="stock", subject="product:cola",
+            payload={"product_id": "cola", "on_hand": 4, "per_day": 3, "days_left": 1, "source": "camera"},
+        )
+        append_event(
+            self.conn, type="stock.low_detected", actor="stock", subject="product:cola",
+            payload={"product_id": "cola", "on_hand": 3, "per_day": 3, "days_left": 1, "source": "camera"},
+        )
+        append_event(
+            self.conn, type="stock.low_detected", actor="stock", subject="product:chips",
+            payload={"product_id": "chips", "on_hand": 1, "per_day": 3, "days_left": 1, "source": "camera"},
+        )
+        self.conn.execute("INSERT INTO suppliers (id, name) VALUES ('sup-a', 'Α')")
+        self.conn.execute("INSERT INTO suppliers (id, name) VALUES ('sup-b', 'Β')")
+        self.conn.execute("INSERT INTO supplier_products (supplier_id, product_id) VALUES ('sup-a', 'cola')")
+        self.conn.execute("INSERT INTO supplier_products (supplier_id, product_id) VALUES ('sup-a', 'water')")
+        self.conn.execute("INSERT INTO supplier_products (supplier_id, product_id) VALUES ('sup-b', 'chips')")
+        self.conn.commit()
+        status = tool_catalog.TOOLS["get_store_status"].fn(self.conn)
+        low = {p["product_id"]: p["on_hand"] for p in status["low_products"]}
+        self.assertEqual(low, {"cola": 3, "chips": 1})
+        self.assertEqual(len(status["low_products"]), 2)
+        by_id = {s["id"]: s for s in status["suppliers"]}
+        self.assertEqual(by_id["sup-a"]["name"], "Α")
+        self.assertEqual(by_id["sup-a"]["low_product_ids"], ["cola"])
+        self.assertEqual(by_id["sup-b"]["low_product_ids"], ["chips"])
+
     def test_load_role_tools_ignores_missing_modules(self):
         tool_catalog.load_role_tools()
 

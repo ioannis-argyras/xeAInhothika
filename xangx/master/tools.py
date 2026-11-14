@@ -151,25 +151,67 @@ def _stock_levels(conn):
 
 
 def low_products(conn):
-    """Products whose on-hand stock is at or below their low_threshold."""
+    """Products whose on-hand stock is at or below their low_threshold, or that the
+    camera flagged today (stock.low_detected, with its newer on_hand)."""
     levels = _stock_levels(conn)
+    since = greek_day_start_utc()
+    flagged = {}
+    for e in read_events(conn, types=["stock.low_detected"]):
+        if e.at >= since and e.payload.get("product_id") is not None:
+            flagged[e.payload["product_id"]] = e.payload.get("on_hand")
     rows = conn.execute(
         "SELECT id, name, low_threshold FROM products "
         "WHERE low_threshold IS NOT NULL ORDER BY name"
     ).fetchall()
     low = []
+    seen = set()
     for r in rows:
         on_hand = levels.get(r["id"], 0) or 0
-        if on_hand <= r["low_threshold"]:
+        if r["id"] in flagged and flagged[r["id"]] is not None:
+            on_hand = flagged[r["id"]]
+        elif on_hand > r["low_threshold"]:
+            continue
+        seen.add(r["id"])
+        low.append(
+            {
+                "product_id": r["id"],
+                "name": r["name"],
+                "on_hand": on_hand,
+                "low_threshold": r["low_threshold"],
+            }
+        )
+    extra = conn.execute(
+        "SELECT id, name, low_threshold FROM products WHERE low_threshold IS NULL ORDER BY name"
+    ).fetchall()
+    for r in extra:
+        if r["id"] in flagged and r["id"] not in seen and flagged[r["id"]] is not None:
             low.append(
                 {
                     "product_id": r["id"],
                     "name": r["name"],
-                    "on_hand": on_hand,
-                    "low_threshold": r["low_threshold"],
+                    "on_hand": flagged[r["id"]],
+                    "low_threshold": None,
                 }
             )
     return low
+
+
+def low_suppliers(conn, low):
+    """Suppliers with the ids of their products that are currently low."""
+    low_ids = {p["product_id"] for p in low}
+    out = []
+    for s in conn.execute("SELECT id, name FROM suppliers ORDER BY name").fetchall():
+        ids = [
+            r["product_id"]
+            for r in conn.execute(
+                "SELECT product_id FROM supplier_products WHERE supplier_id = ? "
+                "ORDER BY product_id",
+                (s["id"],),
+            )
+            if r["product_id"] in low_ids
+        ]
+        out.append({"id": s["id"], "name": s["name"], "low_product_ids": ids})
+    return out
 
 
 def sales_today(conn):
@@ -207,6 +249,7 @@ def store_status(conn):
 )
 def get_store_status(conn):
     status = store_status(conn)
+    status["suppliers"] = low_suppliers(conn, status["low_products"])
     status["now_greece"] = greek_time()
     status["summary"] = (
         f"Κατάσταση: {len(status['pending_approvals'])} εγκρίσεις σε αναμονή, "
