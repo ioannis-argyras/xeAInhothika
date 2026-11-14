@@ -6,7 +6,7 @@ from unittest import mock
 
 from xangx.demo.seed import seed_all
 from xangx.master import agent
-from xangx.orders import tools
+from xangx.orders import mail, tools
 from xangx.shared.db import connect, init_db
 from xangx.shared.events import append_event, read_events
 from xangx.stock import worker
@@ -140,6 +140,24 @@ class OrdersTest(unittest.TestCase):
                      payload={"delivery_id": "D-P-0318", "lines": [], "shortages": [],
                               "unknown_barcodes": []})
         self.assertNotIn("cola-330", tools._on_order(self.conn))
+
+    def test_no_connection_keeps_the_order_and_sends_it_later(self):
+        tools.propose_order(self.conn, "sup-ymittou")
+        with mock.patch.object(mail, "send", side_effect=mail.MailError("Το email δεν έφυγε: ConnectionRefusedError")):
+            self.ask_and_approve("P-0319")
+            self.assertTrue((mail.pending_dir() / "P-0319.eml").exists())
+            self.assertEqual([e.payload["order_id"] for e in self.events("order.sent")], ["P-0318"])
+            ran = [e for e in self.events("agent.tool_ran") if e.payload.get("tool") == "send_order"]
+            self.assertIn("θα φύγει μόνη της", ran[-1].payload.get("summary", ""))
+            self.assertEqual(tools.retry_pending(self.conn), [])  # still no connection
+        first_id = str(mail.load(mail.pending_dir() / "P-0319.eml")["Message-ID"]).strip()
+        self.assertTrue(first_id.startswith("<") and first_id.endswith(">"))
+        with mock.patch.object(mail, "send", side_effect=lambda oid, msg: (msg["Message-ID"], "smtp")):
+            sent = tools.retry_pending(self.conn)
+        self.assertEqual([e.payload["order_id"] for e in sent], ["P-0319"])
+        self.assertEqual(sent[0].payload["message_id"], first_id)  # replies still find the order
+        self.assertFalse((mail.pending_dir() / "P-0319.eml").exists())
+        self.assertEqual(tools.retry_pending(self.conn), [])
 
     def test_sent_by_smtp_message_has_one_full_stop(self):
         from xangx.orders import mail

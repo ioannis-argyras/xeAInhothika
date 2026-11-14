@@ -254,6 +254,39 @@ def _approval_yes(conn, order_id):
     return None
 
 
+WAITING = ("Δεν υπάρχει σύνδεση στο internet, οπότε η παραγγελία {order_id} δεν έφυγε ακόμα. "
+           "Την κράτησα και θα φύγει μόνη της μόλις έρθει σύνδεση.")
+
+
+def _mark_sent(conn, order_id, to, message_id, yes):
+    event, _ = append_event(
+        conn, type="order.sent", actor=ACTOR, subject=f"order:{order_id}", caused_by=yes.id,
+        idem_key=f"order.sent:{order_id}",
+        payload={"order_id": order_id, "to": to, "message_id": message_id},
+    )
+    return event
+
+
+def retry_pending(conn):
+    """Send the orders that waited for a connection. Returns the order.sent events written."""
+    written = []
+    for order_id, path in mail.pending():
+        done = [e for e in read_events(conn, types=["order.sent"]) if e.payload.get("order_id") == order_id]
+        events = _order_events(conn, order_id)
+        yes = _approval_yes(conn, order_id)
+        if done or not events or events[-1].type == "order.cancelled" or yes is None:
+            path.unlink(missing_ok=True)  # already sent, cancelled or never approved: nothing to send
+            continue
+        msg = mail.load(path)
+        try:
+            message_id, _ = mail.send(order_id, msg)
+        except mail.MailError:
+            break  # still no connection: try again on the next round
+        written.append(_mark_sent(conn, order_id, str(msg["To"]).strip(), str(message_id).strip(), yes))
+        path.unlink(missing_ok=True)
+    return written
+
+
 @tool(
     name="send_order",
     description=(
@@ -299,13 +332,16 @@ def send_order(conn, order_id):
             f"Σύνολο χωρίς ΦΠΑ: {format_eur(p['net_cents'])}\n\n"
             f"Παρακαλούμε επιβεβαιώστε την ημέρα παράδοσης απαντώντας σε αυτό το email.\n\n"
             f"Ευχαριστούμε,\n{mail.STORE_NAME}\n")
+    if (mail.pending_dir() / f"{order_id}.eml").exists():
+        return {"summary": WAITING.format(order_id=order_id), "event_ids": []}
     msg = mail.build(order_id, to, f"Παραγγελία {order_id} · {mail.STORE_NAME}", body)
-    message_id, how = mail.send(order_id, msg)
-    event, _ = append_event(
-        conn, type="order.sent", actor=ACTOR, subject=f"order:{order_id}", caused_by=yes.id,
-        idem_key=f"order.sent:{order_id}",
-        payload={"order_id": order_id, "to": to, "message_id": message_id},
-    )
+    try:
+        message_id, how = mail.send(order_id, msg)
+    except mail.MailError:
+        # No connection: the owner already said yes, so it waits and leaves on its own (retry_pending).
+        mail.keep_pending(order_id, msg)
+        return {"summary": WAITING.format(order_id=order_id), "event_ids": []}
+    event = _mark_sent(conn, order_id, to, message_id, yes)
     where = "" if how == "smtp" else " (δοκιμή: το email γράφτηκε σε αρχείο)"
     text = f"Στάλθηκε η παραγγελία {order_id} στον {sup['name']}{where}"
     return {"summary": text if text.endswith(".") else text + ".", "event_ids": [event.id]}

@@ -1,6 +1,7 @@
-"""Orders worker: every 30 s, read supplier replies from the mailbox (IMAP_* in .env).
+"""Orders worker: every 30 s, send orders that waited for a connection, compare prices, and
+read supplier replies from the mailbox (IMAP_* in .env).
 
-Without IMAP_HOST it does not start: rehearsals run without a mailbox.
+Without IMAP_HOST the mailbox part is skipped: rehearsals run without a mailbox.
 """
 
 import threading
@@ -56,6 +57,8 @@ def _loop(db_path, settings, interval):
     while True:
         try:
             run_once(conn)
+            for event in tools.retry_pending(conn):
+                print(f"orders worker: {event.payload['order_id']} sent after waiting", flush=True)
             for event in (replies.poll(conn, settings) if settings else []):
                 print(f"orders worker: reply to {event.payload['order_id']}", flush=True)
         except Exception as exc:  # keep polling; never print settings or email text

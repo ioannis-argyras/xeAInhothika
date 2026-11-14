@@ -32,6 +32,33 @@ def outbox_dir():
     return Path(files).parent / "outbox" if files else Path("data/outbox")
 
 
+def pending_dir():
+    """Orders the owner approved but that could not leave (no connection): sent again later."""
+    return outbox_dir() / "pending"
+
+
+def keep_pending(order_id, msg):
+    path = pending_dir() / f"{order_id}.eml"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_bytes(bytes(msg))
+    return path
+
+
+def pending():
+    """[(order_id, path)] of orders waiting to leave, oldest first."""
+    d = pending_dir()
+    if not d.is_dir():
+        return []
+    return [(p.stem, p) for p in sorted(d.glob("P-*.eml"), key=lambda p: p.stat().st_mtime)]
+
+
+def load(path):
+    from email import policy
+    from email.parser import BytesParser
+
+    return BytesParser(policy=policy.default).parsebytes(path.read_bytes())
+
+
 def build(order_id, to, subject, body):
     msg = EmailMessage()
     sender = os.environ.get("SMTP_FROM") or os.environ.get("SMTP_USER") or "orders@xangxothaika.invalid"
