@@ -24,7 +24,8 @@ JSON shape:
  "lines": [{"name": str, "qty": number, "unit_cents": int, "net_cents": int, "vat_rate": 24|13|6|0}],
  "net_cents": int, "vat_by_rate": {"24": int, "13": int}, "total_cents": int,
  "iban": str or null, "pages": {"seen": int, "total": int or null},
- "hidden_instructions": str or null}"""
+ "hidden_instructions": str or null,
+ "supplier_name": str or null, "customer_name": str or null, "customer_afm": str or null}"""
 
 FAKE_ANSWER = {
     "supplier_afm": "990000014",  # sup-ymittou in the demo seed
