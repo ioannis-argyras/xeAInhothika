@@ -40,6 +40,11 @@ def main():
             raise
         mod.start()
 
+    # The clock: the morning check at 07:00 and the partner waking up by itself (XANGX_AUTORUN=0 turns it off).
+    from xangx.master import autorun
+
+    autorun.start()
+
     port = int(os.environ.get("XANGX_PORT") or 8000)
     uvicorn.run("xangx.server.app:app", host="127.0.0.1", port=port)
 
