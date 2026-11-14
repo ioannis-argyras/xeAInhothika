@@ -142,6 +142,15 @@ class DescribeTest(unittest.TestCase):
         event = Event(1, "x", "s", "system", "foo.bar", None, None, None, {}, 1)
         self.assertEqual(describe(event), "foo.bar")
 
+    def test_invoice_matched_without_delivery(self):
+        none = Event(1, "x", "s", "invoices", "invoice.matched", None, None, None,
+                     {"invoice_id": "i1", "issues": []}, 1)
+        self.assertIn("δεν βρέθηκε παραλαβή για ταίριασμα", describe(none))
+        self.assertNotIn("ταιριάζει", describe(none))
+        found = Event(2, "x", "s", "invoices", "invoice.matched", None, None, None,
+                      {"invoice_id": "i1", "issues": [], "delivery_id": "d1"}, 1)
+        self.assertIn("ταιριάζει με την παραλαβή", describe(found))
+
     def test_taken_sentence_and_iban_mask(self):
         names = {"position": {"p": "Ψυγείο 1"}, "product": {"c": "Coca-Cola 330ml"}}
         event = Event(1, "x", "s", "camera", "shelf.items_taken", None, None, None,

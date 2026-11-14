@@ -93,6 +93,8 @@ def _describe(t, p, name):
         return f"Το τιμολόγιο {p['invoice_id']} μοιάζει διπλό με το {p['other_invoice_id']}"
     if t == "invoice.matched":
         issues = len(p.get("issues") or [])
+        if not p.get("delivery_id"):
+            return f"Τιμολόγιο {p['invoice_id']}: δεν βρέθηκε παραλαβή για ταίριασμα"
         return (f"Το τιμολόγιο {p['invoice_id']} ταιριάζει με την παραλαβή"
                 if not issues else
                 f"Το τιμολόγιο {p['invoice_id']} έχει {issues} αποκλίσεις")
