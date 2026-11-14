@@ -44,7 +44,7 @@ const practice = params.get('dokimi') === '1';
 $('trial').hidden = !practice;
 const v = $('v'); let timer = null, busy = false;
 const say = t => $('st').textContent = t;
-$('kick').textContent = (practice ? 'Δοκιμή κάμερας · ' : 'Κάμερα ραφιού · ') + cam;
+$('kick').textContent = practice ? 'Δοκιμή κάμερας ραφιού' : 'Κάμερα ραφιού';
 fetch('/stock/camera/shelf?cam=' + encodeURIComponent(cam)).then(r => r.ok ? r.json() : null)
   .then(j => { if (j) { $('title').textContent = j.name; document.title = j.name + ' · Κάμερα ραφιού'; } }).catch(() => {});
 
