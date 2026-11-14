@@ -141,19 +141,6 @@ class OrdersTest(unittest.TestCase):
                               "unknown_barcodes": []})
         self.assertNotIn("cola-330", tools._on_order(self.conn))
 
-    def test_send_email_only_to_supplier_addresses(self):
-        from xangx.orders import mail
-        send = mail.send_supplier_email
-        r = send(self.conn, to="paraggelies.ymittou@example.com", subject="Πιστωτικό", body="Γεια")
-        self.assertEqual(r["how"], "outbox")
-        self.assertTrue(r["message_id"].startswith("<"))
-        self.assertEqual(len(os.listdir(os.path.join(self.dir.name, "outbox"))), 1)
-        with self.assertRaises(mail.MailError):
-            send(self.conn, to="someone@evil.example", subject="x", body="y")
-        with mock.patch.dict(os.environ, {"XANGX_DEMO_SUPPLIER_EMAIL": "supplier-demo@example.com"}):
-            self.assertEqual(send(self.conn, to="supplier-demo@example.com", subject="x",
-                                  body="y")["to"], "supplier-demo@example.com")
-
     def test_demo_address_wins(self):
         order_id = tools.propose_order(self.conn, "sup-ymittou")["order_id"]
         with mock.patch.dict(os.environ, {"XANGX_DEMO_SUPPLIER_EMAIL": "supplier-demo@example.com"}):

@@ -6,7 +6,6 @@ The only allowed recipient is the supplier's email, or XANGX_DEMO_SUPPLIER_EMAIL
 """
 
 import os
-import re
 import smtplib
 import ssl
 from email.message import EmailMessage
@@ -43,20 +42,6 @@ def build(order_id, to, subject, body):
     msg["Message-ID"] = make_msgid(idstring=order_id, domain=sender.split("@")[-1])
     msg.set_content(body)
     return msg
-
-
-def send_supplier_email(conn, to, subject, body):
-    """For other roles (e.g. the accountant's credit request): only to an address of the
-    suppliers table (or XANGX_DEMO_SUPPLIER_EMAIL). Returns {"message_id", "to", "how"}."""
-    known = {(r["email"] or "").strip().lower() for r in conn.execute("SELECT email FROM suppliers")}
-    demo = (os.environ.get("XANGX_DEMO_SUPPLIER_EMAIL") or "").strip().lower()
-    if (to or "").strip().lower() not in known | ({demo} if demo else set()):
-        raise MailError("Email φεύγει μόνο προς διευθύνσεις προμηθευτών.")
-    to = recipient(to)
-    msg = build("mail", to, subject, body)
-    name = re.sub(r"[^\w.-]+", "_", msg["Message-ID"].strip("<>"))
-    message_id, how = send(name, msg)
-    return {"message_id": message_id, "to": to, "how": how}
 
 
 def send(order_id, msg):
