@@ -2,6 +2,7 @@
 
 Public functions (blocking; called from a thread pool by the server):
     handle_owner_message(conn, text, channel="web") -> {"reply", "event_ids"}
+    handle_trigger(conn, reason, trigger_ids, instruction=None) -> {"reply", "event_ids"}
     decide_approval(conn, approval_id, decision, channel="web") -> {"ok", "message", "event_ids"}
     morning_check(conn) -> event id of check.morning_done
     start_background(db_path=None) -> None
@@ -32,6 +33,10 @@ MSG_PAUSED = "Είμαι σε παύση. Δεν κάνω καμία ενέργ�
 MSG_API_ERROR = "Δεν μπόρεσα να μιλήσω με το Claude αυτή τη στιγμή. Δοκίμασε ξανά σε λίγο."
 MSG_TOO_LONG = "Χρειάστηκαν πάρα πολλά βήματα και σταμάτησα. Ρώτα με πιο συγκεκριμένα."
 MSG_CUT = "Η απάντηση κόπηκε πριν ολοκληρωθεί, και γι' αυτό δεν έκανα τίποτα. Ξαναδοκίμασε."
+TRIGGER_INSTRUCTION = (
+    "Κανείς δεν σου μίλησε. Συνέβη: {reason}. Δες την κατάσταση του μαγαζιού και κάνε ό,τι χρειάζεται, "
+    "με τα εργαλεία· ό,τι θέλει έγκριση γίνεται κάρτα. Αν δεν χρειάζεται τίποτα, πες το σε μία πρόταση."
+)
 
 _background_started = False
 
@@ -240,11 +245,30 @@ def handle_owner_message(conn, text, channel="web"):
         type="owner.said", actor="owner",
         payload={"text": str(text)[:TEXT_LIMIT], "channel": channel},
     )
+    return _run_loop(conn, ids, said, text, channel)
+
+
+def handle_trigger(conn, reason, trigger_ids, instruction=None):
+    """The partner starts on its own: write agent.woke, run the same loop, write agent.said
+    (channel "auto"). With the system paused it only says so. Blocking."""
+    tool_catalog.load_role_tools()
+    ids = []
+    woke = _write(
+        conn, ids,
+        type="agent.woke", actor="master",
+        payload={"reason": str(reason)[:300], "trigger_ids": [i for i in trigger_ids if isinstance(i, int)]},
+    )
+    text = instruction or TRIGGER_INSTRUCTION.format(reason=reason)
+    return _run_loop(conn, ids, woke, text, "auto")
+
+
+def _run_loop(conn, ids, start, text, channel):
+    """The tool loop. `start` is the event that began it (owner.said or agent.woke)."""
 
     def finish(reply):
         _write(
             conn, ids,
-            type="agent.said", actor="master", caused_by=said.id,
+            type="agent.said", actor="master", caused_by=start.id,
             payload={"text": reply[:TEXT_LIMIT], "channel": channel},
         )
         return {"reply": reply, "event_ids": ids}
@@ -253,7 +277,7 @@ def handle_owner_message(conn, text, channel="web"):
         return finish(MSG_PAUSED)
 
     client = _get_client()
-    messages = _history_messages(conn, said.id) + [{"role": "user", "content": str(text)[:TEXT_LIMIT]}]
+    messages = _history_messages(conn, start.id) + [{"role": "user", "content": str(text)[:TEXT_LIMIT]}]
     planned = False
     approvals = 0
 
@@ -290,7 +314,7 @@ def handle_owner_message(conn, text, channel="web"):
             ]
             _write(
                 conn, ids,
-                type="agent.planned", actor="master", caused_by=said.id,
+                type="agent.planned", actor="master", caused_by=start.id,
                 payload={"steps": steps},
             )
 
@@ -300,8 +324,8 @@ def handle_owner_message(conn, text, channel="web"):
             args = dict(block.input or {})
             if t is not None and t.needs_approval:
                 approvals += 1
-                approval_id = f"A-{said.id}" + (f"-{approvals}" if approvals > 1 else "")
-                _request_approval(conn, ids, t, args, approval_id, said.id)
+                approval_id = f"A-{start.id}" + (f"-{approvals}" if approvals > 1 else "")
+                _request_approval(conn, ids, t, args, approval_id, start.id)
                 results.append(
                     _tool_result_block(
                         block.id,
@@ -309,7 +333,7 @@ def handle_owner_message(conn, text, channel="web"):
                     )
                 )
             else:
-                ok, result = _run_tool(conn, ids, block.name, args, said.id)
+                ok, result = _run_tool(conn, ids, block.name, args, start.id)
                 results.append(_tool_result_block(block.id, result, is_error=not ok))
 
         messages.append({"role": "assistant", "content": content})

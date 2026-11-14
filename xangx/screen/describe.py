@@ -118,6 +118,11 @@ def _describe(t, p, name):
         return f"Πώληση {p['receipt_id']}: {format_eur(p['total_cents'])}"
     if t == "owner.said":
         return f"Εσύ: {p['text']}"
+    if t == "agent.woke":
+        return f"Ο συνεργάτης ξεκίνησε μόνος του: {p['reason']}"
+    if t == "agent.planned" and p.get("via") == "mcp":
+        first = (p.get("steps") or [{}])[0]
+        return f"Άλλος agent ζήτησε μέσω MCP: {first.get('summary') or first.get('tool') or 'εργαλείο'}"
     if t == "agent.planned":
         return "Σχεδίασα " + str(len(p.get("steps") or [])) + " βήματα"
     if t in ("agent.tool_ran", "approval.requested"):

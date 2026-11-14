@@ -97,6 +97,7 @@ CATALOG = {
     ),
     # Master, owner and system
     "owner.said": _spec(["owner"], "text", "channel"),
+    "agent.woke": _spec(["master"], "reason", "trigger_ids"),
     "agent.planned": _spec(["master"], "steps"),
     "agent.tool_ran": _spec(
         ["master"], "tool", "summary", "ok", "ms", "result_event_ids"
