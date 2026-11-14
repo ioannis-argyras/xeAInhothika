@@ -126,7 +126,9 @@ function feedItem(e, isNew) {
   const it = el("div", "it" + (isNew ? " new" : ""));
   it.dataset.id = e.id;
   it.appendChild(el("time", null, clock(e.at)));
-  it.appendChild(el("p", null, e.text));
+  const p = el("p");
+  richText(p, e.text);
+  it.appendChild(p);
   return it;
 }
 
