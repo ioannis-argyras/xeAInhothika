@@ -14,17 +14,6 @@ class CompareTest(unittest.TestCase):
         self.conn = connect(os.path.join(self.dir.name, "t.sqlite"))
         init_db(self.conn)
         seed_all(self.conn)
-        # The seed has invoices only from the main supplier: the other supplier's price comes
-        # from its own invoice (here Kava, Coca-Cola at 0,58 EUR).
-        afm = self.conn.execute("SELECT afm FROM suppliers WHERE id = 'sup-kava'").fetchone()["afm"]
-        append_event(
-            self.conn, type="invoice.read", actor="invoices", subject="invoice:inv-kava",
-            payload={"invoice_id": "inv-kava", "supplier_afm": afm, "series": "ΤΔΑ", "number": "1",
-                     "date": "2026-11-01", "net_cents": 580, "vat_by_rate": {}, "total_cents": 580,
-                     "checks": [], "confidence": "high",
-                     "lines": [{"product_id": "cola-330", "qty": 10, "unit_cents": 58,
-                                "net_cents": 580, "vat_rate": 24}]},
-        )
 
     def tearDown(self):
         self.conn.close()
@@ -71,6 +60,15 @@ class CompareTest(unittest.TestCase):
         self.price_changed(1, 1)  # pct 0 and nothing lower than 1 cent
         worker.run_once(self.conn)
         self.assertEqual(self.found(), [])
+
+    def test_fresh_seed_shows_kava_under_the_raised_price(self):
+        out = tools.compare_suppliers(self.conn, "cola-330")
+        by = {s["supplier_id"]: s["unit_cents"] for s in out["suppliers"]}
+        self.assertEqual((by["sup-kava"], by["sup-ymittou"]), (58, 57))
+        self.price_changed(62, 57, invoice_id="A-2271")
+        worker.run_once(self.conn)
+        [f] = self.found()
+        self.assertEqual((f.payload["to_supplier_id"], f.payload["to_cents"]), ("sup-kava", 58))
 
     def test_compare_suppliers_tool(self):
         out = tools.compare_suppliers(self.conn, "cola-330")

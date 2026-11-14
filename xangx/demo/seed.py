@@ -20,6 +20,7 @@ from xangx.demo.catalog_data import (
     SUPPLIERS,
 )
 from xangx.shared.events import append_events
+from xangx.shared.money import line_net_cents, vat_cents
 
 HISTORY_DAYS = 30
 SEED = 1411
@@ -45,6 +46,7 @@ HOUR_WEIGHTS = [
 # 7 days ago as entered 12 days earlier (expires in 2 days). Only the date of the stock move
 # changes, not the stock. Key: (product, days before today of the delivery) -> days to shift.
 EXPIRY_SHIFT = {("milk-fresh-1l", 7): 1, ("yogurt-greek-200", 7): -12}
+KAVA_COLA_CENTS, KAVA_COLA_QTY = 58, 24  # the older invoice of the second supplier
 UNITS_PER_DAY = 300  # expected units sold per day, for the order-up-to levels
 
 
@@ -165,6 +167,8 @@ def seed_history(conn, now):
     for day_index in range(HISTORY_DAYS):
         day = start + timedelta(days=day_index)
         events = []
+        if day == today - timedelta(days=10):
+            events.append(_kava_invoice(today))
 
         if day_index == 0:
             for p in PRODUCTS:
@@ -257,6 +261,33 @@ def seed_history(conn, now):
 
     _seed_morning(conn, on_hand, rate, today)
     _seed_today_sales(conn, on_hand, rng, now, receipt_no)
+
+
+def _kava_invoice(today):
+    """An older invoice of the second supplier: Coca-Cola at 0,58 EUR. Without it the price
+    comparison of the 2:15 scene has nothing to show (prices come only from invoices).
+    No stock move: the stock of the story stays as it is. It is written in the history, on its
+    day, so the later invoices of the main supplier stay the latest price of every product."""
+    unit = KAVA_COLA_CENTS
+    net = line_net_cents(KAVA_COLA_QTY, unit)
+    vat = vat_cents(net, PRODUCT_BY_ID["cola-330"]["vat_rate"])
+    supplier = SUPPLIER_BY_ID["sup-kava"]
+    day = today - timedelta(days=10)
+    lines = [{"name": PRODUCT_BY_ID["cola-330"]["name"], "product_id": "cola-330",
+              "qty": KAVA_COLA_QTY, "unit_cents": unit, "net_cents": net,
+              "vat_rate": PRODUCT_BY_ID["cola-330"]["vat_rate"]}]
+    payload = {
+        "invoice_id": "INV-KAVA-0001", "supplier_afm": supplier["afm"],
+        "series": supplier["series"], "number": "1", "date": day.isoformat(),
+        "lines": lines, "net_cents": net,
+        "vat_by_rate": {str(lines[0]["vat_rate"]): vat}, "total_cents": net + vat,
+        "iban": supplier["iban"],
+        "checks": {"arithmetic": True, "afm_valid": True, "pages_complete": True},
+        "confidence": "high",
+    }
+    return _event(
+        "invoice.read", _utc(day, 7, 50), payload, subject="invoice:INV-KAVA-0001",
+        idem_key=f"invoice:{supplier['afm']}:{supplier['series']}-1")
 
 
 def _seed_morning(conn, on_hand, rate, today):
