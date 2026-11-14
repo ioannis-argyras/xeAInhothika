@@ -51,6 +51,20 @@ def _order_events(conn, order_id):
             and e.payload.get("order_id") == order_id]
 
 
+def _on_order(conn):
+    """{product_id: qty} still coming: orders sent, not delivered (delivery.completed) or cancelled."""
+    done = {e.payload.get("delivery_id") for e in read_events(conn, types=["delivery.completed"])}
+    cancelled = {e.payload.get("order_id") for e in read_events(conn, types=["order.cancelled"])}
+    sent = {e.payload.get("order_id") for e in read_events(conn, types=["order.sent"])}
+    out = {}
+    for e in read_events(conn, types=["order.proposed"]):
+        oid = e.payload.get("order_id")
+        if oid in sent and oid not in cancelled and f"D-{oid}" not in done:
+            for l in e.payload.get("lines", []):
+                out[l["product_id"]] = out.get(l["product_id"], 0) + l["qty"]
+    return out
+
+
 def _names(conn):
     return {r["id"]: r["name"] for r in conn.execute("SELECT id, name FROM products")}
 
@@ -60,6 +74,7 @@ def _needs(conn, supplier_id, now):
     sup = _supplier(conn, supplier_id)
     levels = views.stock_levels(conn)
     camera_low = _low_today(conn)
+    coming = _on_order(conn)
     rows = conn.execute(
         "SELECT sp.product_id, sp.pack_size, p.low_threshold FROM supplier_products sp "
         "JOIN products p ON p.id = sp.product_id WHERE sp.supplier_id = ? ORDER BY sp.product_id",
@@ -76,7 +91,8 @@ def _needs(conn, supplier_id, now):
         elif on_hand > threshold:
             continue
         per_day = round(sales_per_day(conn, pid, now), 1)
-        need = per_day * COVER_DAYS + threshold - on_hand
+        on_order = coming.get(pid, 0)
+        need = per_day * COVER_DAYS + threshold - on_hand - on_order
         if need <= 0:
             continue
         pack = r["pack_size"] or 1
@@ -87,7 +103,7 @@ def _needs(conn, supplier_id, now):
         if unit is None:
             continue  # no known price: nothing to propose for this product
         lines.append({"product_id": pid, "qty": qty, "unit_cents": unit, "last_unit_cents": unit,
-                      "_per_day": per_day, "_on_hand": on_hand})
+                      "_per_day": per_day, "_on_hand": on_hand, "_on_order": on_order})
     return lines
 
 
@@ -107,7 +123,8 @@ def _suppliers_with_low(conn):
     description=(
         "Prepare (do not send) an order to one supplier for its products that are low today "
         "(on-hand at or below the low threshold, or flagged low by the shelf camera). Quantity "
-        "covers 3 days of sales plus the threshold, rounded up to the pack size. If the "
+        "covers 3 days of sales plus the threshold, minus what is already on order (sent, not "
+        "delivered yet), rounded up to the pack size. If the "
         "supplier_id is unknown, the result lists the suppliers that have low products."
     ),
     input_schema={
@@ -151,7 +168,7 @@ def propose_order(conn, supplier_id):
             "event_ids": [event.id], "order_id": order_id, "net": format_eur(net),
             "lines": [{"product": names.get(l["product_id"], l["product_id"]), "qty": l["qty"],
                        "unit_price": format_eur(l["unit_cents"]), "on_hand": _qty(l["_on_hand"]),
-                       "sold_per_day": l["_per_day"]} for l in lines],
+                       "already_on_order": l["_on_order"], "sold_per_day": l["_per_day"]} for l in lines],
             "next": ("Call send_order with this order_id now. It does not send anything by itself: "
                      "it shows the owner an approval card, and the email leaves only after the "
                      "owner's yes there. Do not ask for a yes in the chat first.")}
@@ -200,7 +217,9 @@ def _approval_yes(conn, order_id):
 @tool(
     name="send_order",
     description=(
-        "Email a proposed order to its supplier. Needs the owner's yes. "
+        "Email a proposed order to its supplier. Call it right after propose_order, without "
+        "asking the owner in the chat first: the system itself shows the owner an approval card "
+        "(that card is the question), and the email leaves only after the owner's yes there. "
         "Safe to call twice: an order is sent only once."
     ),
     input_schema={

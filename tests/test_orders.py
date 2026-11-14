@@ -1,3 +1,4 @@
+import math
 import os
 import tempfile
 import unittest
@@ -121,6 +122,37 @@ class OrdersTest(unittest.TestCase):
         self.assertEqual(len([e for e in self.events("order.sent")
                               if e.payload["order_id"] == order_id]), 1)
         self.assertEqual(os.path.getmtime(eml), mtime)
+
+    def test_what_is_already_on_order_is_not_ordered_again(self):
+        # P-0318 (sent this morning, not delivered) brings 48 Coca-Cola.
+        on_order = tools._on_order(self.conn)
+        self.assertEqual(on_order["cola-330"], 48)
+        r = tools.propose_order(self.conn, "sup-ymittou")
+        cola = next(l for l in r["lines"] if l["product"].startswith("Coca-Cola"))
+        self.assertEqual(cola["already_on_order"], 48)
+        lines = {l["product_id"]: l["qty"] for l in self.events("order.proposed")[-1].payload["lines"]}
+        # e.g. 22.7 × 3 + 6 − 3 on hand − 48 on order = 23.1 → one pack of 24 (not 72)
+        need = cola["sold_per_day"] * 3 + 6 - 3 - 48
+        self.assertEqual(lines["cola-330"], math.ceil(need / 24) * 24)
+
+    def test_delivered_order_is_no_longer_on_order(self):
+        append_event(self.conn, type="delivery.completed", actor="stock",
+                     payload={"delivery_id": "D-P-0318", "lines": [], "shortages": [],
+                              "unknown_barcodes": []})
+        self.assertNotIn("cola-330", tools._on_order(self.conn))
+
+    def test_send_email_only_to_supplier_addresses(self):
+        from xangx.orders import mail
+        send = mail.send_supplier_email
+        r = send(self.conn, to="paraggelies.ymittou@example.com", subject="Πιστωτικό", body="Γεια")
+        self.assertEqual(r["how"], "outbox")
+        self.assertTrue(r["message_id"].startswith("<"))
+        self.assertEqual(len(os.listdir(os.path.join(self.dir.name, "outbox"))), 1)
+        with self.assertRaises(mail.MailError):
+            send(self.conn, to="someone@evil.example", subject="x", body="y")
+        with mock.patch.dict(os.environ, {"XANGX_DEMO_SUPPLIER_EMAIL": "supplier-demo@example.com"}):
+            self.assertEqual(send(self.conn, to="supplier-demo@example.com", subject="x",
+                                  body="y")["to"], "supplier-demo@example.com")
 
     def test_demo_address_wins(self):
         order_id = tools.propose_order(self.conn, "sup-ymittou")["order_id"]
