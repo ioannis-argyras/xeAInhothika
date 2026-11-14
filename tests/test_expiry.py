@@ -1,7 +1,7 @@
 import os
 import tempfile
 import unittest
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 
 from xangx.demo.seed import athens_now, seed_all
 from xangx.master.tools import TOOLS
@@ -9,6 +9,7 @@ from xangx.screen.describe import describe
 from xangx.shared.db import connect, init_db
 from xangx.shared.events import append_event, read_events
 from xangx.stock import expiry, tools as stock_tools, worker  # noqa: F401  (registers the tools)
+from xangx.stock.expiry import _greek_day
 
 NOW = datetime(2026, 11, 14, 10, 0, tzinfo=timezone.utc)
 
@@ -76,7 +77,10 @@ class ExpiryTest(unittest.TestCase):
         self.assertEqual(sorted(e.idem_key for e in events),
                          ["expiring:milk:2026-11-15", "expiring:yog:2026-11-16"])
         self.assertEqual(events[0].actor, "stock")
-        self.assertEqual(describe(events[0], {"product": {"milk": "Γάλα 1L"}}), "Λήγει αύριο: 6 Γάλα 1L")
+        # the event's `at` is the real clock, so count the days from its own Greek day
+        left = (date(2026, 11, 15) - _greek_day(events[0].at)).days
+        when = {0: "Λήγει σήμερα", 1: "Λήγει αύριο"}.get(left, f"Λήγει σε {left} μέρες")
+        self.assertEqual(describe(events[0], {"product": {"milk": "Γάλα 1L"}}), f"{when}: 6 Γάλα 1L")
 
     def test_tool(self):
         move(self.conn, "milk", 6, "2026-11-08")
