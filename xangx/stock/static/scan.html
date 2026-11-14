@@ -92,7 +92,7 @@ function scan(code) {
       const s = await post('/stock/delivery/scan', {delivery_id: deliveryId, barcode: code});
       show(s);
       const l = $('last');
-      if (s.last.product_id) { l.className = 'ok'; l.textContent = 'Μετρήθηκε: ' + s.last.name; }
+      if (s.last.product_id) { l.className = 'ok'; l.textContent = 'Μετρήθηκε: ' + (s.last.units > 1 ? 'κιβώτιο ' + s.last.units + ' × ' : '') + s.last.name; }
       else { l.className = 'warn'; l.textContent = 'Άγνωστο barcode: ' + code; }
       if (navigator.vibrate) navigator.vibrate(60);
     } catch (e) { $('last').className = 'warn'; $('last').textContent = e.message; }

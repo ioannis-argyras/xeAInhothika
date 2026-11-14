@@ -189,6 +189,40 @@ class DeliveryTest(unittest.TestCase):
         self.assertEqual(w.headers["content-type"], "application/wasm")
         self.assertEqual(self.client.get("/stock/vendor/../routes.py").status_code, 404)
 
+    def test_case_barcode_counts_pack_size(self):
+        append_event(self.conn, type="order.proposed", actor="orders", subject="order:P-0901",
+                     payload={"order_id": "P-0901", "supplier_id": "sup-ymittou", "net_cents": 48 * 57,
+                              "lines": [{"product_id": "cola-330", "qty": 48, "unit_cents": 57,
+                                         "last_unit_cents": 57}],
+                              "why": {"per_day": 6.0, "on_hand": 8, "lead_days": 1}})
+        self.client.post("/stock/delivery/start", json={"order_id": "P-0901"})
+        case = self.conn.execute("SELECT case_barcode, pack_size FROM supplier_products WHERE "
+                                 "supplier_id = 'sup-ymittou' AND product_id = 'cola-330'").fetchone()
+        self.assertEqual(case[1], 24)
+        r = self.scan(case[0], "D-P-0901").json()
+        self.assertEqual((r["scanned"], r["expected"], r["last"]["units"]), (24, 48, 24))
+        r = self.scan(self.barcode("cola-330"), "D-P-0901").json()
+        self.assertEqual((r["scanned"], r["last"]["units"]), (25, 1))
+        r = self.scan(case[0], "D-P-0901").json()
+        self.assertEqual((r["scanned"], r["missing"]), (48, []))
+        before = views.stock_on_hand(self.conn, "cola-330")
+        self.client.post("/stock/delivery/complete", json={"delivery_id": "D-P-0901"})
+        self.assertEqual(views.stock_on_hand(self.conn, "cola-330") - before, 49)
+
+    def test_case_barcode_of_another_supplier_is_unknown(self):
+        sup = self.conn.execute("SELECT id FROM suppliers WHERE id != 'sup-ymittou' LIMIT 1").fetchone()[0]
+        append_event(self.conn, type="order.proposed", actor="orders", subject="order:P-0902",
+                     payload={"order_id": "P-0902", "supplier_id": sup, "net_cents": 57,
+                              "lines": [{"product_id": "cola-330", "qty": 24, "unit_cents": 57,
+                                         "last_unit_cents": 57}],
+                              "why": {"per_day": 6.0, "on_hand": 8, "lead_days": 1}})
+        self.client.post("/stock/delivery/start", json={"order_id": "P-0902"})
+        case = self.conn.execute("SELECT case_barcode FROM supplier_products WHERE "
+                                 "supplier_id = 'sup-ymittou' AND product_id = 'cola-330'").fetchone()[0]
+        r = self.scan(case, "D-P-0902").json()
+        self.assertIsNone(r["last"]["product_id"])
+        self.assertEqual((r["scanned"], r["unknown_barcodes"]), (0, [case]))
+
     def test_nine_of_ten_gives_a_shortage_of_one(self):
         s = self.order()
         self.assertEqual((s["scanned"], s["expected"]), (0, 10))

@@ -1,4 +1,7 @@
-"""Delivery check with barcodes: start, scan (1 unit per scan), complete with shortages.
+"""Delivery check with barcodes: start, scan, complete with shortages.
+
+A product barcode counts 1 unit; the supplier's case barcode (supplier_products.case_barcode)
+counts pack_size units of that product.
 
 Events: delivery.started and delivery.completed (actor `stock`), delivery.item_scanned
 (actor `scanner`), and one stock.moved reason "delivery" per product on completion.
@@ -60,21 +63,35 @@ def clean_barcode(barcode):
     return code
 
 
+def _lookup(conn, code, supplier_id):
+    """(product_id, units) for a barcode: product barcode = 1, this supplier's case = pack_size."""
+    row = conn.execute("SELECT id FROM products WHERE barcode = ?", (code,)).fetchone()
+    if row:
+        return row["id"], 1
+    row = conn.execute("SELECT product_id, pack_size FROM supplier_products "
+                       "WHERE case_barcode = ? AND supplier_id = ?", (code, supplier_id)).fetchone()
+    if row:
+        return row["product_id"], max(1, int(row["pack_size"] or 1))
+    return None, 1
+
+
 def scan(conn, delivery_id, barcode):
-    """One scan = one unit. Unknown barcodes are kept (product_id null). Returns the status."""
+    """One scan: 1 unit, or pack_size units for a case barcode. Unknown barcodes are kept (product_id null). Returns the status."""
     started = _started(conn, delivery_id)
     if started is None:
         raise DeliveryError(f"Δεν έχει ξεκινήσει η παραλαβή {delivery_id}.")
     if _completed(conn, delivery_id) is not None:
         raise DeliveryError(f"Η παραλαβή {delivery_id} έχει ήδη κλείσει.")
     code = clean_barcode(barcode)
-    row = conn.execute("SELECT id FROM products WHERE barcode = ?", (code,)).fetchone()
-    pid = row["id"] if row else None
+    pid, units = _lookup(conn, code, started.payload.get("supplier_id"))
+    payload = {"delivery_id": delivery_id, "barcode": code, "product_id": pid}
+    if units != 1:
+        payload["units"] = units
     event, _ = append_event(conn, type="delivery.item_scanned", actor=SCANNER,
                             subject=f"order:{started.payload['order_id']}", caused_by=started.id,
-                            payload={"delivery_id": delivery_id, "barcode": code, "product_id": pid})
+                            payload=payload)
     result = status(conn, delivery_id)
-    result["last"] = {"barcode": code, "product_id": pid,
+    result["last"] = {"barcode": code, "product_id": pid, "units": units,
                       "name": _products(conn).get(pid, {}).get("name") if pid else None}
     result["event_ids"] = [event.id]
     return result
@@ -88,7 +105,7 @@ def _count(conn, delivery_id, order):
             continue
         pid = e.payload.get("product_id")
         if pid:
-            scanned[pid] = scanned.get(pid, 0) + 1
+            scanned[pid] = scanned.get(pid, 0) + int(e.payload.get("units") or 1)
         elif e.payload["barcode"] not in unknown:
             unknown.append(e.payload["barcode"])
     expected = {}
