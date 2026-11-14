@@ -110,17 +110,19 @@ def describe_credit(conn, invoice_id):
 
 
 def _send(to, subject, body, message_id):
-    """Email with the orders module if it is there, else a file in data/outbox/."""
+    """Email with Stavros's orders mail module (SMTP, or its outbox without SMTP).
+
+    Without that module: a file in data/outbox/. Returns (message_id, how).
+    Raises mail.MailError when the email could not leave.
+    """
     try:
-        from xangx.orders import mail  # Stavros's module, when it exists
-        sender = getattr(mail, "send_email", None) or getattr(mail, "send_mail", None)
+        from xangx.orders import mail
     except ModuleNotFoundError:
-        sender = None
-    if sender is not None:
-        result = sender(to=to, subject=subject, body=body)
-        if isinstance(result, dict) and result.get("message_id"):
-            return result["message_id"], "email"
-        return message_id, "email"
+        mail = None
+    if mail is not None:
+        key = re.sub(r"[^\w.-]+", "_", message_id.strip("<>").split("@")[0])
+        msg = mail.build(key, mail.recipient(to), subject, body)
+        return mail.send(key, msg)
     outbox = invoices.data_dir() / "outbox"
     outbox.mkdir(parents=True, exist_ok=True)
     safe = re.sub(r"[^\w.-]+", "_", message_id.strip("<>"))
@@ -139,8 +141,11 @@ def request_credit(conn, invoice_id):
     if existing is not None:
         return {"summary": f"Το αίτημα πιστωτικού για το {d['number']} έχει ήδη σταλεί.",
                 "event_ids": []}
-    message_id, how = _send(d["to"], d["subject"], d["body"],
-                            f"<credit-{invoice_id.lower()}@xangxothaika.local>")
+    try:
+        message_id, how = _send(d["to"], d["subject"], d["body"],
+                                f"<credit-{invoice_id.lower()}@xangxothaika.local>")
+    except RuntimeError as exc:  # mail.MailError: nothing is marked as sent
+        return {"summary": f"Το αίτημα πιστωτικού δεν στάλθηκε: {exc}", "event_ids": []}
     event, _ = append_event(
         conn, type="credit.requested", actor="invoices",
         payload={"invoice_id": invoice_id, "amount_cents": d["amount_cents"],
@@ -148,7 +153,7 @@ def request_credit(conn, invoice_id):
         subject=f"invoice:{invoice_id}", idem_key=f"credit:{invoice_id}",
         caused_by=d["read"].id,
     )
-    where = "με email" if how == "email" else "στο φάκελο εξερχομένων (data/outbox)"
+    where = "με email" if how in ("email", "smtp") else "στο φάκελο εξερχομένων (data/outbox)"
     return {"summary": f"Στάλθηκε αίτημα πιστωτικού {format_eur(d['amount_cents'])} στον "
                        f"{d['supplier']['name']} {where}.",
             "event_ids": [event.id]}

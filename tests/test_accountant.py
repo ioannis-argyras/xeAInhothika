@@ -34,7 +34,8 @@ class Accountant(unittest.TestCase):
         self.env = mock.patch.dict(os.environ, {
             "XANGX_DATA_DIR": self.tmp, "XANGX_FAKE_LLM": "1", "MYDATA_USER_ID": "",
             "MYDATA_SUBSCRIPTION_KEY": "", "MYDATA_SUPPLIER_USER_ID": "",
-            "MYDATA_SUPPLIER_SUBSCRIPTION_KEY": "", "XANGX_DEMO_SUPPLIER_EMAIL": ""})
+            "MYDATA_SUPPLIER_SUBSCRIPTION_KEY": "", "XANGX_DEMO_SUPPLIER_EMAIL": "",
+            "SMTP_HOST": "", "XANGX_FILES": str(Path(self.tmp) / "files")})
         self.env.start()
         self.conn = connect(":memory:")
         init_db(self.conn)
@@ -94,9 +95,9 @@ class Accountant(unittest.TestCase):
         acc.request_credit(self.conn, iid)
         [c] = self._types("credit.requested")
         self.assertEqual(c.payload["amount_cents"], 243)
-        files = list((Path(self.tmp) / "outbox").glob("*.txt"))
+        files = list((Path(self.tmp) / "outbox").glob("*.*"))
         self.assertEqual(len(files), 1)
-        self.assertIn(Y["email"], files[0].read_text(encoding="utf-8"))
+        self.assertIn(Y["email"], files[0].read_bytes().decode("utf-8", "ignore"))
         self.assertIn("outbox", out["summary"])
 
     def test_daily_report(self):
