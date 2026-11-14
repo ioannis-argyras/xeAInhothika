@@ -257,5 +257,38 @@ class HomeStateTest(unittest.TestCase):
         self.assertTrue(all(t["last"] is None and not t["active"] for t in data["team"]))
 
 
+class LoginPageTest(unittest.TestCase):
+    """The login page is self-contained and its font files are the only static files open before login."""
+
+    def setUp(self):
+        self.env = mock.patch.dict(os.environ, {"XANGX_ACCESS_CODE": "abc"})
+        self.env.start()
+        self.client = TestClient(server_app.app)
+
+    def tearDown(self):
+        self.env.stop()
+
+    def test_font_files_are_open_without_login(self):
+        for path in ("/static/vendor/ubuntu-sans/ubuntu-sans-greek.woff2",
+                     "/static/vendor/phosphor/Phosphor.woff2"):
+            r = self.client.get(path)
+            self.assertEqual(r.status_code, 200, path)
+            self.assertIn("woff2", r.headers["content-type"])
+
+    def test_everything_else_still_needs_the_code(self):
+        for path in ("/static/app.js", "/static/vendor/README.md", "/api/state",
+                     "/static/vendor/../app.js"):
+            self.assertEqual(self.client.get(path).status_code, 401, path)
+
+    def test_login_page_content(self):
+        page = self.client.get("/login").text
+        self.assertIn("Κωδικός ομάδας", page)
+        self.assertIn("Τον κωδικό τον δίνει ο ιδιοκτήτης.", page)
+        self.assertNotIn("6 ψηφία", page)
+        self.assertNotIn("http", page.replace("http-equiv", ""))
+        self.assertIn('autocomplete="current-password"', page)
+        self.assertIn('type="password"', page)
+
+
 if __name__ == "__main__":
     unittest.main()

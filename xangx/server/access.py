@@ -20,6 +20,7 @@ MAX_AGE = 7 * 24 * 3600
 MAX_FAILS = 5
 WINDOW_SECONDS = 300
 NEED_CODE = {"detail": "Χρειάζεται κωδικός ομάδας."}
+FONT_DIR = "/static/vendor/"  # the login page loads its font and icons from here, before any login
 
 _fails = {}  # client ip -> times of failed attempts
 
@@ -110,36 +111,75 @@ PAGE = """<!doctype html>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Xangxothaika</title>
 <style>
-  :root { color-scheme: light dark; --bg:#f6f6f4; --fg:#1c1c1a; --card:#ffffff;
-          --line:#c9c9c4; --accent:#2f4f4f; --accent-fg:#ffffff; --err:#a12a2a; }
-  @media (prefers-color-scheme: dark) {
-    :root { --bg:#161615; --fg:#ecebe7; --card:#222221; --line:#4a4a47;
-            --accent:#9fc2bd; --accent-fg:#101010; --err:#ff9b9b; } }
-  * { box-sizing: border-box; }
-  body { margin:0; min-height:100vh; display:flex; align-items:center; justify-content:center;
-         padding:16px; background:var(--bg); color:var(--fg);
-         font:16px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif; }
-  main { width:100%; max-width:360px; background:var(--card); border:1px solid var(--line);
-         border-radius:12px; padding:24px; }
-  h1 { margin:0 0 20px; font-size:24px; }
-  label { display:block; margin-bottom:6px; font-weight:600; }
-  input[type=password] { width:100%; min-height:48px; padding:0 12px; font-size:16px;
-         color:var(--fg); background:var(--bg); border:1px solid var(--line); border-radius:8px; }
-  button { width:100%; min-height:48px; margin-top:16px; font-size:16px; font-weight:600;
-         color:var(--accent-fg); background:var(--accent); border:0; border-radius:8px; cursor:pointer; }
-  .err { margin:12px 0 0; color:var(--err); font-weight:600; }
+  /* Η σελίδα είναι αυτόνομη: τα χρώματα και τα μεγέθη είναι από το design/kateuthynseis-v2 (#syndesi). */
+  @font-face { font-family:"Ubuntu Sans"; font-style:normal; font-weight:400 700; font-display:swap;
+    src:url(/static/vendor/ubuntu-sans/ubuntu-sans-greek.woff2) format("woff2");
+    unicode-range:U+0370-0377,U+037A-037F,U+0384-038A,U+038C,U+038E-03A1,U+03A3-03FF; }
+  @font-face { font-family:"Ubuntu Sans"; font-style:normal; font-weight:400 700; font-display:swap;
+    src:url(/static/vendor/ubuntu-sans/ubuntu-sans-latin.woff2) format("woff2");
+    unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD; }
+  @font-face { font-family:"Phosphor"; src:url(/static/vendor/phosphor/Phosphor.woff2) format("woff2"); font-display:block; }
+  :root { --band:#0A1B33; --band2:#0E2444; --n2:#16305A; --n3:#3A5A86; --page:#E2E7EE; --surf:#FFFFFF;
+          --line:#C6CFDB; --ink:#0B1626; --muted:#4B586B; --alert:#A3351B; --accent:#FFC531;
+          --accent-h:#FFD055; --on-accent:#0A1B33; --xl:48px;
+          --sh-stage:0 1px 2px rgba(2,10,22,.30),0 10px 20px -8px rgba(2,10,22,.35),0 36px 64px -24px rgba(2,10,22,.60); }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  html, body { background:var(--page); }
+  body { font-family:"Ubuntu Sans", system-ui, sans-serif; color:var(--ink); font-size:14px; line-height:1.5;
+         -webkit-font-smoothing:antialiased; }
+  :focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+  .ph { font-family:"Phosphor"; font-style:normal; font-weight:normal; line-height:1; speak:never; }
+  .ph-key:before { content:"\\e2d6"; }
+  .ph-arrow-right:before { content:"\\e06c"; }
+  .login { min-height:100vh; display:flex; align-items:center; justify-content:center; padding:40px 16px;
+           background:linear-gradient(180deg,var(--band) 0%,var(--band2) 100%); }
+  .card { width:440px; max-width:100%; background:var(--surf); border:1px solid var(--line); border-radius:18px;
+          box-shadow:var(--sh-stage); overflow:hidden; }
+  .lb { padding:30px 32px 0; }
+  .lb b { display:block; font-size:var(--xl); line-height:1.05; letter-spacing:-.02em; }
+  .lb p { margin-top:8px; color:var(--muted); }
+  .shelfrow { display:flex; gap:7px; align-items:flex-end; margin:22px 32px 0; border-bottom:3px solid var(--line); }
+  .can { width:18px; height:30px; border-radius:7px 7px 4px 4px;
+         background:linear-gradient(180deg,#EEF2F7 0%,#B9C6D8 100%); box-shadow:inset 0 3px 0 rgba(255,255,255,.6); }
+  .fld { padding:24px 32px 30px; }
+  label { display:block; font-weight:700; margin-bottom:8px; }
+  .box { display:flex; align-items:center; height:52px; margin-bottom:14px; padding:0 14px;
+         border:1px solid var(--line); border-radius:12px; background:var(--surf);
+         box-shadow:inset 0 1px 2px rgba(10,27,51,.06); }
+  .box:focus-within { outline:2px solid var(--accent); outline-offset:2px; }
+  .box i { font-size:20px; margin-right:10px; color:var(--n3); }
+  .box input { flex:1; min-width:0; height:100%; border:0; background:transparent; outline:none;
+               font:inherit; font-size:16px; color:var(--ink); }
+  .btn { display:flex; align-items:center; justify-content:center; gap:8px; width:100%; height:52px; border:0;
+         border-radius:999px; background:var(--accent); color:var(--on-accent); font:700 14px/1 "Ubuntu Sans", system-ui, sans-serif;
+         cursor:pointer; box-shadow:inset 0 -2px 0 rgba(10,27,51,.14); transition:transform .14s cubic-bezier(.22,1,.36,1), background-color .16s cubic-bezier(.22,1,.36,1); }
+  .btn:hover { background:var(--accent-h); }
+  .btn:active { transform:scale(.97); }
+  .btn i { font-size:18px; }
+  .note { margin-top:14px; color:var(--muted); }
+  .err { margin:0 0 14px; padding:10px 14px; border-radius:12px; background:#FBEFEB; color:var(--alert); font-weight:700; }
+  @media (max-width:720px) { :root { --xl:30px; } .lb { padding:26px 22px 0; } .fld { padding:20px 22px 26px; }
+                              .shelfrow { margin:22px 22px 0; } }
+  @media (prefers-reduced-motion:reduce) { * { transition:none !important; } }
 </style>
 </head>
 <body>
-<main>
-  <h1>Xangxothaika</h1>
-  <form method="post" action="/login">
-    <label for="code">Κωδικός ομάδας</label>
-    <input id="code" name="code" type="password" autocomplete="current-password" required autofocus>
-    <input type="hidden" name="next" value="__NEXT__">
-    __ERROR__
-    <button type="submit">Μπες</button>
-  </form>
+<main class="login">
+  <div class="card">
+    <div class="lb">
+      <b>Xangxothaika</b>
+      <p>Mini Market 24/7 · Παγκράτι</p>
+    </div>
+    <div class="shelfrow" aria-hidden="true"><i class="can"></i><i class="can"></i><i class="can"></i><i class="can"></i><i class="can"></i><i class="can"></i><i class="can"></i><i class="can"></i></div>
+    <form class="fld" method="post" action="/login">
+      <label for="code">Κωδικός ομάδας</label>
+      <span class="box"><i class="ph ph-key" aria-hidden="true"></i><input id="code" name="code" type="password" autocomplete="current-password" required autofocus></span>
+      __ERROR__
+      <input type="hidden" name="next" value="__NEXT__">
+      <button class="btn" type="submit">Μπες<i class="ph ph-arrow-right" aria-hidden="true"></i></button>
+      <p class="note">Τον κωδικό τον δίνει ο ιδιοκτήτης.</p>
+    </form>
+  </div>
 </main>
 </body>
 </html>
@@ -157,6 +197,11 @@ def _locked_page(next_path):
     return _login_page(next_path, "Πάρα πολλές προσπάθειες. Δοκίμασε ξανά σε λίγα λεπτά.", 429)
 
 
+def _is_font_file(path):
+    """Only the .woff2 font files under /static/vendor/ are open without a login."""
+    return path.startswith(FONT_DIR) and path.endswith(".woff2") and ".." not in path
+
+
 def _wants_page(request):
     return (request.method == "GET" and "text/html" in request.headers.get("accept", "")
             and not request.url.path.startswith("/api/"))
@@ -166,6 +211,9 @@ async def access_middleware(request: Request, call_next):
     path = request.url.path
     if path == "/healthz" and request.method == "GET":
         return JSONResponse({"ok": True})
+
+    if request.method == "GET" and _is_font_file(path):
+        return await call_next(request)
 
     code = _code()
     if not code:
