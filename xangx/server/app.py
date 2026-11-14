@@ -19,7 +19,7 @@ from xangx.screen.api_c import router as api_c_router
 from xangx.screen.describe import _mask, describe, load_names
 from xangx.server.access import access_middleware
 from xangx.server.mcp import router as mcp_router
-from xangx.shared import payments, views
+from xangx.shared import payments, undo, views
 from xangx.shared.catalog import CATALOG
 from xangx.shared.db import connect, init_db
 from xangx.shared.events import EventError, append_event, read_events
@@ -277,10 +277,11 @@ def _home_sections(conn, until_id, names, low):
         team.append({"key": t["key"], "name": t["name"], "actors": list(t["actors"]),
                      "last": event_dict(last, names) if last else None, "active": active})
 
+    undo_index = undo.Index(conn, until_id)
     timeline = [
         {"id": e.id, "at": e.at, "minute": _minute_of_day(e.at),
          "team": "agent" if is_mcp_call(e) else team_of.get(e.actor, "master"),
-         "text": describe(e, names)}
+         "text": describe(e, names), "undo": undo_index.state(e, now_utc)}
         for e in events
         if e.actor in TIMELINE_ACTORS and not is_quiet(e)
         and (is_task(e) or e.type == "approval.requested")
@@ -567,6 +568,25 @@ def _pause_sync(kind):
         return {"ok": False, "message": str(exc)}
     finally:
         conn.close()
+
+
+def _undo_sync(event_id):
+    conn = _db()
+    try:
+        return undo.undo(conn, event_id)
+    except EventError as exc:
+        return 409, {"detail": str(exc)}
+    finally:
+        conn.close()
+
+
+@app.post("/api/undo/{event_id}")
+async def api_undo(event_id: int):
+    """Take back one thing the owner may take back, written as the opposite event."""
+    status, body = await run_in_threadpool(_undo_sync, event_id)
+    if status != 200:
+        return JSONResponse(body, status_code=status)
+    return body
 
 
 @app.post("/api/pause")

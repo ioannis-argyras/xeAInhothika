@@ -6,6 +6,7 @@ Nothing here pays anything: "paid" only means what the owner said.
 """
 
 from xangx.shared.events import append_event, read_events
+from xangx.shared.undo import undone_ids
 from xangx.shared.money import format_eur
 
 METHODS = ("cash", "card", "bank", "not_yet")
@@ -29,7 +30,10 @@ def open_payments(conn, day_start, today, until_id=None):
         types=["payment.asked", "payment.reminder_set", "payment.recorded"])
     items = {}
     answered = {}
+    undone = undone_ids(conn, until_id)  # taken back by the owner: as if it never happened
     for e in events:
+        if e.id in undone:
+            continue
         p = e.payload
         iid = p.get("invoice_id")
         if e.type == "payment.asked":
@@ -54,8 +58,9 @@ def open_payments(conn, day_start, today, until_id=None):
 
 def find_amount(conn, invoice_id):
     """The amount the owner is asked about, or None if nobody asked about this invoice."""
+    undone = undone_ids(conn)
     for e in reversed(read_events(conn, types=["payment.asked", "payment.reminder_set"])):
-        if e.payload.get("invoice_id") == invoice_id:
+        if e.payload.get("invoice_id") == invoice_id and e.id not in undone:
             return e.payload.get("amount_cents")
     return None
 
@@ -83,8 +88,12 @@ def record_payment(conn, invoice_id, method, today):
     amount = find_amount(conn, invoice_id)
     if amount is None:
         return None
-    event, _ = append_event(
-        conn, type="payment.recorded", actor="owner",
-        payload={"invoice_id": invoice_id, "method": method, "amount_cents": amount},
-        idem_key=f"payment-recorded:{invoice_id}:{method}:{today}")
+    payload = {"invoice_id": invoice_id, "method": method, "amount_cents": amount}
+    key = f"payment-recorded:{invoice_id}:{method}:{today}"
+    event, _ = append_event(conn, type="payment.recorded", actor="owner", payload=payload,
+                            idem_key=key)
+    if event.id in undone_ids(conn):
+        # The same answer was undone earlier: this one is a new answer, not the old event again.
+        event, _ = append_event(conn, type="payment.recorded", actor="owner", payload=payload,
+                                idem_key=f"{key}:after-{event.id}")
     return event

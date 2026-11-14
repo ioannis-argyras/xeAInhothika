@@ -13,6 +13,7 @@ from xangx.server import app as server_app
 from xangx.shared.catalog import CATALOG
 from xangx.shared.db import connect, init_db
 from xangx.shared.events import Event, append_event, read_events
+from xangx.shared import views
 
 
 class ServerTest(unittest.TestCase):
@@ -534,6 +535,150 @@ class PaymentCardTest(unittest.TestCase):
             describe(ev("stock.moved", {"product_id": "milk", "qty": 12, "reason": "invoice",
                                         "invoice_id": "G-318"}), names),
             "Μπήκαν στην αποθήκη 12 Γάλα 1L από το τιμολόγιο Γ-318")
+
+
+class UndoTest(unittest.TestCase):
+    """The "Αναίρεση" button: what can be taken back is written as the opposite event."""
+
+    def setUp(self):
+        self.dir = tempfile.TemporaryDirectory()
+        self.db = os.path.join(self.dir.name, "t.sqlite")
+        self.env = mock.patch.dict(os.environ, {"XANGX_DB": self.db})
+        self.env.start()
+        self.client = TestClient(server_app.app)
+        self.conn = connect(self.db)
+        init_db(self.conn)
+        self.conn.execute("INSERT INTO suppliers (id, name) VALUES ('sup-a', 'Αρτοποιία')")
+        self.conn.commit()
+
+    def tearDown(self):
+        self.conn.close()
+        self.env.stop()
+        try:
+            self.dir.cleanup()
+        except OSError:
+            pass
+
+    def add(self, type_, actor, payload, **kw):
+        return append_event(self.conn, type=type_, actor=actor, payload=payload, **kw)[0]
+
+    def of_type(self, type_):
+        return [e for e in read_events(self.conn) if e.type == type_]
+
+    def undo(self, event):
+        return self.client.post(f"/api/undo/{event.id}")
+
+    def cards(self):
+        return self.client.get("/api/state").json()["pending_payments"]
+
+    def test_reminder_is_taken_back_once(self):
+        reminder = self.add("payment.reminder_set", "accountant", {
+            "supplier_id": "sup-a", "invoice_id": "A-1", "due_on": "2026-11-10", "amount_cents": 15929})
+        self.assertEqual(len(self.cards()), 1)
+        for _ in range(2):  # a double click
+            r = self.undo(reminder)
+            self.assertEqual(r.status_code, 200)
+            self.assertTrue(r.json()["ok"])
+        self.assertEqual(self.cards(), [])
+        undone = self.of_type("action.undone")
+        self.assertEqual(len(undone), 1)
+        self.assertEqual(undone[0].actor, "owner")
+        self.assertEqual(undone[0].payload["event_id"], reminder.id)
+        self.assertTrue(undone[0].payload["how"])
+        # Nobody can answer a question that was taken back.
+        self.assertEqual(self.client.post("/api/payments/A-1", json={"method": "cash"}).status_code, 404)
+
+    def test_payment_is_asked_again(self):
+        self.add("payment.asked", "accountant", {
+            "invoice_id": "B-512", "supplier_id": "sup-a", "amount_cents": 5170, "invoice_date": "2026-11-14"})
+        self.client.post("/api/payments/B-512", json={"method": "cash"})
+        self.assertEqual(self.cards(), [])
+        recorded = self.of_type("payment.recorded")[0]
+        self.assertEqual(self.undo(recorded).status_code, 200)
+        self.assertEqual([c["invoice_id"] for c in self.cards()], ["B-512"])
+        # Answering the same way again counts: it is a new answer, not the undone one.
+        self.client.post("/api/payments/B-512", json={"method": "cash"})
+        self.assertEqual(self.cards(), [])
+        self.assertEqual(len(self.of_type("payment.recorded")), 2)
+
+    def test_stock_move_from_an_invoice_gets_the_opposite_move(self):
+        move = self.add("stock.moved", "invoices", {"product_id": "cola-330", "qty": 24, "reason": "invoice"})
+        self.assertEqual(views.stock_on_hand(self.conn, "cola-330"), 24)
+        r = self.undo(move)
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(views.stock_on_hand(self.conn, "cola-330"), 0)
+        opposite = [e for e in self.of_type("stock.moved") if e.payload["reason"] == "undo"]
+        self.assertEqual([e.payload["qty"] for e in opposite], [-24])
+        self.undo(move)
+        self.assertEqual(views.stock_on_hand(self.conn, "cola-330"), 0)
+        self.assertEqual(len(self.of_type("action.undone")), 1)
+
+    def test_a_sale_is_not_undoable(self):
+        sale = self.add("stock.moved", "pos-sim", {"product_id": "cola-330", "qty": -1, "reason": "sale"})
+        self.assertEqual(self.undo(sale).status_code, 400)
+        self.assertEqual(self.of_type("action.undone"), [])
+
+    def test_unsent_proposal_is_cancelled_with_its_card(self):
+        proposal = self.add("order.proposed", "orders", {
+            "order_id": "P-0001", "supplier_id": "sup-a", "lines": [], "net_cents": 1000, "why": {}})
+        card = self.add("approval.requested", "master", {
+            "approval_id": "ap-1", "action": "send_order", "summary": "Παραγγελία", "exact": "", "why": "",
+            "ref": "P-0001", "tool": "send_order", "args": {"order_id": "P-0001"}})
+        self.assertEqual(len(self.client.get("/api/state").json()["pending_approvals"]), 1)
+        r = self.undo(proposal)
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(self.client.get("/api/state").json()["pending_approvals"], [])
+        self.assertEqual(views.order_status(self.conn, "P-0001"), "order.cancelled")
+        decided = self.of_type("approval.decided")
+        self.assertEqual([(e.payload["approval_id"], e.payload["decision"]) for e in decided], [("ap-1", "no")])
+        self.assertEqual(decided[0].caused_by, card.id)
+        self.undo(proposal)
+        self.assertEqual(len(self.of_type("action.undone")), 1)
+        self.assertEqual(len(self.of_type("order.cancelled")), 1)
+
+    def test_what_was_sent_is_not_undone(self):
+        proposal = self.add("order.proposed", "orders", {
+            "order_id": "P-0002", "supplier_id": "sup-a", "lines": [], "net_cents": 1000, "why": {}})
+        sent = self.add("order.sent", "orders", {"order_id": "P-0002", "to": "x@example.com", "message_id": "m1"})
+        credit = self.add("credit.requested", "invoices", {
+            "invoice_id": "A-1", "amount_cents": 100, "reason": "x", "message_id": "m2"})
+        for event in (proposal, sent, credit):
+            r = self.undo(event)
+            self.assertEqual(r.status_code, 409)
+            self.assertIn("Έφυγε ήδη", r.json()["detail"])
+        self.assertEqual(self.of_type("action.undone"), [])
+        self.assertEqual(self.of_type("order.cancelled"), [])
+
+    def test_unknown_other_and_old_events(self):
+        self.assertEqual(self.client.post("/api/undo/9999").status_code, 404)
+        said = self.add("agent.said", "master", {"text": "γεια", "channel": "web"})
+        self.assertEqual(self.undo(said).status_code, 400)
+        old = self.add("payment.reminder_set", "system", {
+            "supplier_id": "sup-a", "invoice_id": "A-9", "due_on": "2026-11-01", "amount_cents": 1},
+            at="2026-01-01T10:00:00.000Z")
+        r = self.undo(old)
+        self.assertEqual(r.status_code, 409)
+        self.assertIn("24 ώρες", r.json()["detail"])
+
+    def test_the_screens_say_what_can_be_undone(self):
+        reminder = self.add("payment.reminder_set", "accountant", {
+            "supplier_id": "sup-a", "invoice_id": "A-1", "due_on": "2026-11-10", "amount_cents": 100})
+        proposal = self.add("order.proposed", "orders", {
+            "order_id": "P-0003", "supplier_id": "sup-a", "lines": [], "net_cents": 1, "why": {}})
+        self.add("order.sent", "orders", {"order_id": "P-0003", "to": "x@example.com", "message_id": "m"})
+
+        def states():
+            tasks = [t for g in self.client.get("/api/screen/tasks").json()["groups"] for t in g["tasks"]]
+            return {t["id"]: t["undo"] for t in tasks}
+
+        before = states()
+        self.assertEqual(before[reminder.id], "can")
+        self.assertEqual(before[proposal.id], "sent")
+        self.undo(reminder)
+        self.assertEqual(states()[reminder.id], "done")
+        timeline = {t["id"]: t["undo"] for t in self.client.get("/api/state").json()["timeline"]}
+        self.assertEqual(timeline[reminder.id], "done")
+        self.assertEqual(timeline[proposal.id], "sent")
 
 
 if __name__ == "__main__":

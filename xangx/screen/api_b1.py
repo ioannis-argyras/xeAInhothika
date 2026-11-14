@@ -14,7 +14,7 @@ from fastapi import HTTPException
 from xangx.accountant import core as accountant
 from xangx.master.tools import greek_day_start_utc, greek_offset
 from xangx.screen.describe import _mask, describe, load_names
-from xangx.shared import views
+from xangx.shared import undo, views
 from xangx.shared.db import connect, init_db
 from xangx.shared.events import read_events
 from xangx.shared.money import format_eur
@@ -430,6 +430,7 @@ def tasks_today(until_id: int | None = None):
         day_start = greek_day_start_utc(now)
         events = _since(conn, day_start, until_id, TASK_TYPES + (
             "approval.decided", "agent.tool_ran", "agent.planned"))
+        undo_index = undo.Index(conn, until_id)
         names = load_names(conn)
         bundles = _bundles(conn, until_id)
         labels = {iid: _label(b, iid) for iid, b in bundles.items()}
@@ -455,6 +456,7 @@ def tasks_today(until_id: int | None = None):
             groups.setdefault(key, {"key": key, "name": name, "tasks": []})["tasks"].append({
                 "id": e.id, "at": _hhmm(e.at), "team": key, "text": text,
                 "how": "yes" if e.id in made_by_yes else "auto",
+                "undo": undo_index.state(e, now),
                 "links": {"invoice_id": iid} if iid in known else {},
                 "warn": e.type == "exception.flagged"
                 or (e.type == "invoice.matched" and bool(p.get("issues"))),
