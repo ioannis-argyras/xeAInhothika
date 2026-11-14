@@ -307,23 +307,30 @@ def step_paralavi(conn, background=True):
         if state["completed"]:
             return _result(True, "Η παραλαβή P-0318 έχει ήδη κλείσει.")
         rows = conn.execute(
-            "SELECT product_id, case_barcode FROM supplier_products "
+            "SELECT product_id, case_barcode, pack_size FROM supplier_products "
             "WHERE supplier_id = 'sup-ymittou' AND case_barcode IS NOT NULL"
         ).fetchall()
-        case_codes = {r["product_id"]: r["case_barcode"] for r in rows}
+        case_info = {r["product_id"]: (r["case_barcode"], max(1, int(r["pack_size"] or 1))) for r in rows}
         water = conn.execute("SELECT barcode FROM products WHERE id = ?", (WATER,)).fetchone()["barcode"]
         scanned = {l["product_id"]: l["scanned"] for l in state["lines"]}
+        expected = {l["product_id"]: l["expected"] for l in state["lines"]}
         for pid in CASE_PRODUCTS:
-            code = case_codes.get(pid)
-            if code and not scanned.get(pid) and code not in state["unknown_barcodes"]:
+            if pid not in case_info:
+                continue
+            code, pack = case_info[pid]
+            left = max(0, expected.get(pid, 0) - scanned.get(pid, 0))
+            unit = conn.execute("SELECT barcode FROM products WHERE id = ?", (pid,)).fetchone()["barcode"]
+            for _ in range(left // pack):
                 state = delivery.scan(conn, delivery_id, code)
+            for _ in range(left % pack):
+                state = delivery.scan(conn, delivery_id, unit)
         for _ in range(max(0, WATER_SCANS - scanned.get(WATER, 0))):
             state = delivery.scan(conn, delivery_id, water)
         state = delivery.status(conn, delivery_id)
         missing = [(m["product_id"], m["qty"]) for m in state["missing"]]
         if missing != [(WATER, 1)]:
-            return _result(False, "Περιμένει τον μετρητή κιβωτίων του Σταύρου: η παραλαβή δείχνει "
-                           "λείψεις και δεν την έκλεισα.", missing=missing)
+            return _result(False, "Η παραλαβή δείχνει λείψεις που δεν περίμενα και δεν την έκλεισα.",
+                           missing=missing)
         delivery.complete(conn, delivery_id)
         return _result(True, "Η παραλαβή έκλεισε: ήρθαν 9 από 10 εξάδες νερό, λείπει 1.")
     except Exception as exc:

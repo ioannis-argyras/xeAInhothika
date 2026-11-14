@@ -135,20 +135,20 @@ class StepTests(DirectorBase):
 
     def test_paralavi_closes_only_with_exactly_one_water_missing(self):
         out = director.run_step("paralavi", self.conn)
+        self.assertTrue(out["ok"], out)
         done = self.types("delivery.completed")
-        if out["ok"]:
-            self.assertEqual([(s["product_id"], s["qty"]) for s in done[0].payload["shortages"]],
-                             [("water-1500x6", 1)])
-        else:  # the case counter of the stock role is not in yet: nothing is closed
-            self.assertIn("Σταύρου", out["summary"])
-            self.assertEqual(done, [])
+        self.assertEqual(len(done), 1)
+        self.assertEqual([(s["product_id"], s["qty"]) for s in done[0].payload["shortages"]],
+                         [("water-1500x6", 1)])
         scans = [e for e in self.types("delivery.item_scanned")
                  if e.payload["product_id"] == "water-1500x6"]
         self.assertEqual(len(scans), 9)
 
     def test_paralavi_twice_scans_no_more_water(self):
         director.run_step("paralavi", self.conn)
-        director.run_step("paralavi", self.conn)
+        again = director.run_step("paralavi", self.conn)
+        self.assertTrue(again["ok"])
+        self.assertIn("έχει ήδη κλείσει", again["summary"])
         scans = [e for e in self.types("delivery.item_scanned")
                  if e.payload["product_id"] == "water-1500x6"]
         self.assertEqual(len(scans), 9)
