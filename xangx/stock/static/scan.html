@@ -61,12 +61,22 @@
 <script>
 const $ = id => document.getElementById(id);
 const params = new URLSearchParams(location.search);
-const order = params.get('order') || '';
+let order = params.get('order') || '';
 // Practice (?dokimi=1): the same counter, but the scans stay on the phone and nothing is saved.
 const practice = params.get('dokimi') === '1';
 let deliveryId = null, closed = false, queue = Promise.resolve(), codes = [];
 const say = t => $('st').textContent = t;
-$('title').textContent = (practice ? 'Δοκιμή παραλαβής · ' : 'Παραλαβή · ') + order;
+const setTitle = sup => { $('title').textContent = (practice ? 'Δοκιμή παραλαβής · ' : 'Παραλαβή · ') + order + (sup ? ' · ' + sup : ''); };
+setTitle();
+const euro = c => (c / 100).toLocaleString('el-GR', {style: 'currency', currency: 'EUR'});
+// Camera errors in plain words (the browser gives only an English name).
+function cameraProblem(name) {
+  return ({NotAllowedError: 'Δεν δόθηκε άδεια για την κάμερα. Στο Safari: «aA» → Ρυθμίσεις ιστότοπου → Κάμερα → Να επιτρέπεται, και ανανέωση.',
+           NotReadableError: 'Την κάμερα την κρατά άλλη εφαρμογή ή καρτέλα. Κλείσ’ την και κάνε ανανέωση.',
+           NotFoundError: 'Δεν βρέθηκε κάμερα σε αυτή τη συσκευή.',
+           OverconstrainedError: 'Δεν βρέθηκε κάμερα σε αυτή τη συσκευή.'}[name]
+          || 'Αυτός ο browser δεν δίνει κάμερα.') + ' Μέχρι τότε γράψε ή σκάναρε με USB στο πεδίο.';
+}
 $('trial').hidden = !practice;
 if (practice) $('done').hidden = true;
 
@@ -89,7 +99,7 @@ async function post(path, body) {
 }
 
 // One row: number, name (with an optional muted second line), optional icon.
-function row(num, name, sub, cls, icon) {
+function row(num, name, sub, cls, icon, right) {
   const d = document.createElement('div'); d.className = 'ms';
   const b = document.createElement('b'); b.textContent = num; if (cls) b.className = cls;
   const t = document.createElement('span');
@@ -99,7 +109,8 @@ function row(num, name, sub, cls, icon) {
     t.append(n, m);
   } else t.textContent = name;
   d.append(b, t);
-  if (icon) { const i = document.createElement('i'); i.className = 'ph ' + icon; d.appendChild(i); } else d.appendChild(document.createElement('span'));
+  if (icon) { const i = document.createElement('i'); i.className = 'ph ' + icon; d.appendChild(i); }
+  else { const r = document.createElement('span'); r.className = 'm'; r.textContent = right || ''; d.appendChild(r); }
   return d;
 }
 function fill(box, list, rows) { list.replaceChildren(...rows); box.hidden = !rows.length; }
@@ -107,6 +118,7 @@ const plural = (n, one, many) => n + ' ' + (n === 1 ? one : many);
 
 function show(s) {
   closed = s.completed;
+  setTitle(s.supplier_name);
   $('count').textContent = s.scanned + ' από ' + s.expected;
   $('bar').style.width = (s.expected ? Math.min(100, 100 * s.scanned / s.expected) : 0).toFixed(1) + '%';
   const full = s.lines.filter(l => l.scanned >= l.expected);
@@ -116,7 +128,8 @@ function show(s) {
   const byId = Object.fromEntries(s.lines.map(l => [l.product_id, l]));
   fill($('miss'), $('missList'), s.missing.map(m => {
     const l = byId[m.product_id];
-    return row(String(m.qty), m.name, l ? 'ήρθαν ' + l.scanned + ' από ' + l.expected : null, 'q warn');
+    return row(String(m.qty), m.name, l ? 'ήρθαν ' + l.scanned + ' από ' + l.expected : null, 'q warn', null,
+               m.value_cents ? euro(m.value_cents) : '');
   }));
   $('missOf').textContent = plural(gone, 'τεμάχιο', 'τεμάχια');
   const extra = s.extra.map(e => row(String(e.scanned), e.name))
@@ -227,7 +240,7 @@ async function startCamera() {
   }
   const v = $('v');
   try { v.srcObject = await navigator.mediaDevices.getUserMedia({video: {facingMode: {ideal: 'environment'}, width: {ideal: 1920}}, audio: false}); }
-  catch (e) { say('Η κάμερα δεν άνοιξε (' + e.name + '). Γράψε ή σκάναρε με USB στο πεδίο.'); return; }
+  catch (e) { say(cameraProblem(e.name)); return; }
   v.hidden = false; say('Στόχευσε το barcode. Ένα τεμάχιο τη φορά.');
   const loop = async () => {
     if (closed) return;
@@ -238,7 +251,11 @@ async function startCamera() {
 }
 
 async function start() {
-  if (!order) { say('Λείπει η παραγγελία στη διεύθυνση (?order=P-0318).'); return; }
+  if (!order) {
+    try { order = (await (await fetch('/stock/delivery/pending')).json()).order_id || ''; } catch (e) {}
+    if (!order) { say('Δεν περιμένουμε καμία παραλαβή τώρα.'); $('done').disabled = true; return; }
+    params.set('order', order); history.replaceState(null, '', '?' + params.toString()); setTitle();
+  }
   try {
     const s = practice ? await post('/stock/delivery/practice', {order_id: order, barcodes: []})
                        : await post('/stock/delivery/start', {order_id: order});

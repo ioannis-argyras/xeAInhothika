@@ -42,12 +42,21 @@ $('kick').textContent = 'Κάμερα ραφιού · ' + cam;
 fetch('/stock/camera/shelf?cam=' + encodeURIComponent(cam)).then(r => r.ok ? r.json() : null)
   .then(j => { if (j) { $('title').textContent = j.name; document.title = j.name + ' · Κάμερα ραφιού'; } }).catch(() => {});
 
+// Camera errors in plain words (the browser gives only an English name).
+function cameraProblem(name) {
+  return ({NotAllowedError: 'Δεν δόθηκε άδεια για την κάμερα. Στο Safari: «aA» → Ρυθμίσεις ιστότοπου → Κάμερα → Να επιτρέπεται, και ανανέωση.',
+           NotReadableError: 'Την κάμερα την κρατά άλλη εφαρμογή ή καρτέλα. Κλείσ’ την και κάνε ανανέωση.',
+           NotFoundError: 'Δεν βρέθηκε κάμερα σε αυτή τη συσκευή.',
+           OverconstrainedError: 'Δεν βρέθηκε κάμερα σε αυτή τη συσκευή.'}[name]
+          || 'Αυτός ο browser δεν δίνει κάμερα.') + ' Μέχρι τότε χρησιμοποίησε «Από τη συλλογή».';
+}
+
 async function start() {
   if (!window.isSecureContext) { say('Χωρίς HTTPS ο browser δεν δίνει κάμερα. Χρησιμοποίησε «Από τη συλλογή».'); return; }
   try {
     v.srcObject = await navigator.mediaDevices.getUserMedia({video: {facingMode: {ideal: 'environment'}, width: {ideal: 1920}}, audio: false});
     say('Η κάμερα είναι έτοιμη.');
-  } catch (e) { say('Η κάμερα δεν άνοιξε (' + e.name + '). Χρησιμοποίησε «Από τη συλλογή».'); }
+  } catch (e) { say(cameraProblem(e.name)); }
 }
 
 // Shrink to 1024 px wide, JPEG quality 0.8, then base64.

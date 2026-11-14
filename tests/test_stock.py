@@ -228,6 +228,21 @@ class DeliveryTest(unittest.TestCase):
         self.assertEqual(self.client.post("/stock/delivery/practice",
                                           json={"order_id": "P-0903", "barcodes": "x"}).status_code, 400)
 
+    def test_supplier_value_of_missing_and_pending_order(self):
+        s = self.order("P-0904", 10)
+        self.assertTrue(s["supplier_name"])
+        r = self.scan(self.barcode("water-1500x6"), "D-P-0904").json()
+        self.assertEqual(r["missing"][0]["value_cents"], 9 * 215)
+        self.assertEqual(self.client.get("/stock/camera/shelf?cam=cam-1").json()["name"], "Ψυγείο 1")
+        self.assertEqual(self.client.get("/stock/camera/shelf?cam=nope").status_code, 404)
+        from xangx.stock import delivery
+        sent = delivery.pending_order(self.conn)
+        self.assertEqual(self.client.get("/stock/delivery/pending").json()["order_id"], sent)
+        if sent:
+            delivery.start(self.conn, sent)
+            delivery.complete(self.conn, delivery.delivery_id_for(sent))
+            self.assertNotEqual(delivery.pending_order(self.conn), sent)
+
     def test_case_barcode_of_another_supplier_is_unknown(self):
         sup = self.conn.execute("SELECT id FROM suppliers WHERE id != 'sup-ymittou' LIMIT 1").fetchone()[0]
         append_event(self.conn, type="order.proposed", actor="orders", subject="order:P-0902",

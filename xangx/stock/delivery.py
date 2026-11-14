@@ -145,12 +145,19 @@ def _shape(conn, delivery_id, order_id, completed, lines, shortages, unknown, ex
     names = {pid: p["name"] for pid, p in _products(conn).items()}
     expected = sum(l["expected"] for l in lines)
     got = sum(min(l["scanned"], l["expected"]) for l in lines)
+    order = _order(conn, order_id)
+    unit = {l["product_id"]: l.get("unit_cents") for l in (order.payload.get("lines", []) if order else [])}
+    supplier_id = order.payload.get("supplier_id") if order else None
+    row = conn.execute("SELECT name FROM suppliers WHERE id = ?", (supplier_id,)).fetchone() if supplier_id else None
     return {
         "delivery_id": delivery_id, "order_id": order_id, "completed": completed,
+        "supplier_name": row["name"] if row else None,
         "scanned": got, "expected": expected,
         "lines": [dict(l, name=names.get(l["product_id"], l["product_id"])) for l in lines],
         "missing": [{"product_id": s["product_id"], "qty": s["qty"],
-                     "name": names.get(s["product_id"], s["product_id"])} for s in shortages],
+                     "name": names.get(s["product_id"], s["product_id"]),
+                     "value_cents": s["qty"] * unit[s["product_id"]] if unit.get(s["product_id"]) else None}
+                    for s in shortages],
         "extra": [dict(l, name=names.get(l["product_id"], l["product_id"])) for l in extra],
         "unknown_barcodes": unknown,
     }
@@ -209,3 +216,12 @@ def practice(conn, order_id, barcodes):
         result["last"] = {"barcode": code, "product_id": pid, "units": units,
                           "name": _products(conn).get(pid, {}).get("name") if pid else None}
     return result
+
+
+def pending_order(conn):
+    """The newest sent order whose delivery is not closed yet, or None."""
+    for e in reversed(read_events(conn, types=["order.sent"])):
+        order_id = e.payload.get("order_id")
+        if order_id and _completed(conn, delivery_id_for(order_id)) is None and _order(conn, order_id):
+            return order_id
+    return None

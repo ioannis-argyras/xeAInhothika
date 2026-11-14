@@ -101,6 +101,12 @@ def _delivery_call(fn, *args):
         conn.close()
 
 
+@router.get("/stock/delivery/pending")
+def delivery_pending():
+    """The order the scan page opens when its link names none."""
+    return {"order_id": _delivery_call(delivery.pending_order)}
+
+
 @router.post("/stock/delivery/start")
 def delivery_start(body: dict = Body(...)):
     return _delivery_call(delivery.start, _field(body, "order_id"))
