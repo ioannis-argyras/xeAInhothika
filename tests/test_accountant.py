@@ -2,11 +2,14 @@ import os
 import shutil
 import tempfile
 import unittest
-from datetime import date
+from datetime import date, datetime, timezone
 from pathlib import Path
 from unittest import mock
 
+from fastapi.testclient import TestClient
+
 from xangx.accountant import core as acc
+from xangx.accountant import trends as tr
 from xangx.accountant import worker
 from xangx.demo.catalog_data import SUPPLIER_BY_ID, make_iban
 from xangx.demo.seed import seed_reference
@@ -168,6 +171,187 @@ class Accountant(unittest.TestCase):
         worker.run_once(self.conn)
         self.assertEqual(len(self._types("payment.asked")), 1)
         self.assertEqual(self._types("payment.reminder_set"), [])
+
+
+# ---------- purchase trends (GET /accountant/trends/purchases) ----------
+
+K = SUPPLIER_BY_ID["sup-kava"]
+NOW = datetime(2026, 11, 15, 10, 0, tzinfo=timezone.utc)  # Sunday 15/11/2026, 12:00 Greek time
+
+
+def _cola_invoice(conn, invoice_id, supplier, day, cola_cents, qty=24):
+    net = cola_cents * qty
+    vat = round(net * 0.24)
+    event, _ = append_event(
+        conn, type="invoice.read", actor="system", subject=f"invoice:{invoice_id}",
+        payload={"invoice_id": invoice_id, "supplier_afm": supplier["afm"], "series": "Α",
+                 "number": invoice_id[-3:], "date": day, "net_cents": net,
+                 "vat_by_rate": {"24": vat}, "total_cents": net + vat,
+                 "checks": {"arithmetic": True}, "confidence": 0.9,
+                 "lines": [{"name": "Coca-Cola 330ml κουτί", "product_id": "cola-330", "qty": qty,
+                            "unit_cents": cola_cents, "net_cents": net, "vat_rate": 24}]})
+    return event
+
+
+class PurchaseTrends(unittest.TestCase):
+    def setUp(self):
+        self.conn = connect(":memory:")
+        init_db(self.conn)
+        seed_reference(self.conn)
+
+    def tearDown(self):
+        self.conn.close()
+
+    def trends(self, days=30, until_id=None):
+        return tr.purchase_trends(self.conn, days, until_id, now=NOW)
+
+    def total(self, event):
+        return event.payload["total_cents"]
+
+    def test_price_change_and_cheapest(self):
+        _cola_invoice(self.conn, "INV-k01", K, "2026-11-01", 58)
+        _cola_invoice(self.conn, "INV-y01", Y, "2026-11-07", 57)
+        _cola_invoice(self.conn, "INV-y02", Y, "2026-11-14", 62)
+        [cola] = self.trends()["prices"]
+        self.assertEqual(cola["product_id"], "cola-330")
+        self.assertEqual([p["unit_cents"] for p in cola["points"]], [58, 57, 62])
+        self.assertEqual([p["supplier_id"] for p in cola["points"]],
+                         ["sup-kava", "sup-ymittou", "sup-ymittou"])
+        self.assertEqual((cola["last_cents"], cola["last_supplier_id"]), (62, "sup-ymittou"))
+        # Against the same supplier's previous price (0,57), not the Kava's 0,58.
+        self.assertEqual((cola["previous_cents"], cola["change_pct"]), (57, 8.8))
+        self.assertEqual(cola["cheapest"], {"supplier_id": "sup-kava", "name": K["name"],
+                                            "unit_cents": 58})
+        # 72 cans in the 30 days, each 0,04 cheaper at the Kava.
+        self.assertEqual((cola["qty_in_window"], cola["saving_cents"]), (72, 288))
+
+    def test_changes_was_now_pct(self):
+        _cola_invoice(self.conn, "INV-y01", Y, "2026-11-07", 57)
+        _cola_invoice(self.conn, "INV-y02", Y, "2026-11-14", 62)
+        [change] = self.trends()["changes"]
+        self.assertEqual((change["was_cents"], change["now_cents"], change["pct"]), (57, 62, 8.8))
+        self.assertEqual((change["supplier_id"], change["date"]), ("sup-ymittou", "2026-11-14"))
+
+    def test_same_price_is_not_a_change(self):
+        _cola_invoice(self.conn, "INV-y01", Y, "2026-11-07", 57)
+        _cola_invoice(self.conn, "INV-y02", Y, "2026-11-14", 57)
+        data = self.trends()
+        self.assertEqual(data["prices"][0]["change_pct"], 0.0)
+        self.assertEqual(data["changes"], [])
+
+    def test_cheapest_is_the_same_as_compare_suppliers(self):
+        from xangx.orders.tools import compare_suppliers
+
+        _cola_invoice(self.conn, "INV-k01", K, "2026-11-01", 58)
+        _cola_invoice(self.conn, "INV-y02", Y, "2026-11-14", 62)
+        [cola] = self.trends()["prices"]
+        self.assertEqual(cola["cheapest"]["supplier_id"],
+                         compare_suppliers(self.conn, "cola-330")["cheapest_supplier_id"])
+
+    def test_no_saving_when_last_supplier_is_cheapest(self):
+        _cola_invoice(self.conn, "INV-y01", Y, "2026-11-07", 62)
+        _cola_invoice(self.conn, "INV-k01", K, "2026-11-14", 58)
+        [cola] = self.trends()["prices"]
+        self.assertEqual(cola["last_supplier_id"], "sup-kava")
+        self.assertEqual(cola["saving_cents"], 0)
+
+    def test_reread_invoice_counts_once(self):
+        _cola_invoice(self.conn, "INV-y02", Y, "2026-11-14", 60)
+        again = _cola_invoice(self.conn, "INV-y02", Y, "2026-11-14", 62)  # the latest read wins
+        data = self.trends()
+        self.assertEqual(data["purchases"]["invoices"], 1)
+        self.assertEqual(data["purchases"]["total_cents"], self.total(again))
+        self.assertEqual([p["unit_cents"] for p in data["prices"][0]["points"]], [62])
+        self.assertIsNone(data["prices"][0]["change_pct"])
+
+    def test_purchases_per_supplier_in_window(self):
+        y1 = _cola_invoice(self.conn, "INV-y01", Y, "2026-11-07", 57)
+        y2 = _cola_invoice(self.conn, "INV-y02", Y, "2026-11-15", 62, qty=48)
+        k1 = _cola_invoice(self.conn, "INV-k01", K, "2026-11-10", 58)
+        k0 = _cola_invoice(self.conn, "INV-k00", K, "2026-11-08", 58)  # before 09/11
+        b = self.trends(days=7)["purchases"]
+        rows = {r["supplier_id"]: r for r in b["suppliers"]}
+        self.assertEqual(set(rows), {"sup-ymittou", "sup-kava"})
+        self.assertEqual((rows["sup-ymittou"]["total_cents"], rows["sup-ymittou"]["invoices"]),
+                         (self.total(y2), 1))
+        self.assertEqual((rows["sup-kava"]["total_cents"], rows["sup-kava"]["invoices"]),
+                         (self.total(k1), 1))
+        self.assertEqual(b["suppliers"][0]["supplier_id"], "sup-ymittou")  # biggest first
+        self.assertEqual(b["total_cents"], self.total(y2) + self.total(k1))
+        self.assertEqual(rows["sup-ymittou"]["share_pct"],
+                         round(self.total(y2) * 100.0 / b["total_cents"], 1))
+        self.assertEqual(self.trends(days=30)["purchases"]["total_cents"],
+                         sum(self.total(e) for e in (y1, y2, k1, k0)))
+
+    def test_window_follows_the_greek_day(self):
+        # 15/11 00:30 Greek time is still 14/11 22:30 UTC: the window already ends on 15/11.
+        late = datetime(2026, 11, 14, 22, 30, tzinfo=timezone.utc)
+        self.assertEqual(tr.window(1, late), ("2026-11-15", "2026-11-15"))
+        self.assertEqual(tr.window(7, NOW), ("2026-11-09", "2026-11-15"))
+
+    def test_until_id_replays_the_past(self):
+        first = _cola_invoice(self.conn, "INV-y01", Y, "2026-11-07", 57)
+        _cola_invoice(self.conn, "INV-y02", Y, "2026-11-14", 62)
+        data = tr.purchase_trends(self.conn, 30, until_id=first.id, now=NOW)
+        [cola] = data["prices"]
+        self.assertEqual([p["unit_cents"] for p in cola["points"]], [57])
+        self.assertEqual(data["changes"], [])
+        self.assertEqual(data["purchases"]["invoices"], 1)
+        self.assertIsNone(cola["cheapest"])  # no price from the future
+        self.assertEqual(data["until_id"], first.id)
+
+    def test_days_are_clamped(self):
+        self.assertEqual(tr.clamp_days(0), 1)
+        self.assertEqual(tr.clamp_days(10_000), tr.MAX_DAYS)
+        self.assertEqual(tr.clamp_days("x"), tr.DEFAULT_DAYS)
+
+    def test_reads_only(self):
+        _cola_invoice(self.conn, "INV-y02", Y, "2026-11-14", 62)
+        before = len(read_events(self.conn))
+        data = self.trends()
+        self.assertEqual(len(read_events(self.conn)), before)
+        self.assertEqual((data["from"], data["to"]), ("2026-10-17", "2026-11-15"))
+
+
+class PurchaseTrendsRoute(unittest.TestCase):
+    def setUp(self):
+        self.dir = tempfile.TemporaryDirectory()
+        self.env = mock.patch.dict(os.environ, {
+            "XANGX_DB": os.path.join(self.dir.name, "t.sqlite"),
+            "XANGX_DATA_DIR": self.dir.name, "XANGX_FAKE_LLM": "1", "XANGX_ACCESS_CODE": ""})
+        self.env.start()
+        conn = connect()
+        init_db(conn)
+        seed_reference(conn)
+        self.first = _cola_invoice(conn, "INV-k01", K, "2026-11-01", 58)
+        _cola_invoice(conn, "INV-y02", Y, "2026-11-14", 62)
+        conn.close()
+        from xangx.server import app as server_app
+        self.client = TestClient(server_app.app)
+
+    def tearDown(self):
+        self.env.stop()
+        try:
+            self.dir.cleanup()
+        except OSError:
+            pass
+
+    def test_json_shape(self):
+        r = self.client.get("/accountant/trends/purchases?days=7")
+        self.assertEqual(r.status_code, 200, r.text)
+        data = r.json()
+        self.assertEqual(set(data), {"days", "from", "to", "until_id", "prices", "changes",
+                                     "purchases"})
+        self.assertEqual(data["days"], 7)
+        self.assertEqual(data["prices"][0]["cheapest"]["supplier_id"], "sup-kava")
+
+    def test_until_id(self):
+        r = self.client.get(f"/accountant/trends/purchases?until_id={self.first.id}")
+        self.assertEqual(r.status_code, 200, r.text)
+        self.assertEqual([p["unit_cents"] for p in r.json()["prices"][0]["points"]], [58])
+
+    def test_old_route_is_gone(self):
+        self.assertEqual(self.client.get("/accountant/trends").status_code, 404)
 
 
 if __name__ == "__main__":

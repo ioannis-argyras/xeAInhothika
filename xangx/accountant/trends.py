@@ -1,18 +1,19 @@
-"""Trends for the owner: sales per Greek day, prices per product and supplier, purchases per supplier.
+"""Purchase trends for the owner: prices per product and supplier, purchases per supplier.
 
 Read only: it reads events and the reference tables, and writes nothing. Money is in cents.
+Sales per day are the stock role's (GET /stock/trends/sales), not here.
 The cheapest supplier comes from the same function as compare_suppliers (xangx.orders.tools).
+`until_id` replays the past like /api/state: only events up to that id, and "today" is the
+Greek day of the last of them.
 """
 
-from datetime import date, datetime, timedelta, timezone
+from datetime import datetime, timedelta, timezone
 
 from xangx.master.tools import greek_offset
 from xangx.shared import read_events
-from xangx.shared.money import format_eur
 
 DEFAULT_DAYS = 30
 MAX_DAYS = 365
-WEEKDAYS = ["Δευτέρα", "Τρίτη", "Τετάρτη", "Πέμπτη", "Παρασκευή", "Σάββατο", "Κυριακή"]
 
 
 def clamp_days(days):
@@ -23,15 +24,28 @@ def clamp_days(days):
     return max(1, min(MAX_DAYS, days))
 
 
-def greek_date(at):
-    """The Greek calendar day of an `at` string (UTC), e.g. 23:30 UTC in November -> next day."""
-    moment = datetime.strptime(at[:19], "%Y-%m-%dT%H:%M:%S").replace(tzinfo=timezone.utc)
-    return (moment + greek_offset(moment)).date()
+def _parse(at):
+    return datetime.strptime(at[:19], "%Y-%m-%dT%H:%M:%S").replace(tzinfo=timezone.utc)
 
 
-def today_greek(now=None):
-    now = now or datetime.now(timezone.utc)
+def reference_now(conn, until_id=None):
+    """The real clock, or the time of the last event up to `until_id` (as the time machine)."""
+    if until_id is not None:
+        row = conn.execute("SELECT at FROM events WHERE id <= ? ORDER BY id DESC LIMIT 1",
+                           (until_id,)).fetchone()
+        if row:
+            return _parse(row["at"])
+    return datetime.now(timezone.utc)
+
+
+def today_greek(now):
     return (now + greek_offset(now)).date()
+
+
+def window(days, now):
+    """First and last Greek day of the last N days, as YYYY-MM-DD."""
+    today = today_greek(now)
+    return (today - timedelta(days=days - 1)).isoformat(), today.isoformat()
 
 
 def _pct(new, old):
@@ -40,69 +54,10 @@ def _pct(new, old):
     return round((new - old) * 100.0 / old, 1)
 
 
-# ---------- 1. sales per Greek day ----------
-
-def sales_by_day(conn, days, now=None):
-    today = today_greek(now)
-    first = today - timedelta(days=days - 1)
-    scan_from = first - timedelta(days=7)  # for the same weekday a week before the first day
-    totals, receipts = {}, {}
-    for e in read_events(conn, types=["sale.recorded"]):
-        d = greek_date(e.at)
-        if scan_from <= d <= today:
-            totals[d] = totals.get(d, 0) + int(e.payload["total_cents"])
-            receipts[d] = receipts.get(d, 0) + 1
-    rows = []
-    for k in range(days):
-        d = first + timedelta(days=k)
-        total, week_before = totals.get(d, 0), totals.get(d - timedelta(days=7), 0)
-        rows.append({
-            "date": d.isoformat(), "weekday": WEEKDAYS[d.weekday()], "today": d == today,
-            "total_cents": total, "receipts": receipts.get(d, 0),
-            "same_weekday_last_week_cents": week_before,
-            "vs_last_week_pct": _pct(total, week_before),
-        })
-    # Today is not over yet: it counts in the list, not in the average or the best day.
-    full = [r for r in rows if not r["today"] and r["receipts"] > 0]
-    average = round(sum(r["total_cents"] for r in full) / len(full)) if full else None
-    best = max(full, key=lambda r: (r["total_cents"], r["date"])) if full else None
-    return {
-        "days": rows,
-        "total_cents": sum(r["total_cents"] for r in rows),
-        "total_without_today_cents": sum(r["total_cents"] for r in rows if not r["today"]),
-        "receipts": sum(r["receipts"] for r in rows),
-        "average_cents": average,
-        "days_with_sales": len(full),
-        "best_day": {"date": best["date"], "weekday": best["weekday"],
-                     "total_cents": best["total_cents"]} if best else None,
-        "by_weekday": _by_weekday(full),
-    }
-
-
-def _by_weekday(full):
-    """Per weekday (Monday first): the average of its full days with sales, and its latest day
-    against that average ("τα Σάββατα +2%")."""
-    out = []
-    for wd, name in enumerate(WEEKDAYS):
-        same = [r for r in full if date.fromisoformat(r["date"]).weekday() == wd]
-        if not same:
-            out.append({"weekday": name, "days": 0, "average_cents": None, "last_date": None,
-                        "last_cents": None, "last_vs_average_pct": None})
-            continue
-        avg = round(sum(r["total_cents"] for r in same) / len(same))
-        last = same[-1]
-        out.append({"weekday": name, "days": len(same), "average_cents": avg,
-                    "last_date": last["date"], "last_cents": last["total_cents"],
-                    "last_vs_average_pct": _pct(last["total_cents"], avg)})
-    return out
-
-
-# ---------- 2 and 3. invoices: prices and purchases ----------
-
-def _invoices(conn):
-    """The latest invoice.read per invoice, oldest first by paper date."""
+def _invoices(conn, until_id=None):
+    """The latest invoice.read per invoice (a re-read replaces the first), oldest first by paper date."""
     latest = {}
-    for e in read_events(conn, types=["invoice.read"]):
+    for e in read_events(conn, until_id=until_id, types=["invoice.read"]):
         latest[e.payload["invoice_id"]] = e
     return sorted(latest.values(), key=lambda e: (e.payload.get("date") or "", e.id))
 
@@ -112,20 +67,23 @@ def _suppliers(conn):
             for r in conn.execute("SELECT id, afm, name FROM suppliers")}
 
 
-def _window(days, now):
-    today = today_greek(now)
-    return (today - timedelta(days=days - 1)).isoformat(), today.isoformat()
-
-
-def prices(conn, invoices=None, days=DEFAULT_DAYS, now=None):
-    """Per product: every invoice price (date, supplier, unit price), the last price, its change
-    against the same supplier's previous price, and the cheapest supplier (as compare_suppliers).
-    saving_cents: what the last N days' quantity would have cost less at the cheapest supplier
-    (net, without VAT); 0 when the last supplier is already the cheapest."""
+def _cheapest(conn, product_id, until_id):
+    """As compare_suppliers. supplier_prices has no until_id yet, so in a replay of the past
+    it would show today's prices: then None rather than a price from the future."""
+    if until_id is not None:
+        return None
     from xangx.orders.tools import supplier_prices
 
-    invoices = _invoices(conn) if invoices is None else invoices
-    first, last_day = _window(days, now)
+    cheap = supplier_prices(conn, product_id)
+    return {"supplier_id": cheap[0][0], "name": cheap[0][1], "unit_cents": cheap[0][2]} if cheap else None
+
+
+def prices(conn, invoices, days, now, until_id=None):
+    """Per product: every invoice price (date, supplier, unit price), the last price, its change
+    against the same supplier's previous price, and the cheapest supplier.
+    saving_cents: what the last N days' quantity would cost less at the cheapest supplier
+    (net, without VAT); 0 when the last supplier is already the cheapest."""
+    first, last_day = window(days, now)
     suppliers = _suppliers(conn)
     names = {r["id"]: r["name"] for r in conn.execute("SELECT id, name FROM products")}
     points, qty = {}, {}
@@ -150,9 +108,7 @@ def prices(conn, invoices=None, days=DEFAULT_DAYS, now=None):
         last = series[-1]
         before = [x for x in series[:-1] if x["supplier_id"] == last["supplier_id"]]
         previous = before[-1]["unit_cents"] if before else None
-        cheap = supplier_prices(conn, pid)
-        cheapest = ({"supplier_id": cheap[0][0], "name": cheap[0][1], "unit_cents": cheap[0][2]}
-                    if cheap else None)
+        cheapest = _cheapest(conn, pid, until_id)
         saving = 0
         if (cheapest and cheapest["supplier_id"] != last["supplier_id"]
                 and cheapest["unit_cents"] < last["unit_cents"]):
@@ -167,10 +123,18 @@ def prices(conn, invoices=None, days=DEFAULT_DAYS, now=None):
     return out
 
 
-def purchases(conn, days, now=None, invoices=None):
+def changes(price_rows):
+    """The price changes: "ήταν / τώρα / %", biggest change first."""
+    rows = [{"product_id": r["product_id"], "name": r["name"], "supplier_id": r["last_supplier_id"],
+             "supplier_name": r["last_supplier_name"], "date": r["points"][-1]["date"],
+             "was_cents": r["previous_cents"], "now_cents": r["last_cents"], "pct": r["change_pct"]}
+            for r in price_rows if r["change_pct"]]
+    return sorted(rows, key=lambda r: (-abs(r["pct"]), r["name"]))
+
+
+def purchases(conn, invoices, days, now):
     """Per supplier: total and number of invoices with a paper date in the last N Greek days."""
-    invoices = _invoices(conn) if invoices is None else invoices
-    first, last_day = _window(days, now)
+    first, last_day = window(days, now)
     suppliers = _suppliers(conn)
     by = {}
     for e in invoices:
@@ -191,37 +155,15 @@ def purchases(conn, days, now=None, invoices=None):
     return {"suppliers": rows, "total_cents": total, "invoices": sum(r["invoices"] for r in rows)}
 
 
-def trends(conn, days=DEFAULT_DAYS, now=None):
+def purchase_trends(conn, days=DEFAULT_DAYS, until_id=None, now=None):
     days = clamp_days(days)
-    first, last_day = _window(days, now)
-    invoices = _invoices(conn)
+    now = now or reference_now(conn, until_id)
+    first, last_day = window(days, now)
+    invoices = _invoices(conn, until_id)
+    price_rows = prices(conn, invoices, days, now, until_id)
     return {
-        "days": days,
-        "from": first,
-        "to": last_day,
-        "sales": sales_by_day(conn, days, now),
-        "prices": prices(conn, invoices, days, now),
-        "purchases": purchases(conn, days, now, invoices),
+        "days": days, "from": first, "to": last_day, "until_id": until_id,
+        "prices": price_rows,
+        "changes": changes(price_rows),
+        "purchases": purchases(conn, invoices, days, now),
     }
-
-
-def _gr(iso):
-    return date.fromisoformat(iso).strftime("%d/%m/%Y")
-
-
-def summary_text(data):
-    s, b = data["sales"], data["purchases"]
-    parts = [f"Τελευταίες {data['days']} μέρες: πωλήσεις {format_eur(s['total_cents'])}"]
-    if s["average_cents"] is not None:
-        parts[0] += f", μέσος όρος {format_eur(s['average_cents'])} τη μέρα"
-    if s["best_day"]:
-        parts.append(f"καλύτερη μέρα {_gr(s['best_day']['date'])} με "
-                     f"{format_eur(s['best_day']['total_cents'])}")
-    parts.append(f"αγορές {format_eur(b['total_cents'])} από {b['invoices']} τιμολόγια")
-    moved = [p for p in data["prices"] if p["change_pct"]]
-    if moved:
-        top = max(moved, key=lambda p: abs(p["change_pct"]))
-        sign = "+" if top["change_pct"] > 0 else ""
-        pct = f"{sign}{top['change_pct']:.1f}".replace(".", ",")
-        parts.append(f"μεγαλύτερη αλλαγή τιμής: {top['name']} {pct}%")
-    return ", ".join(parts) + "."
