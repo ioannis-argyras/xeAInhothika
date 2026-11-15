@@ -342,7 +342,7 @@ def step_paralavi(conn, background=True):
         state = delivery.status(conn, delivery_id)
         missing = [(m["product_id"], m["qty"]) for m in state["missing"]]
         if missing != [(WATER, 1)]:
-            return _result(False, "Η παραλαβή δείχνει λείψεις που δεν περίμενα και δεν την έκλεισα.",
+            return _result(False, "Η παραλαβή δείχνει ελλείψεις που δεν περίμενα και δεν την έκλεισα.",
                            missing=missing)
         delivery.complete(conn, delivery_id)
         return _result(True, "Η παραλαβή έκλεισε: ήρθαν 9 από 10 εξάδες νερό, λείπει 1.")
