@@ -1,6 +1,6 @@
 /* Τιμολόγια: η εγκεκριμένη κατεύθυνση Β της αρχικής (15/11/2026), από το design/stadio1-v2/B-timologia/_sx-tim.css. Φορτώνεται μετά τα app.css και arxiki.css.
    Νέες κλάσεις με πρόθεμα tb-. Το κουτί Α (hb-qb) και το ανοιχτό «Τι ακριβώς» (hb-lt) είναι στο arxiki.css. */
-#s-tim{--xl:44px;--l:20px;--gut:40px;--rise:112px;--gap:24px}
+#s-tim{--surf:var(--grp);--zebra:#CAD5E4;--xl:44px;--l:20px;--gut:40px;--rise:112px;--gap:24px}
 @media (max-width:1023px){#s-tim{--xl:32px;--gut:16px;--rise:64px;--gap:16px}}
 #s-tim .bandB{padding-bottom:var(--rise)}
 #s-tim .bandB .in{padding-bottom:26px}
@@ -176,4 +176,22 @@
   .tb-lr .q span.x b,.tb-lr .q span.x{color:var(--alert)}
   .tb-lr .nt{display:flex;align-items:center;gap:6px;margin-top:6px;color:var(--muted)}
   .tb-lr .nt b{color:var(--alert)}
+}
+
+/* Λιγότερο άσπρο (έλεγχος site, 15/11/2026): πάνελ σε μεσαίο επίπεδο, κεφαλίδα πίνακα σε λωρίδα, γραμμές με χρώμα ανά κατάσταση */
+#s-tim .tbl .th{background:var(--n2);color:#fff;border-bottom:0}
+#s-tim .tbl .tr2.tb-s-ok{background:color-mix(in srgb,var(--grp) 60%,var(--strip))}
+#s-tim .tbl .tr2.tb-s-paid{background:color-mix(in srgb,var(--ok) 20%,var(--grp))}
+#s-tim .tbl .tr2.tb-s-due{background:color-mix(in srgb,var(--n3) 22%,var(--grp))}
+#s-tim .tbl .tr2.tb-s-bad,#s-tim .tbl .tr2.tb-s-need{background:color-mix(in srgb,var(--alert) 22%,var(--grp))}
+#s-tim .tbl a.tr2:hover{filter:brightness(.96)}
+#s-tim .tbl .more2{background:color-mix(in srgb,var(--grp) 60%,var(--strip))}
+#s-tim .tbl .tb-sub{background:var(--line);color:var(--ink)}
+#s-tim .tbl .tb-sub.tb-cl{background:var(--line)}
+#s-tim .card .hd{background:var(--hdr)}
+#s-tim .tb-sp .bar{background:var(--line)}
+#s-tim .tbl .tb-sub span{color:var(--ink)}
+@media (max-width:1023px){
+  #s-tim .mb .up1 .btn{border-radius:12px}
+  #s-tim .mb .up1 .btn.no{background:rgba(255,255,255,.10);color:#fff;border-color:rgba(211,219,230,.5)}
 }
