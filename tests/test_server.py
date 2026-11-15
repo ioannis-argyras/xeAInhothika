@@ -210,6 +210,17 @@ class DescribeTest(unittest.TestCase):
                       "note": "Νέο GR1601101250000000012300695 στο τιμολόγιο"}, 1)
         self.assertNotIn("GR1601101250000000012300695", describe(note))
 
+    def test_cheaper_found_sentence_has_no_wrong_articles_and_no_double_full_stop(self):
+        names = {"product": {"cola-330": "Coca-Cola 330ml κουτί"},
+                 "supplier": {"sup-ymittou": "Διανομές Υμηττού Α.Ε.", "sup-kava": "Κάβα Βύρωνα"}}
+        event = Event(1, "x", "s", "orders", "supplier.cheaper_found", None, None, None,
+                      {"product_id": "cola-330", "from_supplier_id": "sup-ymittou",
+                       "to_supplier_id": "sup-kava", "pct_change": 8.8, "to_cents": 58}, 1)
+        text = describe(event, names)
+        self.assertEqual(text, "Η Coca-Cola 330ml κουτί ακρίβυνε 8,8% (Διανομές Υμηττού Α.Ε.). "
+                               "Φθηνότερα: Κάβα Βύρωνα, 0,58 €.")
+        self.assertNotIn("..", text)
+
 
 class HomeStateTest(unittest.TestCase):
     """Data for the new home screen: day, tasks, team, timeline, shelf focus, approval lines."""

@@ -159,9 +159,9 @@ def _describe(t, p, name):
         return (f"Άλλαξε η τιμή του {name('product', p['product_id'])}: "
                 f"{format_eur(p['old_cents'])} σε {format_eur(p['new_cents'])}")
     if t == "supplier.cheaper_found":
-        return (f"Η {name('product', p['product_id'])} ακρίβυνε {str(p['pct_change']).replace('.', ',')}% στον "
-                f"{name('supplier', p['from_supplier_id'])}. "
-                f"Ο {name('supplier', p['to_supplier_id'])} την έχει {format_eur(p['to_cents'])}.")
+        return (f"Η {name('product', p['product_id'])} ακρίβυνε {str(p['pct_change']).replace('.', ',')}% "
+                f"({name('supplier', p['from_supplier_id'])}). "
+                f"Φθηνότερα: {name('supplier', p['to_supplier_id'])}, {format_eur(p['to_cents'])}.")
     if t == "supplier.new_iban_seen":
         return (f"Νέο IBAN (…{p['iban_last4']}) στον προμηθευτή "
                 f"{name('supplier', p['supplier_id'])}")
