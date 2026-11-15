@@ -24,10 +24,12 @@ ACTOR = "autorun"
 TRIGGER_TYPES = ["stock.low_detected", "invoice.matched", "supplier.new_iban_seen", "price.changed",
                  "supplier.cheaper_found"]
 MORNING_HOUR = 7          # Greek time
-QUIET_SECONDS = 45        # no new trigger for this long, then the round starts
-MIN_GAP_SECONDS = 180     # at least this long between the end of one round and the start of the next
+# 10 s: events that come together (two invoices of one email) still make one round; the shelf
+# scene needs the partner within 40 s
+QUIET_SECONDS = 10        # no new trigger for this long, then the round starts
+MIN_GAP_SECONDS = 30      # at least this long between the end of one round and the start of the next
 MORNING_POLL_SECONDS = 30
-TICK_SECONDS = 5
+TICK_SECONDS = 2
 MAX_REASONS = 3
 
 
