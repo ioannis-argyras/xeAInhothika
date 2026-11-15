@@ -1,4 +1,4 @@
-"""Fake demo catalog: one small shop, 35 products, 4 suppliers, 31 shelf positions.
+"""Fake demo catalog: one small shop, 36 products, 4 suppliers, 32 shelf positions.
 
 Everything here is invented, except the public retail barcode of the Coca-Cola can.
 Tax numbers (AFM) and IBANs are generated with valid check digits but belong to nobody.
@@ -18,7 +18,7 @@ _PRODUCT_ROWS = [
     ("ice-tea-lemon-500", "Ice tea λεμόνι 500ml", "Αναψυκτικά", 24, 130, 6, 82, 2.0, 12, _Y),
     ("cola-1500", "Coca-Cola 1,5L φιάλη", "Αναψυκτικά", 24, 220, 6, 140, 1.5, 6, _Y),
     ("energy-250", "Ενεργειακό ποτό 250ml", "Αναψυκτικά", 24, 150, 6, 95, 2.0, 24, _Y),
-    ("water-500", "Νερό 500ml", "Νερά", 13, 50, 12, 24, 6.0, 24, _K),
+    ("water-500", "Νερό 500ml", "Νερά", 13, 50, 1, 24, 6.0, 24, _K),
     ("water-1500", "Νερό 1,5L", "Νερά", 13, 80, 10, 38, 2.5, 6, _K),
     ("water-1500x6", "Νερό 1,5L εξάδα", "Νερά", 13, 380, 4, 215, 0.8, 1, _Y),
     ("water-sparkling-500", "Ανθρακούχο νερό 500ml", "Νερά", 13, 90, 6, 48, 1.0, 12, _K),
@@ -42,10 +42,12 @@ _PRODUCT_ROWS = [
     ("yogurt-greek-200", "Γιαούρτι στραγγιστό 200g", "Γαλακτοκομικά", 13, 120, 8, 68, 2.5, 24, _G),
     ("cheese-slices-200", "Τυρί τοστ φέτες 200g", "Γαλακτοκομικά", 13, 320, 4, 195, 1.0, 10, _G),
     ("butter-250", "Βούτυρο 250g", "Γαλακτοκομικά", 13, 310, 3, 190, 0.6, 10, _G),
-    ("coffee-frappe-can", "Καφές frappé έτοιμος 250ml", "Καφές", 24, 160, 6, 95, 2.0, 24, _Y),
-    ("coffee-ground-194", "Καφές ελληνικός 194g", "Καφές", 24, 450, 3, 290, 0.8, 12, _Y),
+    ("coffee-frappe-can", "Cold brew κουτάκι 250ml", "Καφές", 24, 160, 1, 95, 2.0, 24, _Y),
+    ("coffee-ground-194", "Espresso κόκκοι, ποικιλία Α", "Καφές", 24, 450, 1, 290, 0.8, 12, _Y),
     ("coffee-capsule-10", "Κάψουλες καφέ 10 τεμ.", "Καφές", 24, 420, 3, 270, 0.6, 12, _Y),
     ("coffee-instant-100", "Στιγμιαίος καφές 100g", "Καφές", 24, 520, 3, 340, 0.5, 12, _Y),
+    # Appended at the end so the invented barcodes of the other products do not move.
+    ("coffee-espresso-b", "Espresso κόκκοι, ποικιλία Β", "Καφές", 24, 450, 1, 290, 0.8, 12, _Y),
 ]
 
 # Shelf life in days from the day the goods enter the store. Not listed = never expires.
@@ -200,17 +202,14 @@ SUPPLIER_PRICE = {
     (sp["supplier_id"], sp["product_id"]): sp["unit_cents"] for sp in SUPPLIER_PRODUCTS
 }
 
-# 31 positions: 6 in Fridge 1 (camera cam-1), the rest on shelves.
-_FRIDGE = [
-    "cola-330", "cola-zero-330", "sprite-330", "fanta-330", "juice-orange-1l",
-    "milk-fresh-1l",
-]
+# 32 positions: 4 in Fridge 1 (camera cam-1), the rest on shelves.
+_FRIDGE = ["coffee-frappe-can", "coffee-ground-194", "coffee-espresso-b", "water-500"]
 _SHELF_PRODUCTS = [
     p["id"] for p in PRODUCTS
     if p["id"] not in _FRIDGE
     and p["id"] not in ("water-1500x6", "coffee-capsule-10", "coffee-instant-100",
                         "butter-250")
-]  # 25 products; the other 4 are kept in the back room
+]  # 28 products; the other 4 are kept in the back room
 
 POSITIONS = [
     {"id": f"fridge1-r{i}", "name": f"Ψυγείο 1 · {i}η σειρά", "product_id": pid,

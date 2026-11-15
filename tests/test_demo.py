@@ -31,15 +31,27 @@ class DemoSeedTests(unittest.TestCase):
         cls.conn.close()
 
     def test_catalog_sizes(self):
-        self.assertEqual(len(PRODUCTS), 35)
+        self.assertEqual(len(PRODUCTS), 36)
         self.assertEqual(len(SUPPLIERS), 4)
-        self.assertEqual(len(POSITIONS), 31)
+        self.assertEqual(len(POSITIONS), 32)
         fridge = [p for p in POSITIONS if p["camera_id"] == "cam-1"]
-        self.assertEqual(len(fridge), 6)
-        self.assertIn("cola-330", [p["product_id"] for p in fridge])
-        for table, expected in (("products", 35), ("suppliers", 4), ("positions", 31)):
+        self.assertEqual(
+            [p["product_id"] for p in fridge],
+            ["coffee-frappe-can", "coffee-ground-194", "coffee-espresso-b", "water-500"],
+        )
+        for table, expected in (("products", 36), ("suppliers", 4), ("positions", 32)):
             count = self.conn.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0]
             self.assertEqual(count, expected, table)
+
+    def test_fridge_products_are_at_3_and_not_low_in_the_morning(self):
+        levels = stock_levels(self.conn)
+        by_id = {p["id"]: p for p in PRODUCTS}
+        for pid in ("coffee-frappe-can", "coffee-ground-194", "coffee-espresso-b", "water-500"):
+            self.assertEqual(levels[pid], 3, pid)
+            self.assertEqual(by_id[pid]["low_threshold"], 1, pid)
+        self.assertEqual(by_id["coffee-frappe-can"]["name"], "Cold brew κουτάκι 250ml")
+        self.assertEqual(by_id["coffee-ground-194"]["name"], "Espresso κόκκοι, ποικιλία Α")
+        self.assertEqual(by_id["coffee-espresso-b"]["name"], "Espresso κόκκοι, ποικιλία Β")
 
     def test_cola_on_hand_is_8(self):
         self.assertEqual(stock_levels(self.conn)["cola-330"], 8)

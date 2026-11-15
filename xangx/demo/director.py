@@ -16,7 +16,7 @@ from pathlib import Path
 
 ORDER_ID = "P-0318"
 CAMERA_ID = "cam-1"
-COLA = "cola-330"
+COLD_BREW = "coffee-frappe-can"
 WATER = "water-1500x6"
 # Products of the order that arrive in cases (the case barcode is in supplier_products).
 CASE_PRODUCTS = ("cola-330", "chips-salt-90", "choco-milk-100", "juice-orange-1l")
@@ -201,24 +201,24 @@ def _png(label_seed):
 
 
 def step_kamera(conn, background=True):
-    """0:20 · The camera sees 5 Coca-Cola taken. Same code as the phone upload, count given ready."""
+    """0:20 · The camera sees 2 cold brew taken. Same code as the phone upload, count given ready."""
     from xangx.stock import camera
 
     try:
         positions = camera.camera_positions(conn, CAMERA_ID)
-        cola = next((p for p in positions if p["product_id"] == COLA), None)
-        if cola is None:
-            return _result(False, "Δεν βρήκα τη θέση της Coca-Cola στην κάμερα cam-1. Ξαναστήσε το demo.")
+        cold_brew = next((p for p in positions if p["product_id"] == COLD_BREW), None)
+        if cold_brew is None:
+            return _result(False, "Δεν βρήκα τη θέση του cold brew στην κάμερα cam-1. Ξαναστήσε το demo.")
 
         def counted(prev_path, new_path, _positions):
-            return [{"position_id": cola["position_id"], "taken": 5, "added": 0, "confidence": "high"}]
+            return [{"position_id": cold_brew["position_id"], "taken": 2, "added": 0, "confidence": "high"}]
 
         # The "before" photo: remembered as the camera's last one, no comparison (so no events).
         camera.remember_photo(CAMERA_ID, camera.save_photo(_png(1)))
         done = camera.handle_photo(conn, CAMERA_ID, _png(2), count=counted)
         if not done.get("event_ids"):
             return _result(False, "Η φωτογραφία δεν έγραψε γεγονός. Δες το log του server.")
-        return _result(True, "Η κάμερα είδε 5 Coca-Cola λιγότερες στο Ψυγείο 1.", event_ids=done["event_ids"])
+        return _result(True, "Η κάμερα είδε 2 Cold brew λιγότερα στο Ψυγείο 1.", event_ids=done["event_ids"])
     except Exception as exc:
         return _fail(exc)
 

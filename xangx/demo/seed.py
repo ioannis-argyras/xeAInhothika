@@ -33,8 +33,12 @@ ORDER_LINES = [
     ("choco-milk-100", 30),
     ("juice-orange-1l", 12),
 ]
-# "This morning" stock, set by a count at 06:30. Cola is at 8 (threshold 6).
-MORNING_COUNTS = {"cola-330": 8, "chips-salt-90": 5, "juice-orange-1l": 3}
+# "This morning" stock, set by a count at 06:30. Cola is at 8 (threshold 6). The 4 products
+# of Fridge 1 (cold brew, two espresso, water) are at 3 each (threshold 1).
+MORNING_COUNTS = {
+    "cola-330": 8, "chips-salt-90": 5, "juice-orange-1l": 3,
+    "coffee-frappe-can": 3, "coffee-ground-194": 3, "coffee-espresso-b": 3, "water-500": 3,
+}
 
 # Receipts per hour of the day (local time): quiet at night, busy afternoon and evening.
 HOUR_WEIGHTS = [

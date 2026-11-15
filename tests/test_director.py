@@ -139,9 +139,10 @@ class StepTests(DirectorBase):
         out = director.run_step("kamera", self.conn)
         self.assertTrue(out["ok"], out)
         taken = self.types("shelf.items_taken")
-        self.assertEqual((taken[0].payload["product_id"], taken[0].payload["taken"]), ("cola-330", 5))
+        self.assertEqual((taken[0].payload["product_id"], taken[0].payload["taken"]), ("coffee-frappe-can", 2))
         stock_worker.run_once(self.conn)
-        self.assertEqual(self.types("stock.low_detected")[0].payload["on_hand"], 3)
+        low = self.types("stock.low_detected")[0].payload
+        self.assertEqual((low["product_id"], low["on_hand"]), ("coffee-frappe-can", 1))
 
     def test_kamera_twice_does_not_break(self):
         self.assertTrue(director.run_step("kamera", self.conn)["ok"])

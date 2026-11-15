@@ -86,26 +86,28 @@ class GatheringTest(unittest.TestCase):
 
     def test_three_triggers_inside_ten_seconds_make_one_round(self):
         ids = [low(self.conn, "cola-330"), low(self.conn, "chips"), matched(self.conn, "T-1", ["price"])]
+        quiet = autorun.QUIET_SECONDS
         self.clock.tick(self.conn, 0)
-        self.clock.tick(self.conn, 10)
-        self.round.assert_not_called()  # 45 seconds of quiet have not passed
-        self.clock.tick(self.conn, 46)
+        self.clock.tick(self.conn, quiet - 1)
+        self.round.assert_not_called()  # the quiet time has not passed
+        self.clock.tick(self.conn, quiet + 1)
         self.assertEqual(self.round.call_count, 1)
         conn, reason, trigger_ids = self.round.call_args.args
         self.assertEqual(trigger_ids, ids)
         self.assertIn("σε χαμηλό", reason)
-        self.clock.tick(self.conn, 60)
+        self.clock.tick(self.conn, quiet + 15)
         self.assertEqual(self.round.call_count, 1)
 
     def test_a_new_trigger_restarts_the_quiet_time(self):
+        quiet = autorun.QUIET_SECONDS
         low(self.conn, "cola-330")
         self.clock.tick(self.conn, 0)
-        self.clock.tick(self.conn, 40)
+        self.clock.tick(self.conn, quiet - 1)
         low(self.conn, "chips")
-        self.clock.tick(self.conn, 41)
-        self.clock.tick(self.conn, 70)  # 29 s after the second one
+        self.clock.tick(self.conn, quiet)
+        self.clock.tick(self.conn, 2 * quiet - 1)  # one second short of the quiet time after the second one
         self.round.assert_not_called()
-        self.clock.tick(self.conn, 90)
+        self.clock.tick(self.conn, 2 * quiet + 1)
         self.assertEqual(self.round.call_count, 1)
         self.assertEqual(len(self.round.call_args.args[2]), 2)
 
@@ -122,27 +124,31 @@ class GatheringTest(unittest.TestCase):
         self.clock.tick(self.conn, 100)
         self.round.assert_not_called()
 
-    def test_second_trigger_one_minute_after_the_round_waits_for_three_minutes(self):
+    def test_second_trigger_soon_after_the_round_waits_for_the_gap(self):
+        quiet, gap = autorun.QUIET_SECONDS, autorun.MIN_GAP_SECONDS
         low(self.conn, "cola-330")
         self.clock.tick(self.conn, 0)
-        self.clock.tick(self.conn, 50)
+        end = quiet + 1
+        self.clock.tick(self.conn, end)
         self.assertEqual(self.round.call_count, 1)
         low(self.conn, "chips")
-        self.clock.tick(self.conn, 110)   # one minute after the round: gathered, but too early
-        self.clock.tick(self.conn, 170)
+        self.clock.tick(self.conn, end + 1)                  # gathered
+        self.clock.tick(self.conn, end + 1 + quiet + 1)      # quiet enough, but the gap has not passed
         self.assertEqual(self.round.call_count, 1)
-        self.clock.tick(self.conn, 232)   # three minutes after the end of the round (about 50)
+        self.clock.tick(self.conn, end + gap + 2)            # the gap after the end of the round has passed
         self.assertEqual(self.round.call_count, 2)
 
     def test_a_failing_round_does_not_stop_the_clock(self):
         self.round.side_effect = RuntimeError("boom")
         low(self.conn, "cola-330")
+        quiet, gap = autorun.QUIET_SECONDS, autorun.MIN_GAP_SECONDS
         self.clock.tick(self.conn, 0)
-        self.clock.tick(self.conn, 50)
+        self.clock.tick(self.conn, quiet + 1)
         self.assertEqual(self.round.call_count, 1)
         low(self.conn, "chips")
-        self.clock.tick(self.conn, 300)
-        self.clock.tick(self.conn, 350)
+        gathered = quiet + 1 + gap + 10
+        self.clock.tick(self.conn, gathered)
+        self.clock.tick(self.conn, gathered + quiet + 1)
         self.assertEqual(self.round.call_count, 2)
 
     def test_events_older_than_today_are_ignored(self):
@@ -220,7 +226,7 @@ class TriggerTest(unittest.TestCase):
         append_event(self.conn, type="system.paused", actor="owner", payload={})
         clock = autorun.Clock()
         clock.tick(self.conn, 0)
-        clock.tick(self.conn, 50)
+        clock.tick(self.conn, autorun.QUIET_SECONDS + 1)
         types = types_of(self.conn)
         self.assertIn("agent.woke", types)
         self.assertNotIn("agent.tool_ran", types)
@@ -276,11 +282,11 @@ class SeedRoundTest(unittest.TestCase):
     def test_fake_claude_round_calls_a_tool_and_sends_nothing(self):
         clock = autorun.Clock()
         clock.tick(self.conn, 0)
-        clock.tick(self.conn, 50)
+        clock.tick(self.conn, autorun.QUIET_SECONDS + 1)
         woke = read_events(self.conn, types=["agent.woke"])
         self.assertEqual(len(woke), 1)
         self.assertEqual(woke[0].payload["trigger_ids"], self.low_ids)
-        self.assertIn("Coca-Cola", woke[0].payload["reason"])
+        self.assertIn("Cold brew", woke[0].payload["reason"])
         types = self.new_types()
         self.assertIn("agent.tool_ran", types)
         self.assertNotIn("order.sent", types)
@@ -313,7 +319,7 @@ class SeedRoundTest(unittest.TestCase):
         with mock.patch.object(agent, "_get_client", return_value=client):
             clock = autorun.Clock()
             clock.tick(self.conn, 0)
-            clock.tick(self.conn, 50)
+            clock.tick(self.conn, autorun.QUIET_SECONDS + 1)
         self.assertTrue(state["order_id"], "the model never got an order_id from propose_order")
         types = self.new_types()
         self.assertIn("order.proposed", types)
