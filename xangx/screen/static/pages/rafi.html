@@ -8,9 +8,11 @@
 <link rel="stylesheet" href="/static/vendor/phosphor/bold/style.css">
 <link rel="stylesheet" href="/static/vendor/phosphor/fill/style.css">
 <link rel="stylesheet" href="/static/app.css">
+<link rel="stylesheet" href="/static/arxiki.css">
 <link rel="stylesheet" href="/static/pages/rafi.css">
 </head>
 <body>
+<div class="shell">
 <header class="top">
   <a class="brand" href="/"><b>Xangxothaika</b><span>Mini Market 24/7 · Παγκράτι</span></a>
   <nav class="links" aria-label="Κύρια">
@@ -23,32 +25,89 @@
   </div>
 </header>
 
-<section id="rafi" class="screen on">
-  <div class="band"><div class="in">
+<section id="s-rafi" class="screen on" aria-labelledby="h-rafi">
+<div class="desk">
+  <div class="band bandB"><div class="in">
     <div>
-      <div class="kick"><i class="ph ph-camera"></i><span id="kick">Ράφι</span></div>
-      <h1>Ράφι</h1>
-      <p class="lead" id="lead" aria-live="polite"></p>
+      <div class="kick"><i class="ph ph-package"></i><span id="rf-kick">Αποθήκη</span></div>
+      <h1 id="h-rafi">Ράφι</h1>
+      <p class="lead" id="rf-lead" aria-live="polite"></p>
     </div>
-    <a class="btn yes" id="cam-btn" href="/stock/camera" hidden><i class="ph ph-camera"></i>Άνοιξε την κάμερα</a>
-  </div></div>
-  <div class="wrap"><div class="col">
-    <div class="row2 g-raf">
-      <section class="card" aria-label="Τι είδε η κάμερα" id="photo-card" aria-busy="true">
-        <div class="hd"><b><i class="ph ph-images"></i>Τι είδε η κάμερα</b><span class="m" id="photo-sub">πριν · μετά</span></div>
-        <div id="photo-body"><div class="empty-note">Φόρτωση…</div></div>
-      </section>
-      <section class="card fr" aria-label="Οι θέσεις" id="pos-card" aria-busy="true">
-        <div class="hd"><b><i class="ph ph-rows"></i><span id="pos-title">Οι θέσεις</span></b><span class="m">πρώτες όσες είναι σε χαμηλό</span></div>
-        <div id="pos-body"><div class="empty-note">Φόρτωση…</div></div>
-      </section>
+    <div class="rf-act">
+      <a class="btn yes" id="rf-cam-btn" href="/stock/camera" hidden><i class="ph ph-camera"></i>Άνοιξε την κάμερα</a>
+      <span>Φωτογραφία κάθε 30″, ή όταν πατήσεις «Φωτογραφία τώρα»</span>
     </div>
-    <section class="card fr" aria-label="Λήγουν σύντομα" id="exp-card" aria-busy="true">
-      <div class="hd"><b><i class="ph ph-hourglass-medium"></i>Λήγουν σύντομα</b><span class="m" id="exp-sub">οι παλιότερες πρώτα</span></div>
-      <div id="exp-body"><div class="empty-note">Φόρτωση…</div></div>
-    </section>
   </div></div>
+
+  <div class="wrap">
+    <div class="rf-g">
+      <article class="stage rf-cam" aria-label="Τι είδε η κάμερα" id="rf-scene" aria-busy="true">
+        <div class="shd"><span><i class="ph ph-camera"></i><span id="rf-scene-t">Τι είδε η κάμερα</span></span><span id="rf-scene-at"></span></div>
+        <div id="rf-scene-body"><div class="rf-note rf-dark">Φόρτωση…</div></div>
+      </article>
+
+      <div class="stack rf-side">
+      <article class="card" aria-label="Σε χαμηλό" id="rf-low-card" aria-busy="true">
+        <div class="hd"><b><i class="ph ph-warning-circle rf-al"></i>Σε χαμηλό</b><span class="r" id="rf-low-n"></span></div>
+        <div id="rf-low-body"><div class="rf-note">Φόρτωση…</div></div>
+      </article>
+      <article class="card" aria-label="Λήγουν σύντομα" id="rf-exp-card" aria-busy="true">
+        <div class="hd"><b><i class="ph ph-hourglass-medium"></i>Λήγουν σύντομα</b><span class="r" id="rf-exp-n"></span></div>
+        <div id="rf-exp-body"><div class="rf-note">Φόρτωση…</div></div>
+        <div class="cf"><span class="m">Μετράμε 3 μέρες μπροστά. Τα παλιότερα πρώτα.</span></div>
+      </article>
+      </div>
+    </div>
+
+    <div class="rf-g mt">
+      <section class="card tbl rf-top" aria-label="Όλες οι θέσεις" id="rf-all-card" aria-busy="true">
+        <div class="hd"><b><i class="ph ph-rows"></i>Όλες οι θέσεις</b><span class="r rf-k"><span class="rf-lv mini" aria-hidden="true"><i style="width:60%"></i><u></u></span><span id="rf-all-n">η κάθετη γραμμή είναι το όριο</span></span></div>
+        <div class="rf-th"><span>Προϊόν</span><span>Στάθμη</span><span class="n">Μένουν</span><span>Σε σχέση με το όριο</span></div>
+        <div id="rf-all-body"><div class="rf-note">Φόρτωση…</div></div>
+      </section>
+
+      <div class="stack">
+        <article class="card" aria-label="Σήμερα από την κάμερα" id="rf-day-card" aria-busy="true">
+          <div class="hd"><b><i class="ph-fill ph-camera rf-apo"></i>Σήμερα από την κάμερα</b><span class="r">Αποθήκη</span></div>
+          <div class="rf-day" id="rf-day-body"></div>
+          <div class="cf"><span class="m" id="rf-day-last"></span><a class="lk" href="/static/pages/mixani.html">Ιστορικό <i class="ph ph-arrow-right"></i></a></div>
+        </article>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="mob">
+  <div class="mb"><div class="mi">
+    <div class="kick"><i class="ph ph-package"></i><span id="rf-mkick">Αποθήκη</span></div>
+    <h1>Ράφι</h1>
+    <p class="lead" id="rf-mlead"></p>
+    <div class="up1"><a class="btn yes" id="rf-mcam-btn" href="/stock/camera" hidden><i class="ph ph-camera"></i>Άνοιξε την κάμερα</a></div>
+  </div></div>
+  <div class="mwrap"><div class="mi">
+    <a class="rf-mcam" id="rf-mcam" href="/stock/camera"></a>
+    <div class="mpanel" id="m-low">
+      <article class="card" aria-label="Σε χαμηλό">
+        <div class="hd"><b><i class="ph ph-warning-circle rf-al"></i>Σε χαμηλό</b><span class="r" id="rf-mlow-n"></span></div>
+        <div id="rf-mlow-body"><div class="rf-note">Φόρτωση…</div></div>
+      </article>
+    </div>
+    <div class="rf-tiles" id="rf-tiles">
+      <a class="rf-tile" href="#ola"><span class="rf-ti"><i class="ph-fill ph-rows"></i></span><b id="rf-t-all"></b><span>Όλες οι θέσεις<small id="rf-t-all-s"></small></span><i class="ph ph-caret-right"></i></a>
+      <a class="rf-tile" href="#lixeis"><span class="rf-ti al"><i class="ph-fill ph-hourglass-medium"></i></span><b id="rf-t-exp"></b><span>Λήγουν σύντομα<small id="rf-t-exp-s"></small></span><i class="ph ph-caret-right"></i></a>
+    </div>
+    <div class="mpanel" id="m-all" hidden>
+      <a class="rf-back" href="#"><i class="ph ph-caret-left"></i>Πίσω στο Ράφι</a>
+      <section class="card tbl" aria-label="Όλες οι θέσεις" id="rf-mall-body"></section>
+    </div>
+    <div class="mpanel" id="m-exp" hidden>
+      <a class="rf-back" href="#"><i class="ph ph-caret-left"></i>Πίσω στο Ράφι</a>
+      <article class="card" aria-label="Λήγουν σύντομα" id="rf-mexp-body"></article>
+    </div>
+  </div></div>
+</div>
 </section>
+</div>
 
 <nav class="tabs" aria-label="Καρτέλες">
   <a href="/"><i class="ph ph-sun-horizon"></i>Σήμερα</a>
