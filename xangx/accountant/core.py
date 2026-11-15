@@ -164,7 +164,7 @@ def describe_credit(conn, invoice_id):
     d = credit_details(conn, invoice_id)
     if d is None:
         return {"summary": f"Αίτημα πιστωτικού για το τιμολόγιο {invoice_id}",
-                "why": "Δεν βρέθηκε λείψη στο ταίριασμα.", "ref": f"invoice:{invoice_id}"}
+                "why": "Δεν βρέθηκε έλλειψη στο ταίριασμα.", "ref": f"invoice:{invoice_id}"}
     return {
         "summary": f"Αίτημα πιστωτικού {format_eur(d['amount_cents'])} προς {d['supplier']['name']}",
         "exact": f"Email προς {d['to']}, θέμα «{d['subject']}»:\n{d['body']}",
@@ -199,7 +199,7 @@ def request_credit(conn, invoice_id):
     """Runs only after the owner's yes. Sends the request and writes credit.requested."""
     d = credit_details(conn, invoice_id)
     if d is None:
-        return {"summary": f"Δεν υπάρχει λείψη για πιστωτικό στο τιμολόγιο {invoice_id}.",
+        return {"summary": f"Δεν υπάρχει έλλειψη για πιστωτικό στο τιμολόγιο {invoice_id}.",
                 "event_ids": []}
     existing = invoices._latest(conn, "credit.requested", invoice_id)
     if existing is not None:
