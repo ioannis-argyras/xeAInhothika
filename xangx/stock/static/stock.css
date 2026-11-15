@@ -177,6 +177,8 @@ dialog .acts{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:18px
 /* σάρωση: σκούρο επίπεδο εστίασης, κάδρο, λωρίδα τελευταίας σάρωσης, πεδίο USB στο ίδιο επίπεδο */
 .pl-scan{border-radius:22px;overflow:hidden;background:var(--stage);border:1px solid rgba(211,219,230,.16);box-shadow:var(--sh-stage);color:#fff}
 .pl-vf{position:relative;aspect-ratio:16/4.2;background:radial-gradient(120% 120% at 50% 30%,var(--pl-fr2) 0%,var(--pl-fr) 75%);display:flex;align-items:center;justify-content:center}
+.pl-vf{overflow:hidden}
+.pl-vf video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 .pl-aim{width:46%;height:52%;border:3px solid var(--pl-aim);border-radius:14px;position:relative;opacity:.9}
 .pl-aim i{position:absolute;left:6%;right:6%;top:50%;height:2px;background:var(--pl-aim);box-shadow:0 0 10px var(--pl-aim)}
 .pl-hint{position:absolute;bottom:14px;left:0;right:0;text-align:center;color:var(--n5)}
@@ -255,7 +257,8 @@ dialog .acts{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:18px
   .pl-mlack{display:flex;align-items:center;gap:8px;margin-top:12px;min-height:44px;padding:0 14px;border-radius:12px;background:var(--pl-red);color:#fff;font-weight:700}
   .pl-mlack i{font-size:20px;flex-shrink:0}
   .pl-scan.m{border-radius:20px}
-  .pl-scan.m .pl-vf{aspect-ratio:16/5.5}
+  .pl-scan.m .pl-vf{aspect-ratio:16/10}
+  .pl-scan.m .pl-aim{width:72%;height:40%}
   .pl-scan.m .pl-hint{display:none}
   .pl-scan.m .pl-last{padding-left:16px;padding-right:16px}
   .pl-scan.m .pl-last b{font-size:var(--s)}
