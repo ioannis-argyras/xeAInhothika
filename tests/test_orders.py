@@ -78,7 +78,7 @@ class OrdersTest(unittest.TestCase):
             self.assertEqual(l["qty"] % packs[pid], 0, pid)
             self.assertIsInstance(l["unit_cents"], int)
         self.assertEqual(p["net_cents"], sum(l["qty"] * l["unit_cents"] for l in p["lines"]))
-        self.assertEqual(set(p["why"]), {"per_day", "on_hand", "lead_days"})
+        self.assertEqual(set(p["why"]), {"product_id", "per_day", "on_hand", "lead_days"})
 
     def test_same_proposal_twice_is_not_duplicated(self):
         first = tools.propose_order(self.conn, "sup-ymittou")
@@ -97,6 +97,21 @@ class OrdersTest(unittest.TestCase):
             self.assertNotIn("στον", text)
             self.assertNotIn("..", text)
 
+    def test_why_names_the_product_that_runs_out_first(self):
+        # On stage the order had 3 products and "Γιατί: Πουλάς 8,2 τη μέρα και έχεις 1." named none.
+        order_id = tools.propose_order(self.conn, "sup-ymittou")["order_id"]
+        why = [e for e in self.events("order.proposed") if e.payload["order_id"] == order_id][0].payload["why"]
+        name = self.conn.execute("SELECT name FROM products WHERE id = ?", (why["product_id"],)).fetchone()[0]
+        self.assertTrue(tools.describe_send({"order_id": order_id})["why"].startswith(f"{name}: πουλάς "))
+        # An older proposal without product_id (the seed's P-0318) keeps the plain sentence.
+        append_event(self.conn, type="order.proposed", actor="orders", subject="order:P-0950",
+                     payload={"order_id": "P-0950", "supplier_id": "sup-ymittou", "net_cents": 215,
+                              "lines": [{"product_id": "water-1500x6", "qty": 1, "unit_cents": 215,
+                                         "last_unit_cents": 215}],
+                              "why": {"per_day": 1.5, "on_hand": 2, "lead_days": 1}})
+        self.assertEqual(tools.describe_send({"order_id": "P-0950"})["why"],
+                         "Πουλάς 1,5 τη μέρα και έχεις 2.")
+
     def test_unknown_supplier_lists_the_ones_with_low_products(self):
         r = tools.propose_order(self.conn, "")
         self.assertEqual(r["event_ids"], [])
@@ -113,7 +128,7 @@ class OrdersTest(unittest.TestCase):
         info = tools.describe_send({"order_id": order_id})
         self.assertIn("Διανομές Υμηττού", info["summary"])
         self.assertIn("Coca-Cola", info["exact"])
-        self.assertTrue(info["why"].startswith("Πουλάς "))
+        self.assertIn(": πουλάς ", info["why"])
 
         result = self.ask_and_approve(order_id)
         self.assertTrue(result["ok"], result)

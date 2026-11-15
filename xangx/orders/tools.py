@@ -200,8 +200,8 @@ def propose_order(conn, supplier_id):
     event, _ = append_event(
         conn, type="order.proposed", actor=ACTOR, subject=f"order:{order_id}",
         payload={"order_id": order_id, "supplier_id": supplier_id, "lines": clean, "net_cents": net,
-                 "why": {"per_day": first["_per_day"], "on_hand": _qty(first["_on_hand"]),
-                         "lead_days": LEAD_DAYS}},
+                 "why": {"product_id": first["product_id"], "per_day": first["_per_day"],
+                         "on_hand": _qty(first["_on_hand"]), "lead_days": LEAD_DAYS}},
     )
     names = _names(conn)
     return {"summary": f"Ετοίμασα παραγγελία {order_id}: {format_eur(net)} προς {sup['name']}",
@@ -235,9 +235,12 @@ def describe_send(args):
                           f"{format_eur(l['unit_cents'])}" for l in p["lines"])
         why = p.get("why") or {}
         per_day = str(why.get("per_day", "")).replace(".", ",")
+        because = f"πουλάς {per_day} τη μέρα και έχεις {why.get('on_hand')}."
+        # The product that runs out first (why.product_id); the seed's P-0318 has none.
+        name = names.get(why.get("product_id"))
         return {"summary": f"Παραγγελία {format_eur(p['net_cents'])} προς {sup['name']}",
                 "exact": exact,
-                "why": f"Πουλάς {per_day} τη μέρα και έχεις {why.get('on_hand')}.",
+                "why": f"{name}: {because}" if name else because[0].upper() + because[1:],
                 "ref": order_id}
     finally:
         conn.close()
