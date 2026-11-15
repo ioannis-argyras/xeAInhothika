@@ -81,27 +81,10 @@
 
   /* ---------- ζωντανά και παύση ---------- */
   var clock = "";
-  function setLive(on, text) {
-    $("live-dot").className = on ? "on" : "";
-    $("live-text").textContent = on && clock ? text + " · " + clock : text;
-  }
+  /* Η «Παύση» και το «Ζωντανά» τα χειρίζεται το shell.js· εδώ μένει μόνο η ένδειξη της σελίδας. */
+  function setLive(on, text) {}
   function setPaused(p) {
-    paused = !!p;
-    $("paused-banner").hidden = !paused;
-    var label = paused ? "Συνέχισε" : "Παύση όλων";
-    var icn = paused ? "play" : "pause";
-    $("stop-btn").replaceChildren(icon("ph", icn), el("span", null, label));
-    $("stop-ibtn").replaceChildren(icon("ph", icn));
-    $("stop-ibtn").setAttribute("aria-label", label);
-  }
-  function togglePause() {
-    var url = paused ? "/api/resume" : "/api/pause";
-    $("stop-btn").disabled = $("stop-ibtn").disabled = true;
-    fetch(url, {method: "POST"}).then(function (r) { return r.json(); }).then(function (d) {
-      if (d && d.ok) setPaused(d.paused);
-    }).catch(function () {}).then(function () {
-      $("stop-btn").disabled = $("stop-ibtn").disabled = false;
-    });
+    paused = document.body.classList.contains("paused");
   }
 
   /* ---------- κοινά κομμάτια ---------- */
@@ -1097,8 +1080,6 @@
     es.onerror = function () { setLive(false, "Σύνδεση…"); };
   }
 
-  $("stop-btn").addEventListener("click", togglePause);
-  $("stop-ibtn").addEventListener("click", togglePause);
   if (ID === "") problem("Δεν βρήκα αυτό το τιμολόγιο."); else load();
   listen();
 })();
