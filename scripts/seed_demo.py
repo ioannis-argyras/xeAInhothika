@@ -10,6 +10,7 @@ import time
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+from xangx.demo.director import start_cursors_at_end  # noqa: E402
 from xangx.demo.seed import seed_all  # noqa: E402
 from xangx.shared.db import DEFAULT_DB_PATH, connect, init_db  # noqa: E402
 
@@ -32,6 +33,7 @@ def main():
             )
             return 1
         seed_all(conn)
+        start_cursors_at_end(conn)
         count = conn.execute("SELECT COUNT(*) FROM events").fetchone()[0]
     finally:
         conn.close()

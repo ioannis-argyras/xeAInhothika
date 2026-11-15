@@ -1,5 +1,7 @@
 import os
 import shutil
+import subprocess
+import sys
 import tempfile
 import unittest
 from pathlib import Path
@@ -105,6 +107,21 @@ class ResetTests(DirectorBase):
         after = read_events(self.conn, after_id=start)
         self.assertEqual(after[-1].id, morning.id)
         self.assertTrue(all(e.actor == "master" and e.type in ("notification.sent", "check.morning_done") for e in after))
+
+
+class SeedScriptTests(DirectorBase):
+    def test_seed_script_starts_the_workers_at_the_end_of_the_history(self):
+        self.conn.close()
+        script = Path(__file__).resolve().parents[1] / "scripts" / "seed_demo.py"
+        run = subprocess.run([sys.executable, str(script)], capture_output=True, text=True,
+                             encoding="utf-8", env=dict(os.environ, XANGX_DB=self.db, PYTHONIOENCODING="utf-8"))
+        self.assertEqual(run.returncode, 0, run.stdout + run.stderr)
+        self.conn = connect(self.db)
+        last = self.conn.execute("SELECT MAX(id) FROM events").fetchone()[0]
+        self.assertGreater(last, 1000)
+        rows = {r["actor"]: r["last_id"] for r in self.conn.execute("SELECT * FROM cursors")}
+        for actor in director.cursor_actors([]):
+            self.assertEqual(rows.get(actor), last, actor)
 
 
 class StepTests(DirectorBase):

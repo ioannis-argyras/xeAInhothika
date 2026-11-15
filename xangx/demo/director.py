@@ -78,7 +78,7 @@ def _clear_tables(conn):
         ).fetchall()
         for t in triggers:
             conn.execute(f'DROP TRIGGER "{t["name"]}"')
-        actors = _cursor_actors([r["actor"] for r in conn.execute("SELECT actor FROM cursors")])
+        actors = cursor_actors([r["actor"] for r in conn.execute("SELECT actor FROM cursors")])
         conn.execute("DELETE FROM events")
         for table in ("supplier_products", "positions", "suppliers", "products"):
             conn.execute(f"DELETE FROM {table}")
@@ -99,7 +99,7 @@ def _clear_tables(conn):
     return actors
 
 
-def _cursor_actors(old_actors):
+def cursor_actors(old_actors):
     """Workers that read the log. They start from the end of the seeded history, not from 0:
     otherwise the Telegram notifier would replay the whole history to the owner's phone."""
     names = {"stock", "accountant", "orders-compare", "autorun"} | set(old_actors)
@@ -112,6 +112,18 @@ def _cursor_actors(old_actors):
     return sorted(names)
 
 
+def start_cursors_at_end(conn, actors=None):
+    """Put the workers' cursors on the last event, so they do not replay the seeded history."""
+    from xangx.shared.cursors import set_cursor
+
+    if actors is None:
+        actors = cursor_actors([r["actor"] for r in conn.execute("SELECT actor FROM cursors")])
+    last = conn.execute("SELECT COALESCE(MAX(id), 0) FROM events").fetchone()[0]
+    for actor in actors:
+        set_cursor(conn, actor, last)
+    return last
+
+
 def reset_demo(conn, data=None, now=None):
     """Rebuild the shop as of this morning, in the same database, with the server running.
 
@@ -119,7 +131,6 @@ def reset_demo(conn, data=None, now=None):
     """
     from xangx.demo.seed import seed_all
     from xangx.master.agent import morning_check
-    from xangx.shared.cursors import set_cursor
     from xangx.shared.db import init_db
 
     started = time.monotonic()
@@ -128,9 +139,7 @@ def reset_demo(conn, data=None, now=None):
     moved = _move_aside(data, datetime.now().strftime("%Y%m%d-%H%M%S"))
     actors = _clear_tables(conn)
     seed_all(conn, now)
-    last = conn.execute("SELECT COALESCE(MAX(id), 0) FROM events").fetchone()[0]
-    for actor in actors:
-        set_cursor(conn, actor, last)
+    start_cursors_at_end(conn, actors)
     morning_check(conn)
     count = conn.execute("SELECT COUNT(*) FROM events").fetchone()[0]
     return {"ms": round((time.monotonic() - started) * 1000), "moved_files": moved, "events": count}
