@@ -410,6 +410,7 @@ i.ph-bold{line-height:1}
 :where(body:not([data-page]):not([data-shell])) .ibtn{display:none;width:44px;height:44px;border-radius:50%;border:1px solid rgba(211,219,230,.3);background:transparent;color:#fff;align-items:center;justify-content:center;cursor:pointer}
 :where(body:not([data-page]):not([data-shell])) .ibtn i{font-size:18px}
 :where(body:not([data-page])) .band{background:linear-gradient(180deg,var(--band) 0%,var(--band2) 100%);color:#fff;padding:96px var(--gut) var(--rise);position:relative}
+:where(body[data-shell]) .band{padding-top:32px}
 :where(body:not([data-page])) .band:after{content:"";position:absolute;left:0;right:0;bottom:0;height:1px;background:rgba(163,180,204,.18)}
 :where(body:not([data-page])) .band .in{max-width:1344px;margin:0 auto;display:flex;align-items:flex-end;justify-content:space-between;gap:40px;padding-bottom:28px}
 :where(body:not([data-page])) .band h1{font-size:var(--xl);line-height:1.06;letter-spacing:-.03em;font-weight:700;margin-top:6px;text-wrap:balance}
@@ -499,6 +500,7 @@ i.ph-bold{line-height:1}
   :where(body:not([data-page]):not([data-shell])) .top{height:60px}
   :where(body:not([data-page]):not([data-shell])) .brand span{display:none}
   :where(body:not([data-page])) .band{padding-top:76px}
+  :where(body[data-shell]) .band{padding-top:16px}
   :where(body:not([data-page])) .band h1{line-height:1.08}
   :where(body:not([data-page])) .wrap{padding:0 12px}
   .row2,.col{gap:16px}
