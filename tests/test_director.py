@@ -72,6 +72,18 @@ class ResetTests(DirectorBase):
         self.assertEqual(result["events"], self.conn.execute("SELECT COUNT(*) FROM events").fetchone()[0])
         self.assertLess(result["ms"], 10000)
 
+    def test_reset_moves_the_cameras_last_photo_aside_so_the_next_one_is_first(self):
+        from xangx.stock import camera
+        ref = camera.save_photo(b"\x89PNG\r\n\x1a\n" + b"rehearsal")
+        camera.remember_photo("cam-1", ref)
+        self.assertEqual(camera.last_photo("cam-1"), ref)
+        result = director.reset_demo(self.conn)
+        self.assertIsNone(camera.last_photo("cam-1"))
+        self.assertEqual(result["moved_files"], 1)
+        moved = sorted(p.name for p in (self.data / "_prin-reset").rglob("*") if p.is_file())
+        self.assertEqual(moved, ["cam-1.last"])
+        self.assertEqual(list((self.data / "camera").iterdir()), [])
+
     def test_reset_puts_the_append_only_triggers_back(self):
         director.reset_demo(self.conn)
         with self.assertRaises(Exception):

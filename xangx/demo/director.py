@@ -41,9 +41,13 @@ def data_dir():
 # ---------- reset ----------
 
 def _move_aside(data, stamp):
-    """Move (never delete) what is in inbox/ and outbox/ to _prin-reset/<stamp>/. Returns the count."""
+    """Move (never delete) what is in inbox/, outbox/ and camera/ to _prin-reset/<stamp>/. Returns the count.
+
+    camera/ holds each camera's last photo: left behind, the first photo on stage would be compared
+    with one from the rehearsal.
+    """
     moved = 0
-    for name in ("inbox", "outbox"):
+    for name in ("inbox", "outbox", "camera"):
         source = data / name
         if not source.is_dir():
             continue
