@@ -15,9 +15,13 @@ STATIC = Path(__file__).resolve().parent / "static"
 MAX_B64 = camera.MAX_PHOTO_BYTES * 4 // 3 + 16
 
 
+# The phone must never keep an old page or stylesheet: it asks again every time (the file is small).
+NO_STALE = {"Cache-Control": "no-cache"}
+
+
 @router.get("/stock/camera")
 def camera_page():
-    return FileResponse(STATIC / "camera.html", media_type="text/html")
+    return FileResponse(STATIC / "camera.html", media_type="text/html", headers=NO_STALE)
 
 
 @router.get("/stock/trends/sales")
@@ -35,7 +39,7 @@ def sales_trends(until_id: int | None = None, days: int = 30):
 
 @router.get("/stock/style.css")
 def stock_style():
-    return FileResponse(STATIC / "stock.css", media_type="text/css; charset=utf-8")
+    return FileResponse(STATIC / "stock.css", media_type="text/css; charset=utf-8", headers=NO_STALE)
 
 
 @router.get("/stock/camera/shelf")
@@ -85,7 +89,7 @@ VENDOR = {"zxing-reader.js": "text/javascript; charset=utf-8", "zxing_reader.was
 
 @router.get("/stock/scan")
 def scan_page():
-    return FileResponse(STATIC / "scan.html", media_type="text/html")
+    return FileResponse(STATIC / "scan.html", media_type="text/html", headers=NO_STALE)
 
 
 @router.get("/stock/vendor/{name}")
