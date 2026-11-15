@@ -440,9 +440,9 @@ i.ph-bold{line-height:1}
 .mk.end{transform:translateX(-100%)}
 .mk i{width:28px;height:28px;border-radius:50%;background:var(--band);color:#fff;font-size:15px;display:flex;align-items:center;justify-content:center;border:2px solid var(--surf)}
 .mk i+i{margin-left:-8px;background:var(--n2)}
-.now{position:absolute;top:2px;width:2px;height:36px;background:var(--band);margin-left:-1px}
-.now span{position:absolute;left:8px;top:-6px;white-space:nowrap;font-weight:700;background:var(--surf);padding-right:4px}
-.now.rev span{left:auto;right:8px;padding:0 0 0 4px}
+:where(body:not([data-page])) .now{position:absolute;top:2px;width:2px;height:36px;background:var(--band);margin-left:-1px}
+:where(body:not([data-page])) .now span{position:absolute;left:8px;top:-6px;white-space:nowrap;font-weight:700;background:var(--surf);padding-right:4px}
+:where(body:not([data-page])) .now.rev span{left:auto;right:8px;padding:0 0 0 4px}
 .story{display:grid;grid-template-columns:repeat(5,1fr);margin-top:8px;border-top:1px solid var(--line)}
 .story>div{padding:14px 20px 18px;border-left:1px solid var(--hair)}
 .story>div:first-child{border-left:0;padding-left:28px}

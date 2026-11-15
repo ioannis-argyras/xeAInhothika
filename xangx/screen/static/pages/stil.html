@@ -1,0 +1,493 @@
+<!doctype html>
+<html lang="el">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light">
+<title>Οδηγός στυλ · Xangxothaika</title>
+<link rel="stylesheet" href="/static/vendor/phosphor/style.css">
+<link rel="stylesheet" href="/static/vendor/phosphor/fill/style.css">
+<link rel="stylesheet" href="/static/app.css">
+<style>
+/* Μόνο για αυτή τη σελίδα-οδηγό: διάταξη των ενοτήτων και του κώδικα. Οι κοινές κλάσεις είναι στο app.css. */
+body[data-page] .wrap.stil-wrap{padding-top:var(--rise)}
+.stil-sec{margin-top:40px}
+.stil-sec:first-child{margin-top:0}
+.stil-sec h2{font-size:var(--l);line-height:1.2;letter-spacing:-.01em;font-weight:700}
+.stil-sec>p.m{margin:4px 0 14px;max-width:760px}
+.stil-code{margin-top:14px;padding:14px 16px;background:var(--well-l);border:1px solid var(--well-edge);border-radius:12px;box-shadow:inset 0 1px 3px rgba(10,27,51,.12);font:400 var(--s)/1.5 ui-monospace,Consolas,monospace;color:var(--ink);white-space:pre-wrap;overflow-wrap:anywhere}
+.stil-row{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+.stil-ask{padding:16px 20px 0}
+.stil-l{font-size:var(--l);font-weight:700;margin-top:2px}
+.stil-btns{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:16px 20px 18px}
+.stil-warn{display:flex;align-items:center;gap:8px}
+.stil-warn i{font-size:18px}
+.stil-ok{font-size:20px}
+.stil-flat{box-shadow:none}
+.stil-mob{display:block}
+.stil-dock .mdock{position:static}
+.stil-demo{min-width:0}
+@media (max-width:1023px){.stil-demo .mdock{position:static}}
+</style>
+<script src="/static/shell.js" defer></script>
+</head>
+<body data-page="stil" data-title="Οδηγός στυλ">
+<main class="main">
+  <div class="band"><div class="in">
+    <div>
+      <div class="kick"><i class="ph ph-swatches"></i>Κοινό στυλ · Α v2</div>
+      <h1>Οδηγός στυλ</h1>
+      <p class="lead">Κάθε κοινό κομμάτι με κείμενα του demo. Κάτω από το καθένα, η HTML που το φτιάχνει.</p>
+    </div>
+  </div></div>
+  <div class="wrap stil-wrap">
+    <section class="stil-sec" aria-labelledby="h-vitrina">
+      <h2 id="h-vitrina">Βιτρίνα</h2>
+      <p class="m">Η σκούρα ζώνη πάνω σε κάθε σελίδα: μικρός τίτλος, ένα μεγάλο κείμενο, και τα στοιχεία της σελίδας κάτω δεξιά. Την έχει και αυτή η σελίδα, από πάνω.</p>
+      <pre class="stil-code"><code>&lt;div class=&quot;band&quot;&gt;&lt;div class=&quot;in&quot;&gt;
+  &lt;div&gt;
+    &lt;div class=&quot;kick&quot;&gt;&lt;i class=&quot;ph ph-calendar-blank&quot;&gt;&lt;/i&gt;Κυριακή 15/11/2026&lt;/div&gt;
+    &lt;h1&gt;Σήμερα&lt;/h1&gt;
+    &lt;p class=&quot;lead&quot;&gt;Δεν υπάρχουν ακόμα πωλήσεις σήμερα. Χθες &lt;b&gt;470,70 €&lt;/b&gt; από 145 αποδείξεις.&lt;/p&gt;
+  &lt;/div&gt;
+&lt;/div&gt;&lt;/div&gt;
+&lt;div class=&quot;wrap&quot;&gt; … οι κάρτες της σελίδας, που ανεβαίνουν πάνω στη βιτρίνα … &lt;/div&gt;</code></pre>
+    </section>
+
+    <section class="stil-sec" aria-labelledby="h-koumpia">
+      <h2 id="h-koumpia">Κουμπιά και σύνδεσμοι</h2>
+      <p class="m">Κίτρινο μόνο στην κύρια ενέργεια, ένα ανά οθόνη: εδώ το έχει η σκηνή απόφασης πιο κάτω. Τα υπόλοιπα είναι λευκά ή σύνδεσμοι.</p>
+      <div class="stil-demo">
+        <div class="stil-row">
+          <button class="btn q" type="button"><i class="ph ph-money"></i>Μετρητά</button>
+          <button class="btn q sm" type="button"><i class="ph ph-credit-card"></i>Κάρτα</button>
+          <a class="lk" href="#koumpia">Έλεγχος <i class="ph ph-arrow-right"></i></a>
+          <a class="lk u" href="#koumpia">Δες το τιμολόγιο</a>
+        </div>
+      </div>
+      <pre class="stil-code"><code>&lt;div class=&quot;stil-row&quot;&gt;
+  &lt;button class=&quot;btn q&quot; type=&quot;button&quot;&gt;&lt;i class=&quot;ph ph-money&quot;&gt;&lt;/i&gt;Μετρητά&lt;/button&gt;
+  &lt;button class=&quot;btn q sm&quot; type=&quot;button&quot;&gt;&lt;i class=&quot;ph ph-credit-card&quot;&gt;&lt;/i&gt;Κάρτα&lt;/button&gt;
+  &lt;a class=&quot;lk&quot; href=&quot;#koumpia&quot;&gt;Έλεγχος &lt;i class=&quot;ph ph-arrow-right&quot;&gt;&lt;/i&gt;&lt;/a&gt;
+  &lt;a class=&quot;lk u&quot; href=&quot;#koumpia&quot;&gt;Δες το τιμολόγιο&lt;/a&gt;
+&lt;/div&gt;</code></pre>
+    </section>
+
+    <section class="stil-sec" aria-labelledby="h-pedio">
+      <h2 id="h-pedio">Πεδίο «Ζήτα κάτι»</h2>
+      <p class="m">Το κείμενο του πεδίου είναι 16px, για να μη μεγεθύνει το iPhone.</p>
+      <div class="stil-demo">
+        <div class="ask">
+          <input type="text" aria-label="Ζήτα κάτι από τον Συνεργάτη" placeholder="Ζήτα κάτι, π.χ. «Τακτοποίησε τις εκκρεμότητες»">
+          <button class="send" type="button" aria-label="Στείλε"><i class="ph ph-arrow-up"></i></button>
+        </div>
+      </div>
+      <pre class="stil-code"><code>&lt;div class=&quot;ask&quot;&gt;
+  &lt;input type=&quot;text&quot; aria-label=&quot;Ζήτα κάτι από τον Συνεργάτη&quot; placeholder=&quot;Ζήτα κάτι, π.χ. «Τακτοποίησε τις εκκρεμότητες»&quot;&gt;
+  &lt;button class=&quot;send&quot; type=&quot;button&quot; aria-label=&quot;Στείλε&quot;&gt;&lt;i class=&quot;ph ph-arrow-up&quot;&gt;&lt;/i&gt;&lt;/button&gt;
+&lt;/div&gt;</code></pre>
+    </section>
+
+    <section class="stil-sec" aria-labelledby="h-karta">
+      <h2 id="h-karta">Κάρτα με κεφαλίδα, λωρίδα ομάδας και υποσέλιδο</h2>
+      <p class="m">Η άκρη φαίνεται, η κεφαλίδα είναι σε τονισμένη λωρίδα, και η μπλε γραμμή λέει «απαντάς εσύ».</p>
+      <div class="stil-demo">
+        <article class="card" aria-label="Πλήρωσες;">
+          <div class="hd"><b><i class="ph ph-wallet"></i>Πλήρωσες; Πώς;</b><span class="r">1 τιμολόγιο</span></div>
+          <div class="askrow">
+            <div class="stil-ask">
+              <p class="m">Β-512 · Αρτοποιία Λαμπρόπουλου</p>
+              <p class="stil-l">51,70 € τοις μετρητοίς</p>
+              <p class="m">Ήρθε σήμερα με email</p>
+            </div>
+            <div class="stil-btns">
+              <button class="btn q sm" type="button"><i class="ph ph-money"></i>Μετρητά</button>
+              <button class="btn q sm" type="button"><i class="ph ph-credit-card"></i>Κάρτα</button>
+              <button class="btn q sm" type="button"><i class="ph ph-bank"></i>Τράπεζα</button>
+              <button class="btn q sm" type="button"><i class="ph ph-clock"></i>Όχι ακόμα</button>
+            </div>
+          </div>
+          <div class="cf"><span class="al stil-warn"><i class="ph ph-warning"></i>Νέο IBAN …7703</span><a class="lk" href="#karta">Έλεγχος <i class="ph ph-arrow-right"></i></a></div>
+          <div class="sub">Επόμενη πληρωμή<span>με υπενθύμιση</span></div>
+        </article>
+      </div>
+      <pre class="stil-code"><code>&lt;article class=&quot;card&quot; aria-label=&quot;Πλήρωσες;&quot;&gt;
+  &lt;div class=&quot;hd&quot;&gt;&lt;b&gt;&lt;i class=&quot;ph ph-wallet&quot;&gt;&lt;/i&gt;Πλήρωσες; Πώς;&lt;/b&gt;&lt;span class=&quot;r&quot;&gt;1 τιμολόγιο&lt;/span&gt;&lt;/div&gt;
+  &lt;div class=&quot;askrow&quot;&gt;
+    &lt;div class=&quot;stil-ask&quot;&gt;
+      &lt;p class=&quot;m&quot;&gt;Β-512 · Αρτοποιία Λαμπρόπουλου&lt;/p&gt;
+      &lt;p class=&quot;stil-l&quot;&gt;51,70 € τοις μετρητοίς&lt;/p&gt;
+      &lt;p class=&quot;m&quot;&gt;Ήρθε σήμερα με email&lt;/p&gt;
+    &lt;/div&gt;
+    &lt;div class=&quot;stil-btns&quot;&gt;
+      &lt;button class=&quot;btn q sm&quot; type=&quot;button&quot;&gt;&lt;i class=&quot;ph ph-money&quot;&gt;&lt;/i&gt;Μετρητά&lt;/button&gt;
+      &lt;button class=&quot;btn q sm&quot; type=&quot;button&quot;&gt;&lt;i class=&quot;ph ph-credit-card&quot;&gt;&lt;/i&gt;Κάρτα&lt;/button&gt;
+      &lt;button class=&quot;btn q sm&quot; type=&quot;button&quot;&gt;&lt;i class=&quot;ph ph-bank&quot;&gt;&lt;/i&gt;Τράπεζα&lt;/button&gt;
+      &lt;button class=&quot;btn q sm&quot; type=&quot;button&quot;&gt;&lt;i class=&quot;ph ph-clock&quot;&gt;&lt;/i&gt;Όχι ακόμα&lt;/button&gt;
+    &lt;/div&gt;
+  &lt;/div&gt;
+  &lt;div class=&quot;cf&quot;&gt;&lt;span class=&quot;al stil-warn&quot;&gt;&lt;i class=&quot;ph ph-warning&quot;&gt;&lt;/i&gt;Νέο IBAN …7703&lt;/span&gt;&lt;a class=&quot;lk&quot; href=&quot;#karta&quot;&gt;Έλεγχος &lt;i class=&quot;ph ph-arrow-right&quot;&gt;&lt;/i&gt;&lt;/a&gt;&lt;/div&gt;
+  &lt;div class=&quot;sub&quot;&gt;Επόμενη πληρωμή&lt;span&gt;με υπενθύμιση&lt;/span&gt;&lt;/div&gt;
+&lt;/article&gt;</code></pre>
+    </section>
+
+    <section class="stil-sec" aria-labelledby="h-lista">
+      <h2 id="h-lista">Λίστα με γραμμές που έχουν φόντο ανά κατάσταση</h2>
+      <p class="m">Ζώνη για τα «εντάξει», απαλό κόκκινο για πρόβλημα, απαλό μπλε για «νέο» ή «θέλει εσένα». Το χρώμα κατάστασης κερδίζει πάντα τη ζώνη, και σε ζυγή θέση. Οι γραμμές ξεχωρίζουν με φόντο, όχι μόνο με γραμμή 1px.</p>
+      <div class="stil-demo">
+        <article class="card tbl" aria-label="Όλα τα τιμολόγια">
+          <div class="hd"><b><i class="ph ph-files"></i>Όλα τα τιμολόγια</b><span class="r">27</span></div>
+          <div class="tr2 th"><span>Τιμολόγιο</span><span>Ήρθε</span><span class="n">Γραμμές</span><span>Κατάσταση</span><span class="n">Σύνολο</span></div>
+          <div class="sub">Σήμερα, 15/11/2026<span>3</span></div>
+          <a class="tr2" href="#lista"><span class="num"><b>Γ-318</b><span class="m">Γαλακτοκομικά Κορωπίου</span></span><span class="c-date">email</span><span class="n c-lines">3</span><span class="st2 c-st"><i class="ph-fill ph-check-circle okt"></i>Εντάξει · πληρωμή 29/11/2026</span><b class="n">71,66 €</b></a>
+          <a class="tr2 hot bad" href="#lista"><span class="num"><b>Α-2271</b><span class="m">Διανομές Υμηττού</span></span><span class="c-date">email</span><span class="n c-lines">5</span><span class="st2 c-st al"><i class="ph ph-warning"></i>Θέλει εσένα: πιστωτικό 2,43 €</span><b class="n">159,29 €</b></a>
+          <a class="tr2 hot need" href="#lista"><span class="num"><b>Β-512</b><span class="m">Αρτοποιία Λαμπρόπουλου</span></span><span class="c-date">email</span><span class="n c-lines">3</span><span class="st2 c-st al"><i class="ph ph-warning"></i>Θέλει εσένα: νέο IBAN</span><b class="n">51,70 €</b></a>
+          <div class="sub">Νοέμβριος 2026<span>13 · 4.528,25 €</span></div>
+          <div class="tr2"><span class="num"><b>Γ-105</b><span class="m">Γαλακτοκομικά Κορωπίου</span></span><span class="c-date">14/11/2026</span><span class="n c-lines">4</span><span class="st2 c-st"><i class="ph-fill ph-check-circle okt"></i>Εντάξει</span><b class="n">279,39 €</b></div>
+          <div class="tr2"><span class="num"><b>ΤΔΑ-105</b><span class="m">Κάβα Βύρωνα</span></span><span class="c-date">13/11/2026</span><span class="n c-lines">4</span><span class="st2 c-st"><i class="ph-fill ph-check-circle okt"></i>Εντάξει</span><b class="n">137,91 €</b></div>
+          <a class="more2" href="#lista"><span class="only-d">Δες και τα άλλα 8 του Οκτωβρίου</span><span class="only-m">Δες όλα τα 27</span><i class="ph ph-arrow-right"></i></a>
+        </article>
+      </div>
+      <pre class="stil-code"><code>&lt;article class=&quot;card tbl&quot; aria-label=&quot;Όλα τα τιμολόγια&quot;&gt;
+  &lt;div class=&quot;hd&quot;&gt;&lt;b&gt;&lt;i class=&quot;ph ph-files&quot;&gt;&lt;/i&gt;Όλα τα τιμολόγια&lt;/b&gt;&lt;span class=&quot;r&quot;&gt;27&lt;/span&gt;&lt;/div&gt;
+  &lt;div class=&quot;tr2 th&quot;&gt;&lt;span&gt;Τιμολόγιο&lt;/span&gt;&lt;span&gt;Ήρθε&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Γραμμές&lt;/span&gt;&lt;span&gt;Κατάσταση&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Σύνολο&lt;/span&gt;&lt;/div&gt;
+  &lt;div class=&quot;sub&quot;&gt;Σήμερα, 15/11/2026&lt;span&gt;3&lt;/span&gt;&lt;/div&gt;
+  &lt;a class=&quot;tr2&quot; href=&quot;#lista&quot;&gt;&lt;span class=&quot;num&quot;&gt;&lt;b&gt;Γ-318&lt;/b&gt;&lt;span class=&quot;m&quot;&gt;Γαλακτοκομικά Κορωπίου&lt;/span&gt;&lt;/span&gt;&lt;span class=&quot;c-date&quot;&gt;email&lt;/span&gt;&lt;span class=&quot;n c-lines&quot;&gt;3&lt;/span&gt;&lt;span class=&quot;st2 c-st&quot;&gt;&lt;i class=&quot;ph-fill ph-check-circle okt&quot;&gt;&lt;/i&gt;Εντάξει · πληρωμή 29/11/2026&lt;/span&gt;&lt;b class=&quot;n&quot;&gt;71,66 €&lt;/b&gt;&lt;/a&gt;
+  &lt;a class=&quot;tr2 hot bad&quot; href=&quot;#lista&quot;&gt;&lt;span class=&quot;num&quot;&gt;&lt;b&gt;Α-2271&lt;/b&gt;&lt;span class=&quot;m&quot;&gt;Διανομές Υμηττού&lt;/span&gt;&lt;/span&gt;&lt;span class=&quot;c-date&quot;&gt;email&lt;/span&gt;&lt;span class=&quot;n c-lines&quot;&gt;5&lt;/span&gt;&lt;span class=&quot;st2 c-st al&quot;&gt;&lt;i class=&quot;ph ph-warning&quot;&gt;&lt;/i&gt;Θέλει εσένα: πιστωτικό 2,43 €&lt;/span&gt;&lt;b class=&quot;n&quot;&gt;159,29 €&lt;/b&gt;&lt;/a&gt;
+  &lt;a class=&quot;tr2 hot need&quot; href=&quot;#lista&quot;&gt;&lt;span class=&quot;num&quot;&gt;&lt;b&gt;Β-512&lt;/b&gt;&lt;span class=&quot;m&quot;&gt;Αρτοποιία Λαμπρόπουλου&lt;/span&gt;&lt;/span&gt;&lt;span class=&quot;c-date&quot;&gt;email&lt;/span&gt;&lt;span class=&quot;n c-lines&quot;&gt;3&lt;/span&gt;&lt;span class=&quot;st2 c-st al&quot;&gt;&lt;i class=&quot;ph ph-warning&quot;&gt;&lt;/i&gt;Θέλει εσένα: νέο IBAN&lt;/span&gt;&lt;b class=&quot;n&quot;&gt;51,70 €&lt;/b&gt;&lt;/a&gt;
+  &lt;div class=&quot;sub&quot;&gt;Νοέμβριος 2026&lt;span&gt;13 · 4.528,25 €&lt;/span&gt;&lt;/div&gt;
+  &lt;div class=&quot;tr2&quot;&gt;&lt;span class=&quot;num&quot;&gt;&lt;b&gt;Γ-105&lt;/b&gt;&lt;span class=&quot;m&quot;&gt;Γαλακτοκομικά Κορωπίου&lt;/span&gt;&lt;/span&gt;&lt;span class=&quot;c-date&quot;&gt;14/11/2026&lt;/span&gt;&lt;span class=&quot;n c-lines&quot;&gt;4&lt;/span&gt;&lt;span class=&quot;st2 c-st&quot;&gt;&lt;i class=&quot;ph-fill ph-check-circle okt&quot;&gt;&lt;/i&gt;Εντάξει&lt;/span&gt;&lt;b class=&quot;n&quot;&gt;279,39 €&lt;/b&gt;&lt;/div&gt;
+  &lt;div class=&quot;tr2&quot;&gt;&lt;span class=&quot;num&quot;&gt;&lt;b&gt;ΤΔΑ-105&lt;/b&gt;&lt;span class=&quot;m&quot;&gt;Κάβα Βύρωνα&lt;/span&gt;&lt;/span&gt;&lt;span class=&quot;c-date&quot;&gt;13/11/2026&lt;/span&gt;&lt;span class=&quot;n c-lines&quot;&gt;4&lt;/span&gt;&lt;span class=&quot;st2 c-st&quot;&gt;&lt;i class=&quot;ph-fill ph-check-circle okt&quot;&gt;&lt;/i&gt;Εντάξει&lt;/span&gt;&lt;b class=&quot;n&quot;&gt;137,91 €&lt;/b&gt;&lt;/div&gt;
+  &lt;a class=&quot;more2&quot; href=&quot;#lista&quot;&gt;&lt;span class=&quot;only-d&quot;&gt;Δες και τα άλλα 8 του Οκτωβρίου&lt;/span&gt;&lt;span class=&quot;only-m&quot;&gt;Δες όλα τα 27&lt;/span&gt;&lt;i class=&quot;ph ph-arrow-right&quot;&gt;&lt;/i&gt;&lt;/a&gt;
+&lt;/article&gt;</code></pre>
+    </section>
+
+    <section class="stil-sec" aria-labelledby="h-theloun">
+      <h2 id="h-theloun">Θέλουν εσένα</h2>
+      <p class="m">Γραμμές με λωρίδα στα αριστερά: κόκκινο φόντο το πρόβλημα, μπλε το νέο. Κάθε γραμμή λέει τι, γιατί και τι πατάς.</p>
+      <div class="stil-demo">
+        <article class="card" aria-label="Θέλουν εσένα">
+          <div class="hd"><b><i class="ph ph-hand-palm"></i>Θέλουν εσένα</b><span class="r">1 από 3</span></div>
+          <a class="need bad" href="#theloun">
+            <div><b>Α-2271 · Διανομές Υμηττού</b><span class="m">Λείπει 1 εξάδα νερό. Ζητάω πιστωτικό 2,43 €;</span></div>
+            <span class="lk">Άνοιξε <i class="ph ph-arrow-right"></i></span>
+          </a>
+          <a class="need blue" href="#theloun">
+            <div><b>Β-512 · Αρτοποιία Λαμπρόπουλου</b><span class="m">Νέο IBAN …7703. Δεν το αλλάζω χωρίς εσένα.</span></div>
+            <span class="lk">Έλεγχος <i class="ph ph-arrow-right"></i></span>
+          </a>
+          <div class="sub">Πλήρωσες;<span>1</span></div>
+          <a class="need blue stil-flat" href="#theloun">
+            <div><b>Β-512 · 51,70 €</b><span class="m">Τοις μετρητοίς. Απαντάς στην αρχική.</span></div>
+            <span class="lk">Απάντησε <i class="ph ph-arrow-right"></i></span>
+          </a>
+          <div class="cf"><span class="m">Γ-318 · Γαλακτοκομικά Κορωπίου: εντάξει</span><i class="ph-fill ph-check-circle okt stil-ok"></i></div>
+        </article>
+      </div>
+      <pre class="stil-code"><code>&lt;article class=&quot;card&quot; aria-label=&quot;Θέλουν εσένα&quot;&gt;
+  &lt;div class=&quot;hd&quot;&gt;&lt;b&gt;&lt;i class=&quot;ph ph-hand-palm&quot;&gt;&lt;/i&gt;Θέλουν εσένα&lt;/b&gt;&lt;span class=&quot;r&quot;&gt;1 από 3&lt;/span&gt;&lt;/div&gt;
+  &lt;a class=&quot;need bad&quot; href=&quot;#theloun&quot;&gt;
+    &lt;div&gt;&lt;b&gt;Α-2271 · Διανομές Υμηττού&lt;/b&gt;&lt;span class=&quot;m&quot;&gt;Λείπει 1 εξάδα νερό. Ζητάω πιστωτικό 2,43 €;&lt;/span&gt;&lt;/div&gt;
+    &lt;span class=&quot;lk&quot;&gt;Άνοιξε &lt;i class=&quot;ph ph-arrow-right&quot;&gt;&lt;/i&gt;&lt;/span&gt;
+  &lt;/a&gt;
+  &lt;a class=&quot;need blue&quot; href=&quot;#theloun&quot;&gt;
+    &lt;div&gt;&lt;b&gt;Β-512 · Αρτοποιία Λαμπρόπουλου&lt;/b&gt;&lt;span class=&quot;m&quot;&gt;Νέο IBAN …7703. Δεν το αλλάζω χωρίς εσένα.&lt;/span&gt;&lt;/div&gt;
+    &lt;span class=&quot;lk&quot;&gt;Έλεγχος &lt;i class=&quot;ph ph-arrow-right&quot;&gt;&lt;/i&gt;&lt;/span&gt;
+  &lt;/a&gt;
+  &lt;div class=&quot;sub&quot;&gt;Πλήρωσες;&lt;span&gt;1&lt;/span&gt;&lt;/div&gt;
+  &lt;a class=&quot;need blue stil-flat&quot; href=&quot;#theloun&quot;&gt;
+    &lt;div&gt;&lt;b&gt;Β-512 · 51,70 €&lt;/b&gt;&lt;span class=&quot;m&quot;&gt;Τοις μετρητοίς. Απαντάς στην αρχική.&lt;/span&gt;&lt;/div&gt;
+    &lt;span class=&quot;lk&quot;&gt;Απάντησε &lt;i class=&quot;ph ph-arrow-right&quot;&gt;&lt;/i&gt;&lt;/span&gt;
+  &lt;/a&gt;
+  &lt;div class=&quot;cf&quot;&gt;&lt;span class=&quot;m&quot;&gt;Γ-318 · Γαλακτοκομικά Κορωπίου: εντάξει&lt;/span&gt;&lt;i class=&quot;ph-fill ph-check-circle okt stil-ok&quot;&gt;&lt;/i&gt;&lt;/div&gt;
+&lt;/article&gt;</code></pre>
+    </section>
+
+    <section class="stil-sec" aria-labelledby="h-skini">
+      <h2 id="h-skini">Σκηνή απόφασης και εσοχή</h2>
+      <p class="m">Η σκούρα κάρτα εστίασης. Μέσα της, η εσοχή (το εσωτερικό του ψυγείου) δείχνει το δεδομένο: 10 χρεώθηκαν, 9 ήρθαν. Ένα κίτρινο κουμπί, και το «Όχι» δίπλα του σε περίγραμμα.</p>
+      <div class="stil-demo">
+        <article class="stage" aria-label="Χρειάζονται εσένα">
+          <div class="shd"><span><i class="ph ph-hand-palm"></i>Χρειάζονται εσένα</span><span>1 από 1</span></div>
+          <div class="body">
+            <div class="lc">
+              <p class="from">Α-2271 · Διανομές Υμηττού</p>
+              <h2>Ζητάω πιστωτικό 2,43 €;</h2>
+              <p class="why">Χρεώθηκαν <b>10</b> εξάδες νερό, ήρθαν <b>9</b>. 2,15 € + ΦΠΑ 13% = <b>2,43 €</b>.</p>
+              <p class="exact"><i class="ph ph-envelope-simple"></i><span>Τι ακριβώς: email στις Διανομές Υμηττού με αίτημα πιστωτικού 2,43 € για το Α-2271.</span></p>
+              <div class="acts">
+                <button class="btn yes" type="button"><i class="ph ph-paper-plane-tilt"></i>Στείλε το αίτημα</button>
+                <button class="btn no" type="button">Όχι</button>
+              </div>
+            </div>
+            <div class="well" aria-label="Νερό 1,5L εξάδα: χρεώθηκαν 10, ήρθαν 9">
+              <span class="m">Νερό 1,5L εξάδα · παραλαβή P-0318</span>
+              <div class="shelfrow"><i class="pack"></i><i class="pack"></i><i class="pack"></i><i class="pack"></i><i class="pack"></i><i class="pack"></i><i class="pack"></i><i class="pack"></i><i class="pack"></i><i class="pack gone"></i></div>
+              <div class="qty">
+                <div><b>10</b><span>χρεώθηκαν</span></div>
+                <div><b>9</b><span>ήρθαν</span></div>
+                <div class="x"><b>1</b><span>λείπει</span></div>
+              </div>
+            </div>
+          </div>
+          <div class="sft"><i class="ph ph-bank"></i><span class="tx">Επίσης: νέο IBAN στην Αρτοποιία Λαμπρόπουλου (…7703)</span><a href="#skini">Δες το <i class="ph ph-arrow-right"></i></a></div>
+        </article>
+      </div>
+      <pre class="stil-code"><code>&lt;article class=&quot;stage&quot; aria-label=&quot;Χρειάζονται εσένα&quot;&gt;
+  &lt;div class=&quot;shd&quot;&gt;&lt;span&gt;&lt;i class=&quot;ph ph-hand-palm&quot;&gt;&lt;/i&gt;Χρειάζονται εσένα&lt;/span&gt;&lt;span&gt;1 από 1&lt;/span&gt;&lt;/div&gt;
+  &lt;div class=&quot;body&quot;&gt;
+    &lt;div class=&quot;lc&quot;&gt;
+      &lt;p class=&quot;from&quot;&gt;Α-2271 · Διανομές Υμηττού&lt;/p&gt;
+      &lt;h2&gt;Ζητάω πιστωτικό 2,43 €;&lt;/h2&gt;
+      &lt;p class=&quot;why&quot;&gt;Χρεώθηκαν &lt;b&gt;10&lt;/b&gt; εξάδες νερό, ήρθαν &lt;b&gt;9&lt;/b&gt;. 2,15 € + ΦΠΑ 13% = &lt;b&gt;2,43 €&lt;/b&gt;.&lt;/p&gt;
+      &lt;p class=&quot;exact&quot;&gt;&lt;i class=&quot;ph ph-envelope-simple&quot;&gt;&lt;/i&gt;&lt;span&gt;Τι ακριβώς: email στις Διανομές Υμηττού με αίτημα πιστωτικού 2,43 € για το Α-2271.&lt;/span&gt;&lt;/p&gt;
+      &lt;div class=&quot;acts&quot;&gt;
+        &lt;button class=&quot;btn yes&quot; type=&quot;button&quot;&gt;&lt;i class=&quot;ph ph-paper-plane-tilt&quot;&gt;&lt;/i&gt;Στείλε το αίτημα&lt;/button&gt;
+        &lt;button class=&quot;btn no&quot; type=&quot;button&quot;&gt;Όχι&lt;/button&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+    &lt;div class=&quot;well&quot; aria-label=&quot;Νερό 1,5L εξάδα: χρεώθηκαν 10, ήρθαν 9&quot;&gt;
+      &lt;span class=&quot;m&quot;&gt;Νερό 1,5L εξάδα · παραλαβή P-0318&lt;/span&gt;
+      &lt;div class=&quot;shelfrow&quot;&gt;&lt;i class=&quot;pack&quot;&gt;&lt;/i&gt;&lt;i class=&quot;pack&quot;&gt;&lt;/i&gt;&lt;i class=&quot;pack&quot;&gt;&lt;/i&gt;&lt;i class=&quot;pack&quot;&gt;&lt;/i&gt;&lt;i class=&quot;pack&quot;&gt;&lt;/i&gt;&lt;i class=&quot;pack&quot;&gt;&lt;/i&gt;&lt;i class=&quot;pack&quot;&gt;&lt;/i&gt;&lt;i class=&quot;pack&quot;&gt;&lt;/i&gt;&lt;i class=&quot;pack&quot;&gt;&lt;/i&gt;&lt;i class=&quot;pack gone&quot;&gt;&lt;/i&gt;&lt;/div&gt;
+      &lt;div class=&quot;qty&quot;&gt;
+        &lt;div&gt;&lt;b&gt;10&lt;/b&gt;&lt;span&gt;χρεώθηκαν&lt;/span&gt;&lt;/div&gt;
+        &lt;div&gt;&lt;b&gt;9&lt;/b&gt;&lt;span&gt;ήρθαν&lt;/span&gt;&lt;/div&gt;
+        &lt;div class=&quot;x&quot;&gt;&lt;b&gt;1&lt;/b&gt;&lt;span&gt;λείπει&lt;/span&gt;&lt;/div&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+  &lt;/div&gt;
+  &lt;div class=&quot;sft&quot;&gt;&lt;i class=&quot;ph ph-bank&quot;&gt;&lt;/i&gt;&lt;span class=&quot;tx&quot;&gt;Επίσης: νέο IBAN στην Αρτοποιία Λαμπρόπουλου (…7703)&lt;/span&gt;&lt;a href=&quot;#skini&quot;&gt;Δες το &lt;i class=&quot;ph ph-arrow-right&quot;&gt;&lt;/i&gt;&lt;/a&gt;&lt;/div&gt;
+&lt;/article&gt;</code></pre>
+    </section>
+
+    <section class="stil-sec" aria-labelledby="h-grafima">
+      <h2 id="h-grafima">Γράφημα σε εσοχή</h2>
+      <p class="m">Τα γραφήματα κάθονται σε ανοιχτή εσοχή μέσα στην κάρτα: τρίτο επίπεδο, με άκρη και εσωτερική σκιά.</p>
+      <div class="stil-demo">
+        <article class="card" aria-label="Πωλήσεις 30 ημερών">
+          <div class="hd"><b><i class="ph ph-chart-bar"></i>Πωλήσεις 30 ημερών</b><span class="r m-hide">16/10/2026 έως 14/11/2026</span></div>
+          <div class="kpis">
+            <div><b>14.614,00 €</b><span class="m">4.618 αποδείξεις</span></div>
+            <div class="m-hide"><b>487,13 €</b><span class="m">μέσος όρος τη μέρα</span></div>
+          </div>
+          <div class="lwell">
+          <div class="bars" role="img" aria-label="Πωλήσεις ανά μέρα, 16/10 έως 14/11/2026, και σήμερα χωρίς πωλήσεις ακόμα">
+               <i style="height:74.1%" title="16/10/2026: 446,60 €"></i><i style="height:97.3%" title="17/10/2026: 586,70 €"></i><i style="height:80.7%" title="18/10/2026: 486,60 €"></i><i style="height:91.8%" title="19/10/2026: 553,10 €"></i><i style="height:89.4%" title="20/10/2026: 539,10 €"></i><i style="height:72.0%" title="21/10/2026: 434,30 €"></i><i style="height:74.8%" title="22/10/2026: 451,00 €"></i><i style="height:58.7%" title="23/10/2026: 353,90 €"></i><i style="height:72.7%" title="24/10/2026: 438,30 €"></i><i style="height:73.1%" title="25/10/2026: 440,40 €"></i><i style="height:84.9%" title="26/10/2026: 512,00 €"></i><i style="height:75.7%" title="27/10/2026: 456,30 €"></i><i style="height:84.7%" title="28/10/2026: 510,40 €"></i><i style="height:100%" title="29/10/2026: 602,80 €"></i><i style="height:79.9%" title="30/10/2026: 481,90 €"></i><i style="height:73.5%" title="31/10/2026: 442,80 €"></i><i style="height:79.1%" title="01/11/2026: 477,00 €"></i><i style="height:89.1%" title="02/11/2026: 537,10 €"></i><i style="height:83.0%" title="03/11/2026: 500,60 €"></i><i style="height:64.1%" title="04/11/2026: 386,50 €"></i><i style="height:88.8%" title="05/11/2026: 535,00 €"></i><i style="height:99.0%" title="06/11/2026: 596,90 €"></i><i style="height:61.5%" title="07/11/2026: 371,00 €"></i><i style="height:88.5%" title="08/11/2026: 533,40 €"></i><i style="height:91.1%" title="09/11/2026: 549,10 €"></i><i style="height:90.5%" title="10/11/2026: 545,60 €"></i><i style="height:80.1%" title="11/11/2026: 483,10 €"></i><i style="height:81.5%" title="12/11/2026: 491,50 €"></i><i style="height:66.4%" title="13/11/2026: 400,30 €"></i><i class="y" style="height:78.1%" title="14/11/2026: 470,70 €"></i><span class="today" title="Σήμερα 15/11/2026: δεν υπάρχουν ακόμα πωλήσεις"></span>
+               <div class="avg" style="bottom:80.8%"><span>μ.ό. 487,13 €</span></div>
+              </div>
+          <div class="axis"><span>16/10/2026</span><span class="m-hide">01/11/2026</span><span>χθες 470,70 €</span><b>Σήμερα</b></div>
+          </div>
+        </article>
+      </div>
+      <pre class="stil-code"><code>&lt;article class=&quot;card&quot; aria-label=&quot;Πωλήσεις 30 ημερών&quot;&gt;
+  &lt;div class=&quot;hd&quot;&gt;&lt;b&gt;&lt;i class=&quot;ph ph-chart-bar&quot;&gt;&lt;/i&gt;Πωλήσεις 30 ημερών&lt;/b&gt;&lt;span class=&quot;r m-hide&quot;&gt;16/10/2026 έως 14/11/2026&lt;/span&gt;&lt;/div&gt;
+  &lt;div class=&quot;kpis&quot;&gt;
+    &lt;div&gt;&lt;b&gt;14.614,00 €&lt;/b&gt;&lt;span class=&quot;m&quot;&gt;4.618 αποδείξεις&lt;/span&gt;&lt;/div&gt;
+    &lt;div class=&quot;m-hide&quot;&gt;&lt;b&gt;487,13 €&lt;/b&gt;&lt;span class=&quot;m&quot;&gt;μέσος όρος τη μέρα&lt;/span&gt;&lt;/div&gt;
+  &lt;/div&gt;
+  &lt;div class=&quot;lwell&quot;&gt;
+  &lt;div class=&quot;bars&quot; role=&quot;img&quot; aria-label=&quot;Πωλήσεις ανά μέρα, 16/10 έως 14/11/2026, και σήμερα χωρίς πωλήσεις ακόμα&quot;&gt;
+       &lt;i style=&quot;height:74.1%&quot; title=&quot;16/10/2026: 446,60 €&quot;&gt;&lt;/i&gt;&lt;i style=&quot;height:97.3%&quot; title=&quot;17/10/2026: 586,70 €&quot;&gt;&lt;/i&gt;&lt;i style=&quot;height:80.7%&quot; title=&quot;18/10/2026: 486,60 €&quot;&gt;&lt;/i&gt;&lt;!-- … ένα &lt;i&gt; ανά μέρα --&gt;&lt;i class=&quot;y&quot; style=&quot;height:78.1%&quot; title=&quot;14/11/2026: 470,70 €&quot;&gt;&lt;/i&gt;&lt;span class=&quot;today&quot; title=&quot;Σήμερα 15/11/2026: δεν υπάρχουν ακόμα πωλήσεις&quot;&gt;&lt;/span&gt;
+       &lt;div class=&quot;avg&quot; style=&quot;bottom:80.8%&quot;&gt;&lt;span&gt;μ.ό. 487,13 €&lt;/span&gt;&lt;/div&gt;
+      &lt;/div&gt;
+  &lt;div class=&quot;axis&quot;&gt;&lt;span&gt;16/10/2026&lt;/span&gt;&lt;span class=&quot;m-hide&quot;&gt;01/11/2026&lt;/span&gt;&lt;span&gt;χθες 470,70 €&lt;/span&gt;&lt;b&gt;Σήμερα&lt;/b&gt;&lt;/div&gt;
+  &lt;/div&gt;
+&lt;/article&gt;</code></pre>
+    </section>
+
+    <section class="stil-sec" aria-labelledby="h-skouro">
+      <h2 id="h-skouro">Σκούρο γράφημα πληρωμών</h2>
+      <p class="m">Στο σχέδιο λέγεται «pay»· στον κώδικα λέγεται paychart, γιατί το «pay» είναι ήδη τα κουμπιά της κάρτας «Πλήρωσες;». Οι μπάρες και οι θέσεις τους (left, height) γράφονται από τη σελίδα.</p>
+      <div class="stil-demo">
+        <article class="dark" aria-label="Πληρωμές που έρχονται">
+          <div class="shd"><span><i class="ph ph-calendar-blank"></i>Πληρωμές των νέων τιμολογίων</span><span class="m-hide">15/11/2026 έως 15/12/2026</span></div>
+          <div class="body">
+            <div class="top">
+              <div><h2>282,65 €</h2><span class="m">σε 3 τιμολόγια, με υπενθύμιση</span></div>
+              <span class="m">Θα σε ρωτήσω «Πλήρωσες;» τη μέρα που λήγει</span>
+            </div>
+            <div class="paychart" role="img" aria-label="Β-512 51,70 € σήμερα, Γ-318 71,66 € στις 29/11/2026, Α-2271 159,29 € στις 15/12/2026">
+              <div class="gl" style="bottom:41%"></div><div class="gl" style="bottom:82%"></div>
+              <div class="b now" style="left:3%;height:26.7%"><span>51,70 €</span></div>
+              <div class="b" style="left:46.7%;height:36.9%"><span>71,66 €</span></div>
+              <div class="b l" style="left:97%;height:82%"><span>159,29 €</span></div>
+            </div>
+            <div class="payx">
+              <span class="s" style="left:0"><b>Β-512</b>σήμερα</span>
+              <span style="left:46.7%"><b>Γ-318</b>29/11/2026</span>
+              <span class="e" style="left:100%"><b>Α-2271</b>15/12/2026</span>
+            </div>
+          </div>
+          <div class="sft"><i class="ph ph-info"></i><span class="tx">Πριν από το Α-2271: πιστωτικό 2,43 € περιμένει εσένα</span><a href="#skouro">Άνοιξε <i class="ph ph-arrow-right"></i></a></div>
+        </article>
+      </div>
+      <pre class="stil-code"><code>&lt;article class=&quot;dark&quot; aria-label=&quot;Πληρωμές που έρχονται&quot;&gt;
+  &lt;div class=&quot;shd&quot;&gt;&lt;span&gt;&lt;i class=&quot;ph ph-calendar-blank&quot;&gt;&lt;/i&gt;Πληρωμές των νέων τιμολογίων&lt;/span&gt;&lt;span class=&quot;m-hide&quot;&gt;15/11/2026 έως 15/12/2026&lt;/span&gt;&lt;/div&gt;
+  &lt;div class=&quot;body&quot;&gt;
+    &lt;div class=&quot;top&quot;&gt;
+      &lt;div&gt;&lt;h2&gt;282,65 €&lt;/h2&gt;&lt;span class=&quot;m&quot;&gt;σε 3 τιμολόγια, με υπενθύμιση&lt;/span&gt;&lt;/div&gt;
+      &lt;span class=&quot;m&quot;&gt;Θα σε ρωτήσω «Πλήρωσες;» τη μέρα που λήγει&lt;/span&gt;
+    &lt;/div&gt;
+    &lt;div class=&quot;paychart&quot; role=&quot;img&quot; aria-label=&quot;Β-512 51,70 € σήμερα, Γ-318 71,66 € στις 29/11/2026, Α-2271 159,29 € στις 15/12/2026&quot;&gt;
+      &lt;div class=&quot;gl&quot; style=&quot;bottom:41%&quot;&gt;&lt;/div&gt;&lt;div class=&quot;gl&quot; style=&quot;bottom:82%&quot;&gt;&lt;/div&gt;
+      &lt;div class=&quot;b now&quot; style=&quot;left:3%;height:26.7%&quot;&gt;&lt;span&gt;51,70 €&lt;/span&gt;&lt;/div&gt;
+      &lt;div class=&quot;b&quot; style=&quot;left:46.7%;height:36.9%&quot;&gt;&lt;span&gt;71,66 €&lt;/span&gt;&lt;/div&gt;
+      &lt;div class=&quot;b l&quot; style=&quot;left:97%;height:82%&quot;&gt;&lt;span&gt;159,29 €&lt;/span&gt;&lt;/div&gt;
+    &lt;/div&gt;
+    &lt;div class=&quot;payx&quot;&gt;
+      &lt;span class=&quot;s&quot; style=&quot;left:0&quot;&gt;&lt;b&gt;Β-512&lt;/b&gt;σήμερα&lt;/span&gt;
+      &lt;span style=&quot;left:46.7%&quot;&gt;&lt;b&gt;Γ-318&lt;/b&gt;29/11/2026&lt;/span&gt;
+      &lt;span class=&quot;e&quot; style=&quot;left:100%&quot;&gt;&lt;b&gt;Α-2271&lt;/b&gt;15/12/2026&lt;/span&gt;
+    &lt;/div&gt;
+  &lt;/div&gt;
+  &lt;div class=&quot;sft&quot;&gt;&lt;i class=&quot;ph ph-info&quot;&gt;&lt;/i&gt;&lt;span class=&quot;tx&quot;&gt;Πριν από το Α-2271: πιστωτικό 2,43 € περιμένει εσένα&lt;/span&gt;&lt;a href=&quot;#skouro&quot;&gt;Άνοιξε &lt;i class=&quot;ph ph-arrow-right&quot;&gt;&lt;/i&gt;&lt;/a&gt;&lt;/div&gt;
+&lt;/article&gt;</code></pre>
+    </section>
+
+    <section class="stil-sec" aria-labelledby="h-kinito">
+      <h2 id="h-kinito">Κινητό: δική του δομή</h2>
+      <p class="m desk">Τα κομμάτια του κινητού φαίνονται σε πλάτος έως 1023px. Άνοιξε τη σελίδα στο κινητό ή στένεψε το παράθυρο.</p>
+      <p class="m mob">Δεν είναι ο υπολογιστής σε μία στήλη. Πλακίδια 2×2 για τη σύνοψη, segmented για «μία λίστα τη φορά», γραμμές-κάρτες, και η απόφαση σε κολλημένη ζώνη πάνω από τη μπάρα καρτελών.</p>
+    </section>
+
+    <section class="stil-sec mob" aria-labelledby="h-plakidia">
+      <h2 id="h-plakidia">Κινητό: πλακίδια 2×2</h2>
+      <p class="m">Περίληψη με αριθμό, μικρό γράφημα σε εσοχή και σύνδεσμο στη σελίδα του.</p>
+      <div class="stil-demo">
+        <div class="stil-mob">
+          <div class="tiles">
+           <a class="tile" href="#" aria-label="Πωλήσεις">
+            <span class="tl"><span><i class="ph ph-chart-bar"></i>Πωλήσεις</span><i class="ph ph-caret-right"></i></span>
+            <span class="tb2"><span><span class="v">470,70 €</span><br><span class="m">χθες</span></span>
+             <span class="tw"><span class="mbars" aria-hidden="true"><i style="height:79%"></i><i style="height:89%"></i><i style="height:83%"></i><i style="height:64%"></i><i style="height:89%"></i><i style="height:99%"></i><i style="height:62%"></i><i style="height:89%"></i><i style="height:91%"></i><i style="height:91%"></i><i style="height:80%"></i><i style="height:82%"></i><i style="height:66%"></i><i class="y" style="height:78%"></i></span></span>
+             <span class="okt up"><i class="ph ph-arrow-up"></i>2% από τα Σάββατα</span></span>
+           </a>
+           <a class="tile hot" href="#" aria-label="Απόθεμα">
+            <span class="tl"><span><i class="ph ph-package"></i>Απόθεμα</span><i class="ph ph-caret-right"></i></span>
+            <span class="tb2"><span><span class="v al">2 χαμηλά</span><br><span class="m">2 λήγουν σύντομα</span></span>
+             <span class="tw" aria-hidden="true"><span class="mseg"><i></i><i></i><i></i><i></i><i></i><i class="g"></i><i class="g"></i><i class="g"></i></span><span class="mseg"><i></i><i></i><i></i><i class="g"></i></span></span>
+             <span class="m">Πατατάκια 5, χυμός 3</span></span>
+           </a>
+           <a class="tile" href="#timologia" aria-label="Πληρωμές">
+            <span class="tl"><span><i class="ph ph-wallet"></i>Πληρωμές</span><i class="ph ph-caret-right"></i></span>
+            <span class="tb2"><span><span class="v">282,65 €</span><br><span class="m">3 νέα τιμολόγια</span></span>
+             <span class="tw"><span class="mpay" aria-hidden="true"><i class="now" style="height:33%"></i><i style="height:45%"></i><i style="height:100%"></i></span></span>
+             <span class="m">Επόμενη 29/11/2026</span></span>
+           </a>
+           <a class="tile" href="#" aria-label="Ομάδα">
+            <span class="tl"><span><i class="ph ph-users-three"></i>Ομάδα</span><i class="ph ph-caret-right"></i></span>
+            <span class="tb2"><span><span class="v">5 μέλη</span><br><span class="m">Τιμολόγια: 2 για σένα</span></span>
+             <span class="tw"><span class="mav" aria-hidden="true"><span><i class="ph ph-handshake"></i></span><span><i class="ph ph-package"></i></span><span><i class="ph ph-truck"></i></span><span class="x"><i class="ph ph-receipt"></i></span></span></span>
+             <span class="m">Τελευταίο 06:50</span></span>
+           </a>
+          </div>
+        </div>
+      </div>
+      <pre class="stil-code"><code>&lt;div class=&quot;tiles&quot;&gt;
+ &lt;a class=&quot;tile&quot; href=&quot;#&quot; aria-label=&quot;Πωλήσεις&quot;&gt;
+  &lt;span class=&quot;tl&quot;&gt;&lt;span&gt;&lt;i class=&quot;ph ph-chart-bar&quot;&gt;&lt;/i&gt;Πωλήσεις&lt;/span&gt;&lt;i class=&quot;ph ph-caret-right&quot;&gt;&lt;/i&gt;&lt;/span&gt;
+  &lt;span class=&quot;tb2&quot;&gt;&lt;span&gt;&lt;span class=&quot;v&quot;&gt;470,70 €&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;m&quot;&gt;χθες&lt;/span&gt;&lt;/span&gt;
+   &lt;span class=&quot;tw&quot;&gt;&lt;span class=&quot;mbars&quot; aria-hidden=&quot;true&quot;&gt;&lt;i style=&quot;height:79%&quot;&gt;&lt;/i&gt;&lt;i style=&quot;height:89%&quot;&gt;&lt;/i&gt;&lt;i style=&quot;height:83%&quot;&gt;&lt;/i&gt;&lt;i style=&quot;height:64%&quot;&gt;&lt;/i&gt;&lt;i style=&quot;height:89%&quot;&gt;&lt;/i&gt;&lt;i style=&quot;height:99%&quot;&gt;&lt;/i&gt;&lt;i style=&quot;height:62%&quot;&gt;&lt;/i&gt;&lt;i style=&quot;height:89%&quot;&gt;&lt;/i&gt;&lt;i style=&quot;height:91%&quot;&gt;&lt;/i&gt;&lt;i style=&quot;height:91%&quot;&gt;&lt;/i&gt;&lt;i style=&quot;height:80%&quot;&gt;&lt;/i&gt;&lt;i style=&quot;height:82%&quot;&gt;&lt;/i&gt;&lt;i style=&quot;height:66%&quot;&gt;&lt;/i&gt;&lt;i class=&quot;y&quot; style=&quot;height:78%&quot;&gt;&lt;/i&gt;&lt;/span&gt;&lt;/span&gt;
+   &lt;span class=&quot;okt up&quot;&gt;&lt;i class=&quot;ph ph-arrow-up&quot;&gt;&lt;/i&gt;2% από τα Σάββατα&lt;/span&gt;&lt;/span&gt;
+ &lt;/a&gt;
+ &lt;a class=&quot;tile hot&quot; href=&quot;#&quot; aria-label=&quot;Απόθεμα&quot;&gt;
+  &lt;span class=&quot;tl&quot;&gt;&lt;span&gt;&lt;i class=&quot;ph ph-package&quot;&gt;&lt;/i&gt;Απόθεμα&lt;/span&gt;&lt;i class=&quot;ph ph-caret-right&quot;&gt;&lt;/i&gt;&lt;/span&gt;
+  &lt;span class=&quot;tb2&quot;&gt;&lt;span&gt;&lt;span class=&quot;v al&quot;&gt;2 χαμηλά&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;m&quot;&gt;2 λήγουν σύντομα&lt;/span&gt;&lt;/span&gt;
+   &lt;span class=&quot;tw&quot; aria-hidden=&quot;true&quot;&gt;&lt;span class=&quot;mseg&quot;&gt;&lt;i&gt;&lt;/i&gt;&lt;i&gt;&lt;/i&gt;&lt;i&gt;&lt;/i&gt;&lt;i&gt;&lt;/i&gt;&lt;i&gt;&lt;/i&gt;&lt;i class=&quot;g&quot;&gt;&lt;/i&gt;&lt;i class=&quot;g&quot;&gt;&lt;/i&gt;&lt;i class=&quot;g&quot;&gt;&lt;/i&gt;&lt;/span&gt;&lt;span class=&quot;mseg&quot;&gt;&lt;i&gt;&lt;/i&gt;&lt;i&gt;&lt;/i&gt;&lt;i&gt;&lt;/i&gt;&lt;i class=&quot;g&quot;&gt;&lt;/i&gt;&lt;/span&gt;&lt;/span&gt;
+   &lt;span class=&quot;m&quot;&gt;Πατατάκια 5, χυμός 3&lt;/span&gt;&lt;/span&gt;
+ &lt;/a&gt;
+ &lt;a class=&quot;tile&quot; href=&quot;#timologia&quot; aria-label=&quot;Πληρωμές&quot;&gt;
+  &lt;span class=&quot;tl&quot;&gt;&lt;span&gt;&lt;i class=&quot;ph ph-wallet&quot;&gt;&lt;/i&gt;Πληρωμές&lt;/span&gt;&lt;i class=&quot;ph ph-caret-right&quot;&gt;&lt;/i&gt;&lt;/span&gt;
+  &lt;span class=&quot;tb2&quot;&gt;&lt;span&gt;&lt;span class=&quot;v&quot;&gt;282,65 €&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;m&quot;&gt;3 νέα τιμολόγια&lt;/span&gt;&lt;/span&gt;
+   &lt;span class=&quot;tw&quot;&gt;&lt;span class=&quot;mpay&quot; aria-hidden=&quot;true&quot;&gt;&lt;i class=&quot;now&quot; style=&quot;height:33%&quot;&gt;&lt;/i&gt;&lt;i style=&quot;height:45%&quot;&gt;&lt;/i&gt;&lt;i style=&quot;height:100%&quot;&gt;&lt;/i&gt;&lt;/span&gt;&lt;/span&gt;
+   &lt;span class=&quot;m&quot;&gt;Επόμενη 29/11/2026&lt;/span&gt;&lt;/span&gt;
+ &lt;/a&gt;
+ &lt;a class=&quot;tile&quot; href=&quot;#&quot; aria-label=&quot;Ομάδα&quot;&gt;
+  &lt;span class=&quot;tl&quot;&gt;&lt;span&gt;&lt;i class=&quot;ph ph-users-three&quot;&gt;&lt;/i&gt;Ομάδα&lt;/span&gt;&lt;i class=&quot;ph ph-caret-right&quot;&gt;&lt;/i&gt;&lt;/span&gt;
+  &lt;span class=&quot;tb2&quot;&gt;&lt;span&gt;&lt;span class=&quot;v&quot;&gt;5 μέλη&lt;/span&gt;&lt;br&gt;&lt;span class=&quot;m&quot;&gt;Τιμολόγια: 2 για σένα&lt;/span&gt;&lt;/span&gt;
+   &lt;span class=&quot;tw&quot;&gt;&lt;span class=&quot;mav&quot; aria-hidden=&quot;true&quot;&gt;&lt;span&gt;&lt;i class=&quot;ph ph-handshake&quot;&gt;&lt;/i&gt;&lt;/span&gt;&lt;span&gt;&lt;i class=&quot;ph ph-package&quot;&gt;&lt;/i&gt;&lt;/span&gt;&lt;span&gt;&lt;i class=&quot;ph ph-truck&quot;&gt;&lt;/i&gt;&lt;/span&gt;&lt;span class=&quot;x&quot;&gt;&lt;i class=&quot;ph ph-receipt&quot;&gt;&lt;/i&gt;&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;
+   &lt;span class=&quot;m&quot;&gt;Τελευταίο 06:50&lt;/span&gt;&lt;/span&gt;
+ &lt;/a&gt;
+&lt;/div&gt;</code></pre>
+    </section>
+
+    <section class="stil-sec mob" aria-labelledby="h-segmented">
+      <h2 id="h-segmented">Κινητό: segmented και γραμμές-κάρτες</h2>
+      <p class="m">Μία λίστα τη φορά, και οι γραμμές έχουν το ποσό δεξιά και μπάρα «ήρθαν».</p>
+      <div class="stil-demo">
+        <div class="seg2" role="tablist" aria-label="Τιμολόγια">
+          <button type="button" role="tab" aria-selected="true">Για σένα <span class="c">3</span></button>
+          <button type="button" role="tab" aria-selected="false">Όλα <span class="c n">27</span></button>
+          <button type="button" role="tab" aria-selected="false">Τάσεις</button>
+        </div>
+
+        <article class="card" aria-label="Γραμμές">
+          <div class="hd"><b><i class="ph ph-list-dashes"></i>Γραμμές</b><span class="r">παραλαβή P-0318</span></div>
+          <div class="lrow chg"><div class="a"><b>Coca-Cola 330ml κουτί</b><b class="v">29,76 €</b></div>
+            <div class="q"><span class="m">48 χρεώθηκαν · 48 ήρθαν</span><span class="got" aria-hidden="true"><i style="width:100%"></i></span></div>
+            <div class="nt"><span class="al"><i class="ph ph-arrow-up"></i>8,8%</span> 0,62 €, ήταν 0,57 €. Κάβα Βύρωνα 0,58 €.</div></div>
+          <div class="lrow bad"><div class="a"><b>Νερό 1,5L εξάδα</b><b class="v">21,50 €</b></div>
+            <div class="q"><span><b>10</b> χρεώθηκαν · <b class="al">9</b> ήρθαν</span><span class="got" aria-hidden="true"><i style="width:90%"></i></span></div></div>
+          <div class="lrow"><div class="a"><b>Πατατάκια αλάτι 90g</b><b class="v">25,20 €</b></div>
+            <div class="q"><span class="m">24 χρεώθηκαν · 24 ήρθαν</span><span class="got" aria-hidden="true"><i style="width:100%"></i></span></div></div>
+        </article>
+      </div>
+      <pre class="stil-code"><code>&lt;div class=&quot;seg2&quot; role=&quot;tablist&quot; aria-label=&quot;Τιμολόγια&quot;&gt;
+  &lt;button type=&quot;button&quot; role=&quot;tab&quot; aria-selected=&quot;true&quot;&gt;Για σένα &lt;span class=&quot;c&quot;&gt;3&lt;/span&gt;&lt;/button&gt;
+  &lt;button type=&quot;button&quot; role=&quot;tab&quot; aria-selected=&quot;false&quot;&gt;Όλα &lt;span class=&quot;c n&quot;&gt;27&lt;/span&gt;&lt;/button&gt;
+  &lt;button type=&quot;button&quot; role=&quot;tab&quot; aria-selected=&quot;false&quot;&gt;Τάσεις&lt;/button&gt;
+&lt;/div&gt;
+
+&lt;article class=&quot;card&quot; aria-label=&quot;Γραμμές&quot;&gt;
+  &lt;div class=&quot;hd&quot;&gt;&lt;b&gt;&lt;i class=&quot;ph ph-list-dashes&quot;&gt;&lt;/i&gt;Γραμμές&lt;/b&gt;&lt;span class=&quot;r&quot;&gt;παραλαβή P-0318&lt;/span&gt;&lt;/div&gt;
+  &lt;div class=&quot;lrow chg&quot;&gt;&lt;div class=&quot;a&quot;&gt;&lt;b&gt;Coca-Cola 330ml κουτί&lt;/b&gt;&lt;b class=&quot;v&quot;&gt;29,76 €&lt;/b&gt;&lt;/div&gt;
+    &lt;div class=&quot;q&quot;&gt;&lt;span class=&quot;m&quot;&gt;48 χρεώθηκαν · 48 ήρθαν&lt;/span&gt;&lt;span class=&quot;got&quot; aria-hidden=&quot;true&quot;&gt;&lt;i style=&quot;width:100%&quot;&gt;&lt;/i&gt;&lt;/span&gt;&lt;/div&gt;
+    &lt;div class=&quot;nt&quot;&gt;&lt;span class=&quot;al&quot;&gt;&lt;i class=&quot;ph ph-arrow-up&quot;&gt;&lt;/i&gt;8,8%&lt;/span&gt; 0,62 €, ήταν 0,57 €. Κάβα Βύρωνα 0,58 €.&lt;/div&gt;&lt;/div&gt;
+  &lt;div class=&quot;lrow bad&quot;&gt;&lt;div class=&quot;a&quot;&gt;&lt;b&gt;Νερό 1,5L εξάδα&lt;/b&gt;&lt;b class=&quot;v&quot;&gt;21,50 €&lt;/b&gt;&lt;/div&gt;
+    &lt;div class=&quot;q&quot;&gt;&lt;span&gt;&lt;b&gt;10&lt;/b&gt; χρεώθηκαν · &lt;b class=&quot;al&quot;&gt;9&lt;/b&gt; ήρθαν&lt;/span&gt;&lt;span class=&quot;got&quot; aria-hidden=&quot;true&quot;&gt;&lt;i style=&quot;width:90%&quot;&gt;&lt;/i&gt;&lt;/span&gt;&lt;/div&gt;&lt;/div&gt;
+  &lt;div class=&quot;lrow&quot;&gt;&lt;div class=&quot;a&quot;&gt;&lt;b&gt;Πατατάκια αλάτι 90g&lt;/b&gt;&lt;b class=&quot;v&quot;&gt;25,20 €&lt;/b&gt;&lt;/div&gt;
+    &lt;div class=&quot;q&quot;&gt;&lt;span class=&quot;m&quot;&gt;24 χρεώθηκαν · 24 ήρθαν&lt;/span&gt;&lt;span class=&quot;got&quot; aria-hidden=&quot;true&quot;&gt;&lt;i style=&quot;width:100%&quot;&gt;&lt;/i&gt;&lt;/span&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;/article&gt;</code></pre>
+    </section>
+
+    <section class="stil-sec mob" aria-labelledby="h-zoni">
+      <h2 id="h-zoni">Κινητό: κολλημένη ζώνη απόφασης</h2>
+      <p class="m">Στη σελίδα είναι κολλημένη πάνω από τη μπάρα καρτελών (fixed)· εδώ φαίνεται στη θέση της. Το κίτρινο κουμπί είναι μόνο ένα ανά οθόνη, οπότε εδώ δεν το δείχνουμε.</p>
+      <div class="stil-demo">
+        <div class="stil-dock">
+        <div class="mdock" role="region" aria-label="Απόφαση">
+          <div class="ask-only"><button class="btn no" type="button">Όχι</button><button class="btn no" type="button">Άνοιξε το Α-2271</button></div>
+        </div>
+        </div>
+      </div>
+      <pre class="stil-code"><code>&lt;div class=&quot;mdock&quot; role=&quot;region&quot; aria-label=&quot;Απόφαση&quot;&gt;
+  &lt;div class=&quot;ask-only&quot;&gt;&lt;button class=&quot;btn no&quot; type=&quot;button&quot;&gt;Όχι&lt;/button&gt;&lt;button class=&quot;btn no&quot; type=&quot;button&quot;&gt;Άνοιξε το Α-2271&lt;/button&gt;&lt;/div&gt;
+&lt;/div&gt;</code></pre>
+    </section>
+
+    <section class="stil-sec" aria-labelledby="h-plaisio">
+      <h2 id="h-plaisio">Πλαίσιο της σελίδας: μενού, μπάρες και παύση</h2>
+      <p class="m">Δεν γράφεται στη σελίδα: το βάζει το shell.js. Από 1024px: σκούρο μενού αριστερά. Έως 1023px: πάνω μπάρα, κάτω μπάρα 5 καρτελών και «Περισσότερα». Πάτα «Παύση όλων» και θα δεις το μπάνερ παύσης πάνω σε κάθε σελίδα.</p>
+      <pre class="stil-code"><code>&lt;!doctype html&gt;
+&lt;html lang=&quot;el&quot;&gt;
+&lt;head&gt;
+&lt;meta charset=&quot;utf-8&quot;&gt;
+&lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1, viewport-fit=cover&quot;&gt;
+&lt;title&gt;Τιμολόγια · Xangxothaika&lt;/title&gt;
+&lt;link rel=&quot;stylesheet&quot; href=&quot;/static/vendor/phosphor/style.css&quot;&gt;
+&lt;link rel=&quot;stylesheet&quot; href=&quot;/static/vendor/phosphor/fill/style.css&quot;&gt;
+&lt;link rel=&quot;stylesheet&quot; href=&quot;/static/app.css&quot;&gt;
+&lt;script src=&quot;/static/shell.js&quot; defer&gt;&lt;/script&gt;
+&lt;/head&gt;
+&lt;body data-page=&quot;timologia&quot;&gt;
+&lt;main class=&quot;main&quot;&gt;
+  &lt;div class=&quot;band&quot;&gt; … &lt;/div&gt;
+  &lt;div class=&quot;wrap&quot;&gt; … &lt;/div&gt;
+&lt;/main&gt;
+&lt;/body&gt;
+&lt;/html&gt;</code></pre>
+    </section>
+  </div>
+</main>
+</body>
+</html>
