@@ -118,6 +118,12 @@ def _delivery_call(fn, *args):
         conn.close()
 
 
+@router.get("/stock/delivery/scene")
+def delivery_scene(order: str = ""):
+    """The scans done before the demo scene (page opened with &skini=1). Read-only."""
+    return {"barcodes": _delivery_call(delivery.scene_barcodes, order)}
+
+
 @router.get("/stock/delivery/pending")
 def delivery_pending():
     """The order the scan page opens when its link names none."""

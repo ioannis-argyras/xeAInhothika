@@ -81,6 +81,29 @@ def _lookup(conn, code, supplier_id):
     return None, 1
 
 
+# The demo scene scans only 4 stickers live (Coca-Cola x2, chocolate case, juice); these were
+# "scanned before" and the page adds them when opened with &skini=1 (Stavros 15/11/2026).
+SCENE_READY = (("water-1500x6", "case", 9), ("chips-salt-90", "case", 2), ("choco-milk-100", "single", 6))
+
+
+def scene_barcodes(conn, order_id):
+    """The barcodes scanned before the demo scene, in order. Products the order's supplier has no code for are skipped."""
+    order = _order(conn, order_id)
+    if order is None:
+        raise DeliveryError(f"Δεν βρήκα την παραγγελία {order_id}.")
+    supplier = order.payload.get("supplier_id")
+    codes = []
+    for pid, kind, times in SCENE_READY:
+        if kind == "case":
+            row = conn.execute("SELECT case_barcode FROM supplier_products WHERE product_id = ? AND supplier_id = ?",
+                               (pid, supplier)).fetchone()
+        else:
+            row = conn.execute("SELECT barcode FROM products WHERE id = ?", (pid,)).fetchone()
+        if row and row[0]:
+            codes += [row[0]] * times
+    return codes
+
+
 def scan(conn, delivery_id, barcode):
     """One scan: 1 unit, or pack_size units for a case barcode. Unknown barcodes are kept (product_id null). Returns the status."""
     started = _started(conn, delivery_id)

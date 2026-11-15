@@ -475,8 +475,25 @@ async function start() {
     const s = practice ? await post('/stock/delivery/practice', {order_id: order, barcodes: []})
                        : await post('/stock/delivery/start', {order_id: order});
     deliveryId = s.delivery_id; show(s);
+    if (params.get('skini') === '1' && !closed) await sceneReady(s);
   } catch (e) { say(e.message); $('done').disabled = $('doneM').disabled = true; return; }
   if (!closed) startCamera();
+}
+
+// &skini=1: the demo scene starts with part of the delivery already scanned (only when nothing is yet).
+async function sceneReady(s) {
+  if (s.lines.some(l => l.scanned > 0)) return;
+  const r = await fetch('/stock/delivery/scene?order=' + encodeURIComponent(order));
+  if (!r.ok) return;
+  const ready = (await r.json()).barcodes || [];
+  if (!ready.length) return;
+  if (practice) {
+    codes = codes.concat(ready);
+    s = await post('/stock/delivery/practice', {order_id: order, barcodes: codes});
+  } else {
+    for (const code of ready) s = await post('/stock/delivery/scan', {delivery_id: deliveryId, barcode: code});
+  }
+  show(s);
 }
 start();
 </script>

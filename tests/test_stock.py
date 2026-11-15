@@ -240,6 +240,19 @@ class DeliveryTest(unittest.TestCase):
         self.assertEqual(shelf.status_code, 404)
         self.assertNotIn("cam-404", shelf.json()["detail"])
 
+    def test_scene_ready_scans(self):
+        # &skini=1: 17 scans "done before" the demo scene, then 4 live ones end at 123 of 124.
+        r = self.client.get("/stock/delivery/scene?order=P-0318")
+        self.assertEqual(r.status_code, 200)
+        ready = r.json()["barcodes"]
+        self.assertEqual(len(ready), 17)
+        did = self.client.post("/stock/delivery/start", json={"order_id": "P-0318"}).json()["delivery_id"]
+        for code in ready:
+            s = self.client.post("/stock/delivery/scan", json={"delivery_id": did, "barcode": code}).json()
+        got = {l["product_id"]: l["scanned"] for l in s["lines"]}
+        self.assertEqual((got["water-1500x6"], got["chips-salt-90"], got["choco-milk-100"]), (9, 24, 6))
+        self.assertEqual(self.client.get("/stock/delivery/scene?order=P-9999").status_code, 400)
+
     def test_page_and_decoder_are_served(self):
         r = self.client.get("/stock/scan?order=P-0318")
         self.assertEqual(r.status_code, 200)
