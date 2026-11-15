@@ -191,7 +191,7 @@ def propose_order(conn, supplier_id):
         e = mine[-1]
         if _order_events(conn, e.payload["order_id"])[-1].type == "order.proposed":
             return {"summary": f"Η παραγγελία {e.payload['order_id']} είναι ήδη έτοιμη: "
-                               f"{format_eur(e.payload['net_cents'])} στον {sup['name']}.",
+                               f"{format_eur(e.payload['net_cents'])} προς {sup['name']}".rstrip(".") + ".",
                     "event_ids": [e.id], "order_id": e.payload["order_id"]}
 
     first = min(lines, key=lambda l: l["_on_hand"] / l["_per_day"] if l["_per_day"] else math.inf)
@@ -204,7 +204,7 @@ def propose_order(conn, supplier_id):
                          "lead_days": LEAD_DAYS}},
     )
     names = _names(conn)
-    return {"summary": f"Ετοίμασα παραγγελία {order_id}: {format_eur(net)} στον {sup['name']}",
+    return {"summary": f"Ετοίμασα παραγγελία {order_id}: {format_eur(net)} προς {sup['name']}",
             "event_ids": [event.id], "order_id": order_id, "net": format_eur(net),
             "lines": [{"product": names.get(l["product_id"], l["product_id"]), "qty": l["qty"],
                        "unit_price": format_eur(l["unit_cents"]), "on_hand": _qty(l["_on_hand"]),
@@ -235,7 +235,7 @@ def describe_send(args):
                           f"{format_eur(l['unit_cents'])}" for l in p["lines"])
         why = p.get("why") or {}
         per_day = str(why.get("per_day", "")).replace(".", ",")
-        return {"summary": f"Παραγγελία {format_eur(p['net_cents'])} στον {sup['name']}",
+        return {"summary": f"Παραγγελία {format_eur(p['net_cents'])} προς {sup['name']}",
                 "exact": exact,
                 "why": f"Πουλάς {per_day} τη μέρα και έχεις {why.get('on_hand')}.",
                 "ref": order_id}
@@ -343,5 +343,5 @@ def send_order(conn, order_id):
         return {"summary": WAITING.format(order_id=order_id), "event_ids": []}
     event = _mark_sent(conn, order_id, to, message_id, yes)
     where = "" if how == "smtp" else " (δοκιμή: το email γράφτηκε σε αρχείο)"
-    text = f"Στάλθηκε η παραγγελία {order_id} στον {sup['name']}{where}"
+    text = f"Στάλθηκε η παραγγελία {order_id} προς {sup['name']}{where}"
     return {"summary": text if text.endswith(".") else text + ".", "event_ids": [event.id]}

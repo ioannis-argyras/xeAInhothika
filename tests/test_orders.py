@@ -87,6 +87,16 @@ class OrdersTest(unittest.TestCase):
         self.assertEqual(len([e for e in self.events("order.proposed")
                               if e.payload["order_id"] == "P-0319"]), 1)
 
+    def test_texts_name_the_supplier_without_a_wrong_article(self):
+        # "στον Διανομές Υμηττού" was wrong Greek on the stage Telegram; "προς" fits every supplier name.
+        first = tools.propose_order(self.conn, "sup-ymittou")
+        again = tools.propose_order(self.conn, "sup-ymittou")
+        ask = tools.describe_send({"order_id": first["order_id"]})
+        for text in (first["summary"], again["summary"], ask["summary"]):
+            self.assertIn("προς Διανομές Υμηττού Α.Ε.", text)
+            self.assertNotIn("στον", text)
+            self.assertNotIn("..", text)
+
     def test_unknown_supplier_lists_the_ones_with_low_products(self):
         r = tools.propose_order(self.conn, "")
         self.assertEqual(r["event_ids"], [])
