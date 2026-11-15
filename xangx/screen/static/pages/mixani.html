@@ -12,21 +12,9 @@
 <link rel="stylesheet" href="/static/arxiki.css">
 <link rel="stylesheet" href="/static/pages/mixani.css">
 </head>
-<body>
-<div class="banner" id="paused-banner" role="status" hidden>Όλες οι ενέργειες είναι σε παύση. Πάτα «Συνέχισε» για να ξαναρχίσουν.</div>
+<body data-shell="mixani">
+<main class="main">
 <div class="shell">
-<header class="top">
-  <a class="brand" href="/"><b class="wm">xe<em>A<span class="ii">I</span></em>nhothika</b><span>Mini Market 24/7 · Παγκράτι</span></a>
-  <nav class="links" aria-label="Κύρια">
-    <a href="/">Σήμερα</a><a href="/#synomilia">Συνομιλία</a><a href="/static/pages/ergasies.html">Εργασίες</a><a href="/static/pages/timologia.html">Τιμολόγια</a><a href="/static/pages/rafi.html">Ράφι</a><a href="/static/pages/mixani.html" class="on" aria-current="page">Ιστορικό</a>
-  </nav>
-  <div class="right">
-    <span class="live"><i id="live-dot"></i><span id="live-text">Σύνδεση…</span></span>
-    <button class="btn qd" id="stop-btn" type="button"><i class="ph ph-pause"></i><span>Παύση όλων</span></button>
-    <button class="ibtn" id="stop-ibtn" type="button" aria-label="Παύση όλων"><i class="ph ph-pause"></i></button>
-  </div>
-</header>
-
 <section id="s-mix" class="screen on" aria-labelledby="h-mix" aria-busy="true">
 <div class="desk">
   <div class="band bandB"><div class="in">
@@ -123,13 +111,8 @@
 </section>
 </div>
 
-<nav class="tabs" aria-label="Καρτέλες">
-  <a href="/" class="on"><i class="ph-fill ph-sun-horizon"></i>Σήμερα</a>
-  <a href="/#synomilia"><i class="ph ph-chat-circle"></i>Συνομιλία</a>
-  <a href="/static/pages/ergasies.html"><i class="ph ph-list-checks"></i>Εργασίες</a>
-  <a href="/static/pages/timologia.html"><i class="ph ph-receipt"></i>Τιμολόγια</a>
-  <a href="/static/pages/rafi.html"><i class="ph ph-package"></i>Ράφι</a>
-</nav>
+</main>
+<script src="/static/shell.js" defer></script>
 <script src="/static/pages/mixani.js"></script>
 </body>
 </html>

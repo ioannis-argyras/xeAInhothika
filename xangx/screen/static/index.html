@@ -14,21 +14,8 @@
 <link rel="stylesheet" href="/static/undo.css">
 <link rel="stylesheet" href="/static/synomilia.css">
 </head>
-<body>
-<div class="banner" id="paused-banner" role="status" hidden>Όλες οι ενέργειες είναι σε παύση. Πάτα «Συνέχισε» για να ξαναρχίσουν.</div>
-<div class="shell">
-<header class="top">
-  <a class="brand" href="#arxiki"><b class="wm">xe<em>A<span class="ii">I</span></em>nhothika</b><span>Mini Market 24/7 · Παγκράτι</span></a>
-  <nav class="links" aria-label="Κύρια">
-    <a href="#arxiki" data-k="arxiki">Σήμερα</a><a href="#synomilia" data-k="synomilia">Συνομιλία</a><a href="/static/pages/ergasies.html">Εργασίες</a><a href="/static/pages/timologia.html">Τιμολόγια</a><a href="/static/pages/rafi.html">Ράφι</a><a href="/static/pages/mixani.html">Ιστορικό</a>
-  </nav>
-  <div class="right">
-    <span class="live"><i id="live-dot"></i><span id="live-text">Σύνδεση…</span></span>
-    <button class="btn qd" id="stop-btn" type="button"><i class="ph ph-pause"></i><span>Παύση όλων</span></button>
-    <button class="ibtn" id="stop-ibtn" type="button" aria-label="Παύση όλων"><i class="ph ph-pause"></i></button>
-  </div>
-</header>
-
+<body data-shell="arxiki">
+<main class="main shell">
 <!-- ΣΗΜΕΡΑ -->
 <section id="s-arxiki" class="screen" aria-labelledby="h-arxiki">
 <div class="desk">
@@ -179,15 +166,8 @@
   </form>
 </div>
 </section>
-</div>
-
-<nav class="tabs" aria-label="Καρτέλες">
-  <a href="#arxiki" data-k="arxiki" data-i="sun-horizon"><i class="ph ph-sun-horizon"></i>Σήμερα</a>
-  <a href="#synomilia" data-k="synomilia" data-i="chat-circle"><i class="ph ph-chat-circle"></i>Συνομιλία</a>
-  <a href="/static/pages/ergasies.html"><i class="ph ph-list-checks"></i>Εργασίες</a>
-  <a href="/static/pages/timologia.html"><i class="ph ph-receipt"></i>Τιμολόγια</a>
-  <a href="/static/pages/rafi.html"><i class="ph ph-package"></i>Ράφι</a>
-</nav>
+</main>
+<script src="/static/shell.js" defer></script>
 <script src="/static/undo.js"></script>
 <script src="/static/arxiki.js"></script>
 <script src="/static/app.js"></script>
