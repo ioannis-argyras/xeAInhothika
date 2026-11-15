@@ -24,17 +24,25 @@ def consume(conn, actor, types, handler, limit=100):
     """Call handler(event) for new events of `types`, one by one.
 
     The cursor moves after each success. If the handler raises, the cursor
-    stays at the last success and the exception propagates. Events of other
-    types move the cursor without calling the handler. Returns how many
-    events were handled.
+    stays at the last event before the failed one and the exception
+    propagates. Skipped events move the cursor once, at the end of the pass.
+    Returns how many events were handled.
     """
     wanted = set(types)
     handled = 0
-    for event in read_events(conn, after_id=get_cursor(conn, actor)):
-        if event.type in wanted:
-            handler(event)
-            handled += 1
-        set_cursor(conn, actor, event.id)
-        if handled >= limit:
-            break
+    pending = None  # id of the last skipped event whose cursor is not written yet
+    try:
+        for event in read_events(conn, after_id=get_cursor(conn, actor)):
+            if event.type in wanted:
+                handler(event)
+                handled += 1
+                set_cursor(conn, actor, event.id)
+                pending = None
+            else:
+                pending = event.id
+            if handled >= limit:
+                break
+    finally:
+        if pending is not None:
+            set_cursor(conn, actor, pending)
     return handled

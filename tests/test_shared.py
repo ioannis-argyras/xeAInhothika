@@ -36,6 +36,12 @@ def move(conn, qty, product_id="product:cola-330"):
     )[0]
 
 
+def move_other(conn):
+    return append_event(
+        conn, type="notification.sent", actor="master", payload={"channel": "web", "text": "x"}
+    )[0]
+
+
 def approval_payload(approval_id):
     return {
         "approval_id": approval_id,
@@ -139,6 +145,40 @@ class SharedTests(unittest.TestCase):
         self.assertEqual(count, 1)
         self.assertEqual(seen, [ids[2]])
         self.assertEqual(get_cursor(self.conn, "stock"), ids[2])
+
+    def test_07b_consume_writes_the_cursor_once_for_skipped_events(self):
+        for _ in range(100):
+            move_other(self.conn)
+        wanted = move(self.conn, 1)
+        before = self.conn.total_changes
+        count = consume(self.conn, "stock", ["stock.moved"], lambda e: None)
+        self.assertEqual(count, 1)
+        self.assertLessEqual(self.conn.total_changes - before, 2)
+        self.assertEqual(get_cursor(self.conn, "stock"), wanted.id)
+
+    def test_07c_consume_failure_leaves_the_cursor_on_the_skipped_event_before_it(self):
+        first = move(self.conn, 1)
+        skipped = move_other(self.conn)
+        move(self.conn, 2)
+
+        def handler(event):
+            if event.payload["qty"] == 2:
+                raise RuntimeError("boom")
+
+        with self.assertRaises(RuntimeError):
+            consume(self.conn, "stock", ["stock.moved"], handler)
+        self.assertGreater(skipped.id, first.id)
+        self.assertEqual(get_cursor(self.conn, "stock"), skipped.id)
+
+    def test_07d_consume_limit_stops_after_the_first_handled_event(self):
+        first = move(self.conn, 1)
+        move_other(self.conn)
+        move(self.conn, 2)
+        move_other(self.conn)
+        move(self.conn, 3)
+        count = consume(self.conn, "stock", ["stock.moved"], lambda e: None, limit=1)
+        self.assertEqual(count, 1)
+        self.assertEqual(get_cursor(self.conn, "stock"), first.id)
 
     def test_08_stock_on_hand(self):
         move(self.conn, 10)
