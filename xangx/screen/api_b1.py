@@ -180,6 +180,12 @@ def _label(bundle, invoice_id):
     return invoice_id
 
 
+def _via(received):
+    """How the paper arrived: "email", "photo", or None (a file in the inbox, or unknown)."""
+    source = ((received.payload or {}).get("source") if received else None)
+    return source if source in ("email", "photo") else None
+
+
 def _supplier_name(conn, afm):
     row = conn.execute("SELECT name FROM suppliers WHERE afm = ?", (afm,)).fetchone()
     return row["name"] if row else "Άγνωστος προμηθευτής"
