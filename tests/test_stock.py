@@ -315,6 +315,19 @@ class DeliveryTest(unittest.TestCase):
             delivery.complete(self.conn, delivery.delivery_id_for(sent))
             self.assertNotEqual(delivery.pending_order(self.conn), sent)
 
+    def test_pending_order_is_the_oldest_not_received(self):
+        # Demo: an order sent at 0:15 must not take the place of P-0318 at 0:55.
+        from xangx.stock import delivery
+        first = delivery.pending_order(self.conn)
+        self.assertIsNotNone(first)
+        self.order("P-0905")
+        append_event(self.conn, type="order.sent", actor="orders", subject="order:P-0905",
+                     idem_key="test-sent-P-0905", payload={"order_id": "P-0905", "to": "test@example.invalid", "message_id": "<t@x>"})
+        self.assertEqual(delivery.pending_order(self.conn), first)
+        delivery.start(self.conn, first)
+        delivery.complete(self.conn, delivery.delivery_id_for(first))
+        self.assertNotEqual(delivery.pending_order(self.conn), first)
+
     def test_case_barcode_of_another_supplier_is_unknown(self):
         sup = self.conn.execute("SELECT id FROM suppliers WHERE id != 'sup-ymittou' LIMIT 1").fetchone()[0]
         append_event(self.conn, type="order.proposed", actor="orders", subject="order:P-0902",
