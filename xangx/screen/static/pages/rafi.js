@@ -176,8 +176,63 @@
     return f;
   }
 
+  /* quiet day: what still holds, from the data the page already has: cameras with their positions and low ones */
+  function memory(d, labels) {
+    var wrap = el("div", "rf-mem");
+    var by = {}, order = [];
+    d.positions.forEach(function (p) {
+      var id = p.camera_id || "";
+      if (!by[id]) { by[id] = {id: id, n: 0, low: 0}; order.push(by[id]); }
+      by[id].n++;
+      if (p.low) by[id].low++;
+    });
+    if (!order.length) return wrap;
+    wrap.appendChild(el("p", "rf-mh", "Η κάμερα παρακολουθεί " + d.total + " " + pl(d.total, "θέση", "θέσεις") + " σε " + order.length + " " + pl(order.length, "κάμερα", "κάμερες")));
+    var chips = el("div", "rf-chips");
+    order.forEach(function (g) {
+      var a = el("a", "rf-chip" + (g.low ? " lo" : ""));
+      a.href = camHref(g.id);
+      add(a, el("b", null, labels[g.id] || "Χωρίς κάμερα"), el("span", null, g.n + (g.low ? " · " + g.low + " σε χαμηλό" : "")));
+      chips.appendChild(a);
+    });
+    wrap.appendChild(chips);
+    wrap.appendChild(el("div", "rf-before"));
+    return wrap;
+  }
+
+  /* the last movement of an earlier day, if the recent events of /api/state hold one; shown under the headline */
+  var beforeFor = null;
+  function loadBefore(d) {
+    var key = d.last_id;
+    if (beforeFor === key) return;
+    beforeFor = key;
+    fetch("/api/state").then(function (r) { return r.ok ? r.json() : null; }).then(function (st) {
+      var id = null;
+      ((st && st.recent) || []).forEach(function (e) {
+        if (/^shelf\.items_(taken|added)$/.test(e.type || "") && (id == null || e.id > id)) id = e.id;
+      });
+      if (id == null) return null;
+      return fetch("/api/screen/shelves?until_id=" + id).then(function (r) { return r.ok ? r.json() : null; });
+    }).then(function (p) {
+      var host = document.querySelector("#rf-scene-body .rf-before");
+      if (!host || !p || !p.latest) return;
+      var l = p.latest;
+      host.appendChild(el("p", "rf-bl", "Η τελευταία κίνηση που θυμάται: " + (l.kind === "taken" ? "πήραν " : "πρόσθεσαν ") + l.qty + " " + l.product_name + " · " + l.position_name + " · " + l.at));
+      if (l.after_url) {
+        var img = el("img", "rf-bimg");
+        img.src = l.after_url; img.alt = ""; img.loading = "lazy";
+        host.appendChild(img);
+      }
+    }).catch(function () {});
+  }
+
   function renderScene(d, labels) {
     var l = d.latest;
+    var quietDay = !l;
+    $("rf-left").classList.toggle("q", quietDay);
+    document.querySelector(".rf-g").classList.toggle("q", quietDay);
+    var dc = $("rf-day-card"), tgt = quietDay ? $("rf-left") : document.querySelector(".rf-side");
+    if (dc.parentNode !== tgt) tgt.appendChild(dc);
     var body = clear($("rf-scene-body"));
     var posOf = null;
     if (l) d.positions.forEach(function (p) { if (p.position_id === l.position_id) posOf = p; });
@@ -188,7 +243,9 @@
       var solo = el("div", "rf-cb rf-solo");
       var left0 = el("div", "rf-cl");
       add(left0, el("h2", null, "Καμία κίνηση στα ράφια σήμερα"), el("p", "from", "Η κάμερα θα το δείξει εδώ μόλις δει κίνηση."));
+      add(left0, memory(d, labels));
       add(body, add(solo, left0));
+      loadBefore(d);
       return;
     }
 

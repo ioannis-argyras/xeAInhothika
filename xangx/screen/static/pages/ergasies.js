@@ -338,6 +338,100 @@
     if (now !== shownKey) { shownKey = now; window.scrollTo(0, 0); }
   }
 
+
+  /* ---------- «Χθες»: οι εργασίες της προηγούμενης μέρας με δεδομένα, από το ίδιο /api/screen/tasks?until_id= ---------- */
+  var yday = null, ydayFor = null, ydayBusy = false;
+  function athensDay(iso) {
+    try { return new Intl.DateTimeFormat("en-CA", {timeZone: "Europe/Athens"}).format(new Date(iso)); } catch (e) { return ""; }
+  }
+  /* το id του τελευταίου γεγονότος πριν από τη σημερινή μέρα, από τα πρόσφατα του /api/state */
+  function loadYesterday(today) {
+    if (ydayBusy || ydayFor === today) return;
+    ydayBusy = true;
+    fetch("/api/state").then(function (r) { return r.ok ? r.json() : null; }).then(function (st) {
+      var rec = (st && st.recent) || [], id = null, now = new Date();
+      var todayKey = athensDay(now.toISOString());
+      rec.forEach(function (e) {
+        if (e.at && athensDay(e.at) !== todayKey && athensDay(e.at) < todayKey && (id == null || e.id > id)) id = e.id;
+      });
+      if (id == null) return null;
+      return fetch("/api/screen/tasks?until_id=" + id).then(function (r) { return r.ok ? r.json() : null; });
+    }).then(function (d) {
+      ydayFor = today;
+      yday = d && d.totals && d.totals.done ? d : null;
+      if (last) paintYesterday(last);
+    }).catch(function () { ydayFor = today; }).then(function () { ydayBusy = false; });
+  }
+  function ydayRow(t, key, mobile) {
+    var yes = t.how === "yes";
+    var r = el("div", "eg-yr" + (t.warn ? " eg-bad" : ""));
+    r.appendChild(el("b", "eg-t", t.at));
+    r.appendChild(howMark(yes));
+    var x = el("span", "eg-x", t.text);
+    r.appendChild(x);
+    return r;
+  }
+  function ydayTitle(d, today) {
+    var p = (today || "").split("/"), y = d.day && d.day.date ? d.day.date : "";
+    if (p.length === 3) {
+      var prev = new Date(Date.UTC(+p[2], +p[1] - 1, +p[0] - 1));
+      var s = two(prev.getUTCDate()) + "/" + two(prev.getUTCMonth() + 1) + "/" + prev.getUTCFullYear();
+      if (s === y) return "Χθες";
+    }
+    return (d.day.weekday ? d.day.weekday + " " : "") + y;
+  }
+  function two(n) { return (n < 10 ? "0" : "") + n; }
+  function ydayCard(host, d, today, mobile) {
+    var t = d.totals, auto = Math.max(0, t.done - t.with_yes);
+    var title = ydayTitle(d, today);
+    host.replaceChildren();
+    var hd = el("div", "hd");
+    var b = el("b");
+    b.appendChild(icon("ph", "clock-counter-clockwise"));
+    b.appendChild(document.createTextNode(title));
+    hd.append(b, el("span", "r", t.done + " " + plural(t.done, "εργασία", "εργασίες")));
+    host.appendChild(hd);
+    var nums = el("div", "eg-y3");
+    [[auto, "μόνα τους"], [t.with_yes, "με το «ναι» σου"], [t.errors, plural(t.errors, "λάθος", "λάθη")]].forEach(function (c, i) {
+      var cell = el("div", i === 2 && c[0] ? "eg-bad" : null);
+      cell.append(el("b", null, String(c[0])), el("span", null, c[1]));
+      nums.appendChild(cell);
+    });
+    host.appendChild(nums);
+    var rows = [];
+    d.groups.forEach(function (g) { g.tasks.forEach(function (tk) { rows.push(tk); }); });
+    rows.sort(function (a, c) { return c.id - a.id; });
+    var box = el("div", "eg-yrows");
+    rows.map(function (tk) { return ydayRow(tk); }).forEach(function (r) { box.appendChild(r); });
+    host.appendChild(box);
+    host.hidden = false;
+    return box;
+  }
+  function paintYesterday(data) {
+    var today = data && data.day ? data.day.date : "";
+    var desk = $("eg-yday"), mob = $("egm-yday");
+    if (!yday) { desk.hidden = true; mob.hidden = true; return; }
+    /* κινητό: έως 3 γραμμές */
+    var mb = ydayCard(mob, yday, today, true);
+    var mrows = [].slice.call(mb.children);
+    limited(mb, mrows, 3, "_ymob");
+    /* υπολογιστής: μπαίνει όσο χωράει στο κενό κάτω από τη λίστα, αλλιώς κρύβεται */
+    var db = ydayCard(desk, yday, today, false);
+    var side = document.querySelector(".eg-g .stack");
+    if (!sideBySide()) { desk.hidden = true; return; }
+    var rows = [].slice.call(db.children);
+    function over() { return desk.getBoundingClientRect().bottom - side.getBoundingClientRect().bottom; }
+    while (rows.length && over() > TOL) { rows.pop().hidden = true; }
+    var shown = rows.filter(function (r) { return !r.hidden; }).length;
+    if (over() > TOL || (!shown && rows.length)) desk.hidden = true;
+    var more = rows.length - shown;
+    if (!desk.hidden && more > 0) {
+      var w = el("div", "eg-more");
+      w.appendChild(el("span", "eg-ymore", "και άλλες " + more + " εργασίες"));
+      desk.appendChild(w);
+    }
+  }
+
   /* ---------- σχεδίαση ---------- */
   function render(data) {
     last = data;
@@ -384,6 +478,8 @@
     undoList($("egm-undo-body"), $("egm-undo-n"), undos, false, "_mundo");
     show();
     balance();
+    paintYesterday(data);
+    loadYesterday(day.date || "");
     $("eg-stage").setAttribute("aria-busy", "false");
     $("eg-list").setAttribute("aria-busy", "false");
   }
@@ -421,8 +517,8 @@
   function init() {
     window.addEventListener("hashchange", show);
     var rt = null;
-    window.addEventListener("resize", function () { clearTimeout(rt); rt = setTimeout(balance, 120); });
-    if (document.fonts && document.fonts.ready) document.fonts.ready.then(balance);
+    window.addEventListener("resize", function () { clearTimeout(rt); rt = setTimeout(function () { balance(); if (last) paintYesterday(last); }, 120); });
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { balance(); if (last) paintYesterday(last); });
     load();
     listen();
   }
