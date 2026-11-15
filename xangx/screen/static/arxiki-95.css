@@ -64,3 +64,22 @@
   .a95-jr b{font-size:16px}
   .a95-cause{font-size:14px;min-height:56px;padding:12px 18px}
 }
+
+/* Γραμμή 13: «Ταμείο: προσομοίωση» είναι κατάσταση, όχι κουμπί: απλό κείμενο χωρίς πλαίσιο */
+.lead .sim{display:inline-flex;align-items:center;gap:6px;margin-left:14px;padding:0;border:0;border-radius:0;font-size:14px;font-weight:500;color:var(--n4)}
+.lead .sim::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--n4)}
+/* Γραμμή 7: «Μόλις τώρα» χωρίς δικό του πλαίσιο, μια γραμμή πάνω στη σκηνή */
+.a95-just{margin-top:16px;border-radius:0;overflow:visible;background:none}
+.a95-jl{padding:0 0 8px;background:none}
+.a95-jr{padding:10px 0}
+.a95-jr:nth-child(even){background:none}
+.a95-jr+.a95-jr{border-top:1px solid rgba(211,219,230,.14)}
+/* Γραμμή 7: το χρώμα της κεφαλίδας είναι το μέλος της ομάδας, και η μικρή υπόμνηση το λέει */
+.hb-leg{gap:5px}
+.hb-leg i{width:10px;height:10px;border-radius:50%;flex:none}
+.hb-leg i:last-of-type{margin-right:6px}
+.hb-leg .lg-syn{background:var(--m-syn)}
+.hb-leg .lg-stock{background:var(--m-apo)}
+.hb-leg .lg-ord{background:var(--m-par)}
+.hb-leg .lg-inv{background:var(--m-tim)}
+.hb-leg .lg-acc{background:var(--m-log)}

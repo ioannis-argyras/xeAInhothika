@@ -393,8 +393,16 @@ function syElapsed() {
 // The time tile: the number big, the unit small next to it.
 function syTime(id, t) {
   const b = $(id);
-  b.replaceChildren(document.createTextNode(t));
+  b.classList.toggle("sy-nil", t === "—");
+  b.replaceChildren(document.createTextNode(t === "—" ? "κανένα σήμερα" : t));
   if (t !== "—") b.appendChild(el("small", "sy-u", " δευτ."));
+}
+
+// A count tile with nothing to show says so quietly instead of a lone dash.
+function syCount(id, text) {
+  const b = $(id);
+  b.classList.toggle("sy-nil", text === "—");
+  b.textContent = text === "—" ? "κανένα σήμερα" : text;
 }
 
 // Few steps leave the left column short next to the decision (many steps, the right one). Then the stage
@@ -446,6 +454,7 @@ function syDrawAsk() {
     richText(ans, sy.reply);
     richText(mans, sy.reply);
   }
+  $("sy-msug").hidden = asked;
   const list = [$("sy-steps"), $("sy-steps-m")];
   list.forEach((ol) => ol.replaceChildren(...sy.steps.map((s) => syStepNode(s.text, s.waiting))));
   $("sy-steps").classList.toggle("sy-one", n <= 3);
@@ -453,8 +462,8 @@ function syDrawAsk() {
   const time = syElapsed();
   syTime("sy-t-time", time);
   syTime("sy-s-time", time);
-  syText("sy-t-steps", asked ? String(n) : "—");
-  syText("sy-s-steps", asked ? String(n) : "—");
+  syCount("sy-t-steps", asked ? String(n) : "—");
+  syCount("sy-s-steps", asked ? String(n) : "—");
   syText("sy-t-wait", String(wait));
   syText("sy-s-wait", String(wait));
   const tile = $("sy-t-wait").parentNode;
@@ -661,6 +670,9 @@ function syInit() {
   });
   document.querySelectorAll("#sy-sug .sy-q").forEach((b) => {
     b.addEventListener("click", () => { if (!sy.working) sendChat(b.textContent); });
+  });
+  document.querySelectorAll("#sy-msug .sy-mrow").forEach((b) => {
+    b.addEventListener("click", () => { if (!sy.working) sendChat(b.querySelector("span").textContent); });
   });
   document.querySelectorAll('a[data-k="synomilia"]').forEach((a) => {
     a.addEventListener("click", () => syView("cur"));
