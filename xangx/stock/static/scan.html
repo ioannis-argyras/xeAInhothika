@@ -93,7 +93,7 @@
     <div class="hd"><b><i class="ph-fill ph-warning-circle"></i>Λείπουν</b><span class="r"><b id="missOf"></b></span></div>
     <div id="missList"></div>
     <div class="pl-none" id="missNone" hidden><i class="ph ph-check-circle"></i><span>Τίποτα δεν λείπει</span></div>
-    <div class="cf"><span class="m">Με το «Κλείσε» γράφεται ως λείψη.</span></div>
+    <div class="cf"><span class="m">Με το «Κλείσε» γράφεται ως έλλειψη.</span></div>
   </section>
   <section class="card" id="extra">
     <div class="hd"><b><i class="ph ph-question"></i>Εκτός παραγγελίας</b><span class="r" id="extraOf">0</span></div>
@@ -369,7 +369,8 @@ $('man').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDe
 
 function askClose() {
   const missing = [...$('missList').children].map(d => d.children[0].textContent + ' ' + d.children[1].firstChild.textContent);
-  $('askText').textContent = missing.length ? 'Λείπουν ακόμα ' + missing.join(', ') + '. Θα γραφτούν ως λείψη.' : 'Ήρθαν όλα.';
+  const one = missing.length === 1 && missing[0].startsWith('1 ');
+  $('askText').textContent = missing.length ? (one ? 'Λείπει ακόμα ' : 'Λείπουν ακόμα ') + missing.join(', ') + (missing.length === 1 ? '. Θα γραφτεί ως έλλειψη.' : '. Θα γραφτούν ως ελλείψεις.') : 'Ήρθαν όλα.';
   $('ask').showModal(); $('askTitle').focus();
 }
 $('done').onclick = askClose;
