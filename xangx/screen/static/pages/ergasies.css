@@ -1,28 +1,139 @@
-/* Εργασίες: οι κανόνες του πίνακα είναι από το design/kateuthynseis-v2/index.html (#ergasies). */
-/* ---------- λίστες σαν πίνακας ---------- */
-.tbl .tr2{display:grid;align-items:center;gap:16px;padding:0 22px;min-height:50px;border-top:1px solid var(--hair)}
-.tbl .th{min-height:44px;background:var(--strip);color:var(--muted);font-weight:700;border-top:0;border-bottom:1px solid var(--line)}
-.tbl .grp{padding:0 22px;min-height:40px;background:var(--tint);font-weight:700;border-top:1px solid var(--line);border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px}
-.tbl .grp i{font-size:18px;color:var(--n2)}
-.tbl .grp span{margin-left:auto;font-weight:400;color:var(--muted)}
-.tbl .n{text-align:right}
-.tbl a.n{color:var(--n2);font-weight:700;text-decoration:underline;text-underline-offset:4px;text-decoration-color:#9FB0C7;min-height:44px;display:flex;align-items:center;justify-content:flex-end}
-.tbl .diff{background:#FBEFEB}
-.tbl .sub{display:none}
-.how{display:flex;align-items:center;gap:6px}
-.how i{font-size:16px;color:var(--n3)}
-.how.yes i{color:var(--ink)}
-.tasks .tr2{grid-template-columns:72px 1fr 260px 140px}
-.tasks .tr2>span:nth-child(2){min-width:0;overflow-wrap:anywhere}
-.tasks .sub a{color:var(--n2);font-weight:700;text-decoration:underline;text-underline-offset:4px;text-decoration-color:#9FB0C7}
-.tbl .retry{margin:0 22px 18px;color:var(--ink);border-color:var(--line)}
-.tabs{grid-template-columns:repeat(5,1fr)}
-.tabs a.on{color:var(--band);font-weight:700}
+/* Εργασίες στο σχέδιο Β (εγκρίθηκε 15/11/2026, design/stadio1-v2/B-ergasies/, δεύτερη μορφή). Φορτώνεται μετά τα app.css και arxiki.css.
+   Νέες κλάσεις με πρόθεμα eg-. Το χρώμα του μέλους μπαίνει με ένα σημάδι eg-k-<μέλος> που δίνει τα --k1, --k2 (εικονίδιο, μπάρα, πλακίδιο)
+   και τους τόνους --ks, --kr, --kr2 (λωρίδα μέλους, γραμμές, ζέβρα). Το «Αποθήκη» (apo) δεν είναι στο σχέδιο: τόνοι από το --m-apo με την ίδια λογική. */
+#ergasies{--xl:44px;--l:20px;--gut:40px;--rise:112px;--gap:24px}
+@media (max-width:1023px){#ergasies{--xl:32px;--gut:16px;--rise:64px;--gap:16px}}
+#ergasies .band{padding-top:34px;padding-bottom:var(--rise)}
+#ergasies .band .in{padding-bottom:26px}
+#ergasies .band>*{max-width:1344px;margin-left:auto;margin-right:auto}
+#ergasies .band+.wrap{z-index:1}
+.eg-replay{background:rgba(211,219,230,.08);border:1px solid rgba(211,219,230,.35);color:#fff;flex-shrink:0}
 
-@media (max-width:720px){
-  .tbl .tr2{padding:0 16px}
-  .tbl .th{display:none}
-  .tbl .sub{display:block}
-  .tasks .tr2{grid-template-columns:48px 1fr!important;padding:12px 16px;align-items:start}
-  .tasks .tr2 .c{display:none}
+/* χρώμα ανά μέλος */
+.eg-k-tim{--k1:var(--m-tim);--k2:var(--m-tim2);--ks:#DCC4D7;--kr:#EADCE7;--kr2:#E2D0DE}
+.eg-k-log{--k1:var(--m-log);--k2:var(--m-log2);--ks:#E2D2B2;--kr:#EDE2CC;--kr2:#E5D7BC}
+.eg-k-par{--k1:var(--m-par);--k2:var(--m-par2);--ks:#D3CCEA;--kr:#E2DEF2;--kr2:#D8D3EC}
+.eg-k-syn{--k1:var(--m-syn);--k2:var(--m-syn2);--ks:#C9D7EE;--kr:#DCE5F3;--kr2:#D1DCEE}
+.eg-k-apo{--k1:var(--m-apo);--k2:var(--m-apo2);--ks:#B8D8DD;--kr:#D6EAED;--kr2:#C8E1E5}
+
+/* σκηνή: το νούμερο της στιγμής 2:15–2:40 */
+.eg-sb{display:grid;grid-template-columns:auto minmax(0,1fr);gap:36px;padding:22px 28px 26px;align-items:stretch}
+.eg-hero{display:flex;flex-direction:column;justify-content:center;gap:6px;color:#fff;min-width:560px}
+.eg-n{display:flex;align-items:baseline;gap:16px;line-height:.9}
+.eg-n b{font-size:136px;letter-spacing:-.05em;font-variant-numeric:tabular-nums}
+.eg-n span{font-size:44px;font-weight:700;color:var(--n5)}
+.eg-n.eg-n0 b{font-size:64px;letter-spacing:-.03em;line-height:1.05}
+.eg-nl{font-size:24px;font-weight:700;color:var(--n5);margin-bottom:14px}
+.eg-side{display:grid;grid-template-columns:1fr;gap:12px;align-content:center}
+.eg-big{display:flex;flex-direction:row;align-items:center;justify-content:flex-start;gap:14px;padding:18px 20px;border-radius:14px;color:#fff;box-shadow:inset 0 1px 0 rgba(255,255,255,.16),0 4px 12px -4px rgba(0,0,0,.45)}
+.eg-big i{font-size:24px;opacity:.95}
+.eg-big b{font-size:56px;line-height:.95;letter-spacing:-.04em;font-variant-numeric:tabular-nums}
+.eg-big span{font-size:18px;font-weight:700;line-height:1.25}
+.eg-big.eg-yes{background:var(--accent);color:var(--on-accent);box-shadow:inset 0 -3px 0 rgba(10,27,51,.15),0 4px 12px -4px rgba(0,0,0,.45)}
+.eg-big.eg-ok{background:linear-gradient(160deg,#2F7D5B,#1E5A40)}
+.eg-big.eg-bad{background:linear-gradient(160deg,#B23A1E,#8E2A12)}
+.eg-bar{display:flex;gap:4px;height:44px;border-radius:12px;overflow:hidden;background:var(--well);box-shadow:inset 0 2px 6px rgba(0,0,0,.45);padding:4px}
+.eg-bar i{display:flex;align-items:center;min-width:0;padding-left:14px;font-style:normal;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;background:linear-gradient(90deg,var(--m-syn2),#3D74CF);border-radius:9px}
+.eg-bar u{display:flex;align-items:center;justify-content:center;min-width:36px;text-decoration:none;font-weight:700;color:var(--on-accent);background:var(--accent);border-radius:9px}
+
+/* τι έγινε + δεξιά στήλη */
+.eg-g{display:grid;grid-template-columns:minmax(0,1fr) 392px;gap:var(--gap);align-items:start}
+.eg-sub{display:flex;align-items:center;justify-content:space-between;min-height:48px;padding:0 20px;font-weight:700;background:var(--ks);border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.hd+div>.eg-grp:first-child>.eg-sub{border-top:0}
+.eg-sub>span{display:flex;align-items:center;gap:10px}
+.eg-sub>b{font-size:var(--l);font-variant-numeric:tabular-nums}
+.eg-mi{width:32px;height:32px;border-radius:10px;display:inline-flex;align-items:center;justify-content:center;color:#fff;flex-shrink:0;background:linear-gradient(160deg,var(--k1),var(--k2))}
+.eg-mi i{font-size:17px}
+.eg-tr{display:grid;grid-template-columns:56px 28px fit-content(600px) auto minmax(0,1fr);gap:14px;align-items:center;min-height:48px;padding:6px 20px;border-top:1px solid var(--hair);background:var(--kr)}
+.eg-sub+.eg-tr{border-top:0}
+.eg-tr:nth-child(even of .eg-tr){background:var(--kr2)}
+.eg-tr.eg-yes{background:#CFDDF5!important;box-shadow:inset 4px 0 0 var(--m-syn)}
+.eg-tr.eg-bad{background:#F3D2C7!important;box-shadow:inset 4px 0 0 var(--alert)}
+.eg-t{font-variant-numeric:tabular-nums}
+.eg-x{line-height:1.35;min-width:0;overflow-wrap:anywhere}
+.eg-yl{display:block;color:var(--ink)}
+.eg-hw{width:24px;height:24px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;color:#fff;background:var(--ok);flex-shrink:0}
+.eg-hw i{font-size:13px}
+.eg-hw.eg-y{background:var(--accent);color:var(--on-accent)}
+.eg-leg{display:flex;align-items:center;gap:8px;color:#2E3B4E!important}
+.eg-leg .eg-hw+.eg-hw,.eg-leg span+span{margin-left:8px}
+.eg-a{display:flex;justify-content:flex-start;min-width:0}
+.eg-a .ud,.eg-un .ud{margin:0}
+.eg-a a,.eg-wr a{display:inline-flex;align-items:center;gap:4px;font-weight:700;color:var(--ink)}
+.eg-gone{display:inline-flex;align-items:center;gap:6px;color:var(--muted)}
+.eg-al{color:var(--alert)!important}
+.eg-more{display:flex;justify-content:center;padding:10px;border-top:1px solid var(--hair);background:#D3DBE6}
+.eg-morebtn{display:inline-flex;align-items:center;gap:6px;font-weight:700;color:var(--ink);min-height:32px}
+.eg-morebtn:focus-visible{outline-offset:4px}
+.eg-empty,.eg-quiet{display:flex;align-items:center;gap:10px;padding:16px 20px;color:#33415A;background:var(--tint)}
+.eg-quiet i{font-size:20px;color:var(--ok)}
+.eg-quiet.eg-qd{padding:0;background:transparent;color:var(--n5)}
+.eg-fail{display:flex;flex-direction:column;align-items:flex-start;gap:12px;padding:18px 20px;background:var(--row-bad);box-shadow:inset 4px 0 0 var(--alert)}
+.eg-fail p{color:var(--alert);font-weight:700}
+.eg-wr{display:grid;grid-template-columns:32px minmax(0,1fr) auto;gap:12px;align-items:center;min-height:64px;padding:8px 20px;background:#F3D2C7;box-shadow:inset 4px 0 0 var(--alert)}
+.eg-wr+.eg-wr{border-top:1px solid var(--hair)}
+.eg-wi{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;background:linear-gradient(160deg,#B23A1E,#8E2A12)}
+.eg-wi i{font-size:16px}
+
+/* ανά μέλος */
+.eg-dark{background:var(--stage);border-color:rgba(211,219,230,.16)}
+#ergasies .card>.hd{background:#C9D3E1}
+#ergasies .eg-dark>.hd{background:var(--stage-hd);color:#fff;border-bottom-color:rgba(211,219,230,.16)}
+#ergasies .eg-dark>.hd b,#ergasies .eg-dark>.hd i,#ergasies .eg-dark>.hd .r{color:#fff}
+.eg-mb{display:flex;flex-direction:column;gap:12px;padding:16px 20px 18px}
+.eg-m{display:grid;grid-template-columns:104px minmax(0,1fr) minmax(32px,auto);gap:12px;align-items:center;font-weight:700;color:#fff}
+.eg-m>span:first-child{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.eg-m>b{font-size:var(--l);text-align:right;font-variant-numeric:tabular-nums}
+.eg-mbar{height:14px;border-radius:7px;background:var(--well);box-shadow:inset 0 1px 3px rgba(0,0,0,.5);overflow:hidden}
+.eg-mbar i{display:block;height:100%;border-radius:7px;background:linear-gradient(90deg,var(--k2),var(--k1))}
+
+/* αναιρούνται ακόμα */
+.eg-un{display:grid;grid-template-columns:32px minmax(0,1fr) auto;gap:12px;align-items:center;min-height:60px;padding:8px 20px;border-top:1px solid var(--hair);background:var(--kr)}
+.eg-un:nth-child(even of .eg-un){background:var(--kr2)}
+.hd+div>.eg-un:first-child{border-top:0}
+.eg-ux{min-width:0;overflow-wrap:anywhere}
+.eg-ux b{display:block}
+.eg-ux span{display:block;color:#33415A;font-size:14px}
+
+@media (max-width:1180px){.eg-g{grid-template-columns:minmax(0,1fr) 340px}}
+
+/* κινητό: δική του διάταξη, πλακίδια μελών που ανοίγουν δική τους οθόνη (#<μέλος>) */
+@media (max-width:1023px){
+  .eg-hero{min-width:0}
+  .eg-mst{padding:16px;border-radius:16px;background:var(--stage);box-shadow:var(--sh-stage);border:1px solid rgba(211,219,230,.16);margin-bottom:12px;color:#fff}
+  .eg-mst .eg-n b{font-size:88px}
+  .eg-mst .eg-n span{font-size:28px}
+  .eg-mst .eg-n.eg-n0 b{font-size:40px}
+  .eg-mst .eg-nl{font-size:18px;margin-bottom:10px}
+  .eg-mst .eg-bar{height:36px}
+  .eg-ms{display:flex;gap:16px;margin-top:12px;color:var(--n5)}
+  .eg-ms span{display:flex;align-items:center;gap:6px}
+  .eg-ms b{color:#fff;font-size:20px}
+  .eg-ms i{font-size:18px;color:var(--accent)}
+  .eg-ms span+span i{color:#5FC795}
+  .eg-ms span.eg-bad i{color:#F2A58F}
+  #egm-fail .eg-fail{border-radius:14px;margin-bottom:12px}
+  .eg-mw{border-radius:14px;margin-bottom:12px;box-shadow:var(--sh-card),inset 4px 0 0 var(--alert)}
+  .eg-tiles{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .eg-tile{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:8px;align-items:center;padding:12px;border-radius:14px;color:#fff;box-shadow:var(--sh-card);min-height:60px;background:linear-gradient(160deg,var(--k1),var(--k2))}
+  .eg-tile:last-child:nth-child(odd){grid-column:1/-1}
+  .eg-tile .eg-mi{background:rgba(255,255,255,.18);width:28px;height:28px;border-radius:9px}
+  .eg-tile>b{order:3;font-size:24px;line-height:1}
+  .eg-tile>span:last-child{font-weight:700;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .eg-mun{margin-top:16px}
+  .eg-un{padding:8px 16px;grid-template-columns:minmax(0,1fr) auto}
+  .eg-back{display:inline-flex;align-items:center;gap:6px;min-height:44px;margin:-4px 0 6px;padding:0 16px 0 10px;border-radius:999px;background:var(--band);color:#fff;font-weight:700;position:relative}
+  .eg-back i{font-size:18px}
+  .eg-mr{display:grid;grid-template-columns:52px minmax(0,1fr);gap:10px;align-items:start;padding:12px 16px;border-top:1px solid var(--hair);background:var(--kr)}
+  .eg-mr:nth-child(even of .eg-mr){background:var(--kr2)}
+  .eg-sub+.eg-mr{border-top:0}
+  .eg-mr.eg-yes{background:#CFDDF5!important;box-shadow:inset 4px 0 0 var(--m-syn)}
+  .eg-mr.eg-bad{background:#F3D2C7!important;box-shadow:inset 4px 0 0 var(--alert)}
+  .eg-mf{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:4px}
+  .eg-mf .ud{margin:0}
+  .eg-mf a{display:inline-flex;align-items:center;gap:4px;font-weight:700;color:var(--ink);min-height:32px}
+  .eg-mr em{display:flex;align-items:center;gap:6px;font-style:normal;font-weight:700;font-size:14px}
+  .eg-mr em.eg-a2{font-weight:400;color:#33415A}
+  .eg-mr em i{font-size:15px}
+  .eg-mr em.eg-a2 i{color:var(--ok)}
 }
