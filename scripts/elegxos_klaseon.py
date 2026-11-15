@@ -29,6 +29,12 @@ KNOWN = {
     "tabs",
     # rafi.css and stock.css are never loaded on the same page.
     "tog",
+    # photo.css (invoice photo page) and stock.css (camera and scan pages) are never loaded on
+    # the same page, and both make the grid one column on mobile (architect, 15/11/2026).
+    "g-cam",
+    "g-par",
+    # photo.css repeats the app.css rule word for word: hidden on desktop, flex on mobile.
+    "only-m",
 }
 
 LAYOUT_PROPS = {"position", "display", "width", "height", "grid", "grid-template-columns"}
