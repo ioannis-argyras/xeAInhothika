@@ -277,5 +277,14 @@ $('auto').onclick = () => {
 };
 start().then(setAuto);
 </script>
+<script>
+/* Computer only (>=1024px): the shared left menu frame. The phone keeps the page as it is. */
+if (matchMedia("(min-width:1024px)").matches) {
+  document.body.setAttribute("data-shell", "kamera");
+  var shellJs = document.createElement("script");
+  shellJs.src = "/static/shell.js";
+  document.body.appendChild(shellJs);
+}
+</script>
 </body>
 </html>
