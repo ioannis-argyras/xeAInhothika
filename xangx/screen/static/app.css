@@ -1,6 +1,7 @@
-/* Xangxothaika: κατεύθυνση 2 v2, «Μία σκηνή, η βιτρίνα τη νύχτα». Παλέτα 58 (Golden Twilight), μετατοπισμένη.
-   Τρία επίπεδα: σελίδα (με τη ζώνη-βιτρίνα πάνω), λευκές κάρτες με άκρη και σκιά σε στρώσεις, σκηνή απόφασης ανυψωμένη.
-   Οι κανόνες είναι από το design/kateuthynseis-v2/index.html της προετοιμασίας. */
+/* Xangxothaika: κοινό στυλ από το εγκεκριμένο Α v2 (design/stadio1-v2/A, 15/11/2026): ορατά όρια, γραμμές με φόντο ανά κατάσταση,
+   τρία επίπεδα, μενού αριστερά και κάτω μπάρα στο κινητό. Οδηγίες και πίνακας κλάσεων: STIL.md. Σελίδα-οδηγός: /static/pages/stil.html.
+   Οι σελίδες που φορτώνουν το shell.js έχουν <body data-page="...">· οι κανόνες που συγκρούονται με τις παλιές σελίδες (body, .band, .wrap, .brand, .ibtn, .qty) ισχύουν μόνο εκεί.
+   Το γράφημα πληρωμών του σχεδίου λέγεται εδώ .paychart (το .pay είναι ήδη τα κουμπιά της κάρτας «Πλήρωσες;»). */
 @font-face{font-family:"Ubuntu Sans";font-style:normal;font-weight:400 700;font-stretch:100%;font-display:swap;
   src:url(/static/vendor/ubuntu-sans/ubuntu-sans-greek.woff2) format("woff2");
   unicode-range:U+0370-0377,U+037A-037F,U+0384-038A,U+038C,U+038E-03A1,U+03A3-03FF}
@@ -9,49 +10,392 @@
   unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
 
 :root{
-  --band:#0A1B33; --band2:#0E2444; --stage:#14305A; --stage-hd:#102749; --well:#071630;
-  --n2:#16305A; --n3:#3A5A86; --n4:#A3B4CC; --n5:#D3DBE6;
-  --page:#E2E7EE; --surf:#FFFFFF; --strip:#EFF2F6; --tint:#E7EDF5; --line:#C6CFDB; --hair:#E2E7EE;
-  --ink:#0B1626; --muted:#4B586B; --alert:#A3351B; --ok:#2F7D5B;
+  --side:#071630; --band:#0A1B33; --band2:#0E2444; --stage:#14305A; --stage-hd:#102749; --well:#071630;
+  --n2:#16305A; --n3:#3A5A86; --n4:#A3B4CC; --n5:#D3DBE6; --navmut:#8FA2BD;
+  --page:#E2E7EE; --surf:#FFFFFF; --strip:#EFF2F6; --tint:#E7EDF5; --line:#AFBCCD; --hair:#D5DDE8;
+  --hdr:#E2E8F0; --grp:#D3DCE8; --zebra:#F3F6FA; --row-need:#E3ECF8; --row-bad:#FBE8E2; --well-l:#E9EEF4; --well-edge:#C3CEDC;
+  --ink:#0B1626; --muted:#4B586B; --alert:#A3351B; --alert-bg:#FBEFEB; --ok:#2F7D5B;
   --accent:#FFC531; --accent-h:#FFD055; --on-accent:#0A1B33;
   --sh-card:0 1px 2px rgba(10,27,51,.07),0 4px 10px -4px rgba(10,27,51,.10),0 16px 32px -18px rgba(10,27,51,.28);
   --sh-stage:0 1px 2px rgba(2,10,22,.30),0 10px 20px -8px rgba(2,10,22,.35),0 36px 64px -24px rgba(2,10,22,.60);
   --f:"Ubuntu Sans",system-ui,sans-serif; --ease:cubic-bezier(.22,1,.36,1);
-  --xl:48px; --l:20px; --s:14px; --gut:48px; --rise:150px;
+  --xl:44px; --l:20px; --s:14px;
+  --sidew:248px; --gut:40px; --rise:112px; --col:360px; --gap:24px;
 }
 *{box-sizing:border-box;margin:0;padding:0}
-html,body{background:var(--page)}
-body{font-family:var(--f);color:var(--ink);font-size:var(--s);line-height:1.5;font-variant-numeric:tabular-nums;-webkit-font-smoothing:antialiased}
+html{background:var(--page)}
+body{font-family:var(--f);color:var(--ink);font-size:var(--s);line-height:1.5;font-variant-numeric:tabular-nums;-webkit-font-smoothing:antialiased;background:var(--page)}
+body[data-page]{display:grid;grid-template-columns:var(--sidew) minmax(0,1fr);min-height:100vh;min-height:100dvh}
 a{color:inherit;text-decoration:none}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 b{font-weight:700}
-.m{color:var(--muted)}
-.warn{color:var(--alert);font-weight:700}
-:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 [hidden]{display:none!important}
-.shell{position:relative}
-.screen{display:none;padding-bottom:40px}
+.m{color:var(--muted)}
+.al{color:var(--alert);font-weight:700}
+.okt{color:var(--ok)}
+:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+.side :focus-visible,body[data-page] .band :focus-visible,.stage :focus-visible,body[data-page] .dark :focus-visible,.tabbar :focus-visible,body[data-page] .more :focus-visible,.mtop :focus-visible,.pausebar :focus-visible{outline-color:var(--accent)}
+i.ph,i.ph-fill{line-height:1}
+.screen{display:none;padding-bottom:48px}
 .screen.on{display:block}
-i.ph,i.ph-bold,i.ph-fill{line-height:1}
-
-/* ---------- buttons: ένα accent, μόνο στην κύρια ενέργεια ---------- */
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:48px;padding:0 22px;border-radius:999px;font:700 var(--s)/1 var(--f);border:1px solid transparent;cursor:pointer;white-space:nowrap;transition:transform .14s var(--ease),background-color .16s var(--ease)}
+.only-m{display:none!important}
+/* ---------- κουμπιά: ένα κίτρινο ανά οθόνη, μόνο στην κύρια ενέργεια ---------- */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:48px;padding:0 22px;border-radius:999px;font:700 var(--s)/1 var(--f);border:1px solid transparent;cursor:pointer;white-space:nowrap;transition:transform .14s var(--ease),background-color .16s var(--ease)}
 .btn:active{transform:scale(.97)}
-.btn:disabled{opacity:.6;cursor:default}
 .btn i{font-size:18px}
-.btn.yes{background:var(--accent);color:var(--on-accent);padding:0 28px;box-shadow:inset 0 -2px 0 rgba(10,27,51,.14)}
+.btn.yes{background:var(--accent);color:var(--on-accent);padding:0 26px;box-shadow:inset 0 -2px 0 rgba(10,27,51,.14)}
 .btn.yes:hover{background:var(--accent-h)}
 .btn.no{background:rgba(255,255,255,.04);color:#fff;border-color:rgba(211,219,230,.34)}
-.btn.no:hover{background:rgba(255,255,255,.09)}
+.btn.no:hover{background:rgba(255,255,255,.10)}
+.btn.q{background:var(--surf);color:var(--ink);border-color:var(--line);font-weight:500}
+.btn.q:hover{background:var(--strip)}
+.btn.sm{min-height:44px;padding:0 16px}
+.lk{display:inline-flex;align-items:center;gap:6px;font-weight:700;min-height:44px;color:var(--n2)}
+.lk i{font-size:16px}
+.lk.u{text-decoration:underline;text-underline-offset:4px;text-decoration-color:#9FB0C7}
+/* ---------- σκούρο μενού αριστερά (248px, ομάδες, μετρητές) ---------- */
+.side{background:var(--side);color:#fff;border-right:1px solid rgba(163,180,204,.14)}
+.side .in{position:sticky;top:0;height:100vh;height:100dvh;display:flex;flex-direction:column;padding:22px 14px 18px}
+body[data-page] .brand{padding:0 10px 18px;border-bottom:1px solid rgba(163,180,204,.14)}
+body[data-page] .brand b{font-size:var(--l);letter-spacing:-.02em;display:block;line-height:1.2}
+body[data-page] .brand span{color:var(--n4)}
+body[data-page] .grp{margin-top:16px}
+body[data-page] .grp>span{display:block;padding:0 10px 4px;color:var(--navmut)}
+.nv{display:flex;align-items:center;gap:12px;min-height:40px;padding:0 10px;border-radius:10px;color:var(--n5);font-weight:500;position:relative}
+.nv i{font-size:20px;color:var(--n4)}
+.nv:hover{background:rgba(255,255,255,.05);color:#fff}
+.nv.on{background:var(--stage);color:#fff;font-weight:700;box-shadow:inset 0 0 0 1px rgba(211,219,230,.14)}
+.nv.on i{color:#fff}
+.nv.on:before{content:"";position:absolute;left:-14px;top:9px;bottom:9px;width:3px;border-radius:0 3px 3px 0;background:#fff}
+.nv .ct{margin-left:auto;min-width:24px;height:24px;padding:0 7px;border-radius:12px;display:inline-flex;align-items:center;justify-content:center;font-weight:700;color:var(--n5);background:rgba(163,180,204,.16)}
+.nv .ct.al{background:var(--alert);color:#fff}
+.side .foot{margin-top:auto;padding:14px 10px 0;border-top:1px solid rgba(163,180,204,.14);display:flex;flex-direction:column;gap:12px}
+.livel{display:flex;align-items:center;gap:8px;color:var(--n4)}
+.dot{width:8px;height:8px;border-radius:50%;background:#55B48A;flex-shrink:0}
+.pbtn{display:flex;align-items:center;justify-content:center;gap:8px;min-height:44px;border-radius:999px;border:1px solid rgba(211,219,230,.3);color:#fff;font-weight:700;width:100%}
+.pbtn:hover{background:rgba(255,255,255,.06)}
+.pbtn i{font-size:18px}
+/* ---------- μπάνερ παύσης (σε όλες τις σελίδες, όταν υπάρχει παύση) ---------- */
+.pausebar{display:none;align-items:center;gap:14px;padding:12px var(--gut);background:var(--alert);color:#fff}
+.pausebar i{font-size:20px}
+.pausebar .btn{margin-left:auto;min-height:44px;background:transparent;color:#fff;border-color:rgba(255,255,255,.6)}
+body.paused .pausebar{display:flex}
+.if-paused{display:none}
+body.paused .if-paused{display:inline}
+body.paused .if-run{display:none}
+/* ---------- βιτρίνα πάνω σε κάθε σελίδα ---------- */
+.main{min-width:0}
+body[data-page] .band{background:linear-gradient(180deg,var(--band) 0%,var(--band2) 100%);color:#fff;padding:34px var(--gut) var(--rise);position:relative}
+body[data-page] .band .in{display:flex;align-items:flex-end;justify-content:space-between;gap:32px;padding-bottom:26px}
+.kick{color:var(--n4);display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.kick i{font-size:18px;color:var(--n5)}
+body[data-page] .band h1{font-size:var(--xl);line-height:1.08;letter-spacing:-.03em;font-weight:700;margin-top:6px;text-wrap:balance}
+body[data-page] .band .lead{font-size:var(--l);line-height:1.35;color:var(--n5);margin-top:8px;max-width:760px}
+body[data-page] .band .lead b{color:#fff}
+.back{display:inline-flex;align-items:center;gap:6px;color:var(--n5);font-weight:700;min-height:44px;margin:-8px 0 2px}
+.back i{font-size:16px}
+body[data-page] .band .act{display:flex;flex-direction:column;align-items:flex-end;gap:10px;flex-shrink:0}
+body[data-page] .band .act .row{display:flex;gap:10px}
+body[data-page] .band .act .m{color:var(--n4)}
+body[data-page] .band .sum{text-align:right}
+body[data-page] .band .sum span{color:var(--n4)}
+body[data-page] .band .sum b{display:block;font-size:var(--xl);letter-spacing:-.03em;line-height:1.05}
+.ask{display:flex;align-items:center;gap:10px;width:380px;height:52px;padding:0 6px 0 18px;background:var(--surf);border:1px solid var(--line);border-radius:999px}
+.ask input{flex:1;min-width:0;border:0;outline:0;background:transparent;font:400 16px/1 var(--f);color:var(--ink)}
+.ask input::placeholder{color:var(--muted)}
+.ask:focus-within{box-shadow:0 0 0 2px var(--accent)}
+.send{width:40px;height:40px;border-radius:50%;background:var(--band);color:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.send i{font-size:18px}
+body[data-page] .wrap{margin:calc(-1*var(--rise)) 0 0;padding:0 var(--gut);position:relative}
+.grid{display:grid;grid-template-columns:minmax(0,1fr) var(--col);gap:var(--gap);align-items:stretch}
+.mt{margin-top:var(--gap)}
+.stack{display:flex;flex-direction:column;gap:var(--gap)}
+/* ---------- κάρτα: άκρη + σκιά σε στρώσεις, κεφαλίδα σε λωρίδα (η «ετικέτα του ραφιού») ---------- */
+.card{background:var(--surf);border:1px solid var(--line);border-radius:18px;box-shadow:var(--sh-card);overflow:hidden;display:flex;flex-direction:column}
+.hd{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:52px;padding:0 20px;background:var(--hdr);border-bottom:1px solid var(--line)}
+.hd>b{display:flex;align-items:center;gap:10px}
+.hd>b i{font-size:18px;color:var(--n2)}
+.hd .r{display:flex;align-items:center;gap:8px;color:var(--muted);white-space:nowrap}
+.stack.fill>.card:last-child{flex:1 0 auto}
+.grid>.stack:not(.fill){align-self:start}
+body[data-page] .sub{display:flex;align-items:center;justify-content:space-between;min-height:40px;padding:0 20px;background:var(--grp);border-top:1px solid var(--line);border-bottom:1px solid var(--line);font-weight:700}
+body[data-page] .sub:first-child{border-top:0}
+body[data-page] .sub span{font-weight:400;color:var(--muted)}
+.cf{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:52px;padding:0 20px;border-top:1px solid var(--line);margin-top:auto;background:var(--surf)}
+/* ---------- σκηνή απόφασης (η σκούρα κάρτα εστίασης) ---------- */
+.stage,body[data-page] .dark{background:var(--stage);color:#fff;border-radius:22px;border:1px solid rgba(211,219,230,.16);box-shadow:var(--sh-stage);overflow:hidden;display:flex;flex-direction:column}
+.shd{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:52px;padding:0 28px;background:var(--stage-hd);border-bottom:1px solid rgba(211,219,230,.12);color:var(--n4)}
+.shd span{display:flex;align-items:center;gap:10px}
+.shd i{font-size:18px;color:var(--n5)}
+.stage .body{padding:24px 28px 28px;flex:1;display:grid;grid-template-columns:minmax(0,1fr) 280px;gap:28px;align-items:stretch}
+.stage .body>.well{align-self:start}
+.stage .lc{display:flex;flex-direction:column}
+.stage .lc .acts{margin-top:auto;padding-top:20px}
+.exact{display:flex;gap:10px;align-items:flex-start;margin-top:16px;padding:12px 14px;border-radius:12px;background:rgba(7,22,48,.45);border:1px solid rgba(211,219,230,.14);color:var(--n5)}
+.exact i{font-size:18px;margin-top:2px}
+.stage h2,body[data-page] .dark h2{font-size:var(--xl);line-height:1.06;letter-spacing:-.03em;font-weight:700;text-wrap:balance}
+.stage .why{font-size:var(--l);line-height:1.35;color:var(--n5);margin-top:12px}
+.stage .why b{color:#fff}
+.stage .from{color:var(--n4);margin-bottom:6px}
+.acts{display:flex;align-items:center;gap:12px;margin-top:24px;flex-wrap:wrap}
+.acts .lk{color:var(--n5);text-decoration:underline;text-underline-offset:4px;text-decoration-color:rgba(211,219,230,.4)}
+.sft{display:flex;align-items:center;gap:12px;min-height:56px;padding:0 28px;background:var(--stage-hd);border-top:1px solid rgba(211,219,230,.12);color:var(--n5);margin-top:auto}
+.sft i{font-size:18px}
+.sft a{margin-left:auto;display:flex;align-items:center;gap:6px;color:#fff;font-weight:700;min-height:44px;white-space:nowrap}
+.sft .tx{min-width:0}
+/* εσοχή: το εσωτερικό του ψυγείου, με τη σειρά του (μοτίβο) */
+.well{background:var(--well);border:1px solid rgba(211,219,230,.10);border-radius:14px;box-shadow:inset 0 2px 6px rgba(0,0,0,.35);padding:14px 16px 4px}
+.well .m{color:var(--n4)}
+.shelfrow{display:flex;gap:6px;align-items:flex-end;margin-top:12px;border-bottom:3px solid #2B4670}
+.pack{flex:1;height:40px;border-radius:6px 6px 3px 3px;background:linear-gradient(180deg,#EEF2F7 0%,#B9C6D8 100%);box-shadow:inset 0 3px 0 rgba(255,255,255,.6)}
+.pack.gone{background:transparent;border:1.5px dashed #E39A85;box-shadow:none}
+body[data-page] .qty{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:6px 0 4px}
+body[data-page] .qty div{display:flex;flex-direction:column;padding:6px 0;color:var(--n5);line-height:1.3}
+body[data-page] .qty b{font-size:var(--l);color:#fff}
+body[data-page] .qty .x b{color:#F2A58F}
+/* ---------- γραμμές λιστών: ζώνες και φόντο ανά κατάσταση ---------- */
+:where(.tbl .tr2:nth-child(even of .tr2:not(.th))){background:var(--zebra)}
+.tbl .tr2.need{background:var(--row-need)}
+.tbl .tr2.bad{background:var(--row-bad)}
+.askrow{background:var(--row-need);border-bottom:1px solid var(--line)}
+.need.bad{background:var(--row-bad)}
+.need.blue{background:var(--row-need)}
+/* ---------- γραφήματα ---------- */
+.lwell{margin:16px 20px 20px;background:var(--well-l);border:1px solid var(--well-edge);border-radius:12px;box-shadow:inset 0 1px 3px rgba(10,27,51,.12)}
+.lwell.grow{flex:1 0 auto;display:flex;flex-direction:column}
+.bars{position:relative;display:flex;align-items:flex-end;gap:4px;height:150px;flex:1 0 150px;margin:16px 16px 0;border-bottom:1px solid var(--line)}
+.bars i{flex:1;background:#9FB0C7;border-radius:3px 3px 0 0;min-width:0}
+.bars i.y{background:var(--n2)}
+.bars .avg{position:absolute;left:0;right:0;border-top:1.5px dashed var(--n3)}
+.bars .avg span{position:absolute;right:0;top:-24px;color:var(--n3);font-weight:700;background:var(--well-l);padding-left:6px}
+.bars .today{flex:1;align-self:stretch;border-left:2px solid var(--band);position:relative;min-width:0}
+.axis{display:flex;justify-content:space-between;margin:6px 20px 16px;color:var(--muted)}
+.lwell .axis{margin:6px 16px 12px}
+.kpis{display:flex;gap:32px;padding:16px 20px 0;flex-wrap:wrap}
+.kpis b{font-size:var(--l);display:block;line-height:1.2}
+/* σκούρο γράφημα πληρωμών */
+body[data-page] .dark .body{padding:22px 28px 0;flex:1;display:flex;flex-direction:column}
+body[data-page] .dark .top{display:flex;justify-content:space-between;align-items:flex-end;gap:20px;flex-wrap:wrap}
+body[data-page] .dark .top .m{color:var(--n4)}
+.paychart{position:relative;height:170px;margin-top:40px;border-bottom:1px solid rgba(211,219,230,.3)}
+.paychart .gl{position:absolute;left:0;right:0;border-top:1px solid rgba(211,219,230,.10)}
+.paychart .b{position:absolute;bottom:0;width:40px;margin-left:-20px;border-radius:6px 6px 0 0;background:linear-gradient(180deg,#D3DBE6,#A3B4CC)}
+.paychart .b.now{background:transparent;border:2px dashed #D3DBE6;border-bottom:0}
+.paychart .b span{position:absolute;bottom:100%;left:50%;transform:translateX(-50%);margin-bottom:6px;white-space:nowrap;font-weight:700;color:#fff}
+.paychart .b.l span{left:auto;right:0;transform:none}
+.payx{position:relative;height:48px;color:var(--n4)}
+.payx span{position:absolute;top:8px;transform:translateX(-50%);white-space:nowrap;line-height:1.3;text-align:center}
+.payx span.s{transform:none;text-align:left}.payx span.e{transform:translateX(-100%);text-align:right}
+.payx b{color:#fff;display:block}
+/* ---------- λίστα τιμολογίων (πίνακας με λωρίδες μήνα) ---------- */
+.tbl .tr2{display:grid;grid-template-columns:minmax(0,1.6fr) 96px 64px minmax(0,1.5fr) 96px;gap:16px;align-items:center;padding:8px 20px;min-height:60px;border-top:1px solid var(--hair)}
+.tbl .th{min-height:44px;background:var(--hdr);color:var(--muted);font-weight:700;border-top:0;border-bottom:1px solid var(--line)}
+.tbl .n{text-align:right}
+.tbl a.tr2:hover{background:var(--strip)}
+.tbl .tr2.hot{box-shadow:inset 4px 0 0 var(--alert)}
+.tbl .num{min-width:0}
+.tbl .num b{display:block}
+.tbl .num .m{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tbl .st2{display:flex;align-items:center;gap:8px;min-width:0}
+.tbl .st2 i{font-size:20px;flex-shrink:0}
+.tbl .st2 .okt i,.tbl .st2 i.okt{color:var(--ok)}
+.tbl .more2{display:flex;align-items:center;justify-content:center;gap:6px;min-height:52px;border-top:1px solid var(--hair);font-weight:700;color:var(--n2)}
+/* θέλουν εσένα */
+.need{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:center;padding:14px 20px;border-top:1px solid var(--hair);box-shadow:inset 4px 0 0 var(--alert)}
+.need:first-of-type{border-top:0}
+.need b{display:block}
+/* ---------- κινητό: πάνω μπάρα, κάτω μπάρα 5 καρτελών, «Περισσότερα» ---------- */
+.mtop,.tabbar,body[data-page] .more{display:none}
+@media (max-width:1180px){
+  :root{--col:320px}
+  .stage .body{grid-template-columns:1fr}
+}
+@media (max-width:1023px){
+  :root{--gut:16px;--rise:64px;--xl:32px;--gap:16px}
+  body[data-page]{display:block;padding-bottom:calc(76px + env(safe-area-inset-bottom))}
+  .side{display:none}
+  .only-m{display:flex!important}
+  .only-d{display:none!important}
+  .mtop{display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:20;height:56px;padding:0 var(--gut);padding-top:env(safe-area-inset-top);background:var(--band);color:#fff;border-bottom:1px solid rgba(163,180,204,.16)}
+  .mtop b{font-size:var(--l);letter-spacing:-.02em}
+  .mtop .livel{margin-left:auto}
+  body[data-page] .ibtn{width:44px;height:44px;border-radius:50%;border:1px solid rgba(211,219,230,.3);color:#fff;display:flex;align-items:center;justify-content:center}
+  body[data-page] .ibtn i{font-size:18px}
+  body[data-page] .band{padding-top:18px}
+  body[data-page] .band .in{flex-direction:column;align-items:stretch;gap:16px;padding-bottom:20px}
+  body[data-page] .band .lead{font-size:var(--s);line-height:1.5}
+  body[data-page] .band .act{align-items:stretch}
+  body[data-page] .band .act .row{flex-direction:column}
+  body[data-page] .band .act .btn{width:100%}
+  body[data-page] .band .sum{text-align:left}
+  .ask{width:100%}
+  .grid{grid-template-columns:1fr}
+  .stage,body[data-page] .dark{border-radius:18px}
+  .shd,.sft{padding:0 18px}
+  .stage .body{padding:18px 18px 20px;gap:16px}
+  .stage .why{font-size:var(--s);line-height:1.5}
+  .acts{margin-top:16px;gap:10px}
+  .acts .btn{flex:1}
+  .well{padding:10px 12px 2px}
+  .pack{height:30px}
+  .hd,body[data-page] .sub,.cf{padding-left:16px;padding-right:16px}
+  .need{padding-left:16px;padding-right:16px}
+  .m-hide{display:none!important}
+  .bars{height:72px;flex-basis:72px;margin:14px 16px 0;gap:2px}
+  .paychart{margin-top:32px}
+  .axis{margin:6px 16px 12px}
+  .kpis{padding:12px 16px 0;gap:20px}
+  body[data-page] .dark .body{padding:16px 18px 0}
+  .paychart{height:130px}
+  .paychart .b{width:28px;margin-left:-14px}
+  .tbl .tr2{grid-template-columns:minmax(0,1fr) auto;gap:4px 12px;padding:10px 16px}
+  .tbl .th{display:none}
+  .tbl .c-date,.tbl .c-lines{display:none}
+  .tbl .c-st{grid-column:1/-1;order:3}
+  .stack.fill{display:contents}
+  .pausebar{flex-wrap:wrap}
+  .tabbar{display:grid;grid-template-columns:repeat(5,1fr);position:fixed;left:0;right:0;bottom:0;z-index:30;background:var(--band);border-top:1px solid rgba(163,180,204,.18);padding:6px 4px calc(6px + env(safe-area-inset-bottom))}
+  body[data-page] .tb{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:56px;color:var(--n4);position:relative}
+  body[data-page] .tb i{font-size:22px}
+  body[data-page] .tb.on{color:#fff;font-weight:700}
+  body[data-page] .tb .ct{position:absolute;top:2px;left:calc(50% + 6px);min-width:20px;height:20px;border-radius:10px;background:var(--alert);color:#fff;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 5px;line-height:1}
+  body[data-page] .tb.cam span.c{width:52px;height:52px;border-radius:50%;background:var(--stage);border:1px solid rgba(211,219,230,.3);display:flex;align-items:center;justify-content:center;color:#fff;margin-top:-22px;box-shadow:0 6px 14px -6px rgba(2,10,22,.7)}
+  body[data-page] .tb.cam span.c i{font-size:24px}
+  body[data-page] .more{display:block;position:fixed;inset:0;z-index:40;visibility:hidden}
+  body[data-page] .more.open{visibility:visible}
+  body[data-page] .more .bd{position:absolute;inset:0;background:rgba(5,14,30,.55);opacity:0;transition:opacity .2s var(--ease)}
+  body[data-page] .more.open .bd{opacity:1}
+  body[data-page] .more .sh{position:absolute;left:0;right:0;bottom:0;background:var(--side);color:#fff;border-radius:20px 20px 0 0;padding:8px 12px calc(16px + env(safe-area-inset-bottom));transform:translateY(100%);transition:transform .3s var(--ease)}
+  body[data-page] .more.open .sh{transform:none}
+  body[data-page] .more .shh{display:flex;align-items:center;justify-content:space-between;padding:6px 6px 8px}
+  body[data-page] .more .shh b{font-size:var(--l)}
+  body[data-page] .more .nv{min-height:48px}
+  body[data-page] .more .pbtn{margin-top:12px}
+}
+/* ===================== ΚΙΝΗΤΟ: δική του διάταξη (ui-taste Γ), όχι οι κάρτες του υπολογιστή στη σειρά ===================== */
+.mob{display:none}
+@media (max-width:1023px){
+  .desk{display:none}
+  .mob{display:block}
+  .mi{max-width:640px;margin:0 auto}
+  .mb{background:linear-gradient(180deg,var(--band) 0%,var(--band2) 100%);color:#fff;padding:16px 16px 84px}
+  .mb h1{font-size:var(--xl);line-height:1.1;letter-spacing:-.03em;margin-top:2px}
+  .mb .lead{color:var(--n5);margin-top:4px}
+  .mb .lead b{color:#fff}
+  .mb .ask{margin-top:14px;height:48px}
+  .mb .back{margin:0 0 2px}
+  .mb .ttl{display:flex;align-items:flex-end;justify-content:space-between;gap:12px}
+  .mb .ttl .tot{text-align:right;color:var(--n4);line-height:1.2}
+  .mb .ttl .tot b{display:block;font-size:var(--xl);color:#fff;letter-spacing:-.03em}
+  .mb .up1{margin-top:14px;display:flex;flex-direction:column;gap:10px}
+  .mb .up1 .btn.yes{min-height:56px;width:100%}
+  .mb .up1 .row{display:flex;align-items:center;gap:12px;color:var(--n4)}
+  .mb .up1 .row .btn{flex-shrink:0}
+  .mwrap{padding:0 16px;margin-top:-68px;position:relative}
+  .car{display:flex;gap:16px;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;margin:0 -16px;padding:0 16px 4px;scroll-padding:0 16px}
+  .car::-webkit-scrollbar{display:none}
+  .car>article{flex:0 0 100%;scroll-snap-align:start;scroll-snap-stop:always}
+  .mc .mcb{padding:18px 18px 20px;display:flex;flex-direction:column;flex:1}
+  .mc .from{color:var(--n4);margin-bottom:4px}
+  .mc h2{font-size:var(--xl)}
+  .mc .why{font-size:var(--s);line-height:1.5;margin-top:8px}
+  .mc .acts{margin-top:auto;padding-top:16px}
+  .mc .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:auto;padding-top:16px}
+  .mc .grid2 .btn{min-height:48px;width:100%}
+  .mc .well{margin-top:14px}
+  .dots{display:flex;justify-content:center;gap:6px;margin-top:10px}
+  .dots i{width:8px;height:8px;border-radius:50%;background:#9FB0C7}
+  .dots i.on{background:var(--band);width:20px;border-radius:4px}
+  .tiles{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px}
+  .tile{background:var(--surf);border:1px solid var(--line);border-radius:16px;box-shadow:var(--sh-card);overflow:hidden;display:flex;flex-direction:column}
+  .tile .tl{display:flex;align-items:center;justify-content:space-between;gap:6px;min-height:44px;padding:0 12px;background:var(--hdr);border-bottom:1px solid var(--line);font-weight:700}
+  .tile .tl span{display:flex;align-items:center;gap:6px}
+  .tile .tl i{font-size:18px;color:var(--n2)}
+  .tile .tb2{padding:12px;display:flex;flex-direction:column;gap:8px;flex:1}
+  .tile .v{font-size:var(--l);font-weight:700;line-height:1.15}
+  .tile .tw{background:var(--well-l);border:1px solid var(--well-edge);border-radius:10px;box-shadow:inset 0 1px 3px rgba(10,27,51,.12);padding:8px}
+  .tile.hot .tl{background:var(--row-need);box-shadow:inset 0 3px 0 var(--alert)}
+  .mbars{display:flex;align-items:flex-end;gap:2px;height:40px}
+  .mbars i{flex:1;background:#9FB0C7;border-radius:2px 2px 0 0}
+  .mbars i.y{background:var(--n2)}
+  .mseg{display:flex;gap:2px}
+  .mseg i{flex:1;height:7px;border-radius:2px;background:var(--alert)}
+  .mseg i.g{background:var(--hair)}
+  .mseg+.mseg{margin-top:6px}
+  .mpay{display:flex;align-items:flex-end;justify-content:space-between;height:40px;padding:0 4px}
+  .mpay i{width:16px;border-radius:3px 3px 0 0;background:var(--n2)}
+  .mpay i.now{background:#9FB0C7}
+  .mav{display:flex;gap:4px}
+  .mav span{width:30px;height:30px;border-radius:50%;background:linear-gradient(160deg,#21426F,#0A1B33);color:#fff;display:flex;align-items:center;justify-content:center;position:relative}
+  .mav span i{font-size:15px;color:#fff}
+  .mav span.x:after{content:"";position:absolute;right:-2px;top:-2px;width:10px;height:10px;border-radius:50%;background:var(--alert);border:2px solid var(--well-l)}
+  .mdark{margin-bottom:16px}
+  .mdark .body{padding:14px 18px 0}
+  .mdark h2{font-size:var(--xl)}
+  .mdark .paychart{height:84px;margin-top:30px}
+  .mdark .paychart .b{width:24px;margin-left:-12px}
+  .mdark .payx{height:46px}
+  .seg2{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;padding:4px;border-radius:14px;background:var(--grp);border:1px solid var(--line);box-shadow:inset 0 1px 3px rgba(10,27,51,.12);margin-bottom:16px}
+  .seg2 button{min-height:44px;border-radius:10px;font-weight:700;color:var(--muted);display:flex;align-items:center;justify-content:center;gap:6px}
+  .seg2 button[aria-selected="true"]{background:var(--surf);color:var(--ink);box-shadow:0 1px 2px rgba(10,27,51,.18)}
+  .seg2 .c{min-width:22px;height:22px;border-radius:11px;padding:0 6px;background:var(--alert);color:#fff;display:inline-flex;align-items:center;justify-content:center;line-height:1}
+  .seg2 .c.n{background:var(--n3)}
+  .mpanel[hidden]{display:none}
+  .mpanel>.card+.card{margin-top:16px}
+  .lrow{padding:12px 16px;border-top:1px solid var(--hair)}
+  :where(.lrow:nth-child(even of .lrow)){background:var(--zebra)}
+  .lrow.bad{background:var(--row-bad);box-shadow:inset 4px 0 0 var(--alert)}
+  .lrow.chg{background:var(--row-need)}
+  .lrow .a{display:flex;justify-content:space-between;gap:12px;align-items:baseline}
+  .lrow .a b.v{font-size:var(--l);white-space:nowrap}
+  .lrow .q{display:flex;align-items:center;gap:10px;margin-top:6px}
+  .lrow .q span{white-space:nowrap}
+  body[data-page] .got{flex:1;height:8px;border-radius:4px;background:#E39A85;overflow:hidden}
+  body[data-page] .got i{display:block;height:100%;background:var(--n2)}
+  .lrow .nt{margin-top:6px;color:var(--muted)}
+  .lrow .nt .lk{min-height:44px}
+  .mstage .mcb{padding:16px 18px 18px}
+  .mstage h2{font-size:var(--xl)}
+  .mdock{position:fixed;left:0;right:0;bottom:calc(76px + env(safe-area-inset-bottom));z-index:25;background:var(--stage);border-top:1px solid rgba(211,219,230,.2);box-shadow:0 -10px 24px -12px rgba(2,10,22,.6);padding:10px 16px}
+  .mdock .ask-only{max-width:640px;margin:0 auto;display:flex;gap:10px;align-items:center}
+  .mdock .btn.yes{flex:1}
+  .dockpad{height:84px}
+  .mt16{margin-top:16px}
+}
+
+/* ---------- μετάβαση: παλιές κλάσεις, φεύγουν όταν ξαναχτιστούν οι σελίδες ---------- */
+/* Οι σημερινές σελίδες (χωρίς data-page) χρησιμοποιούν ακόμα τον παλιό κώδικα της κατεύθυνσης 2 v2. Ό,τι έχει ίδιο όνομα με νέο κανόνα
+   αλλά άλλη σημασία (.band, .wrap, .brand, .ibtn, .qty, τα μεγέθη) μένει εδώ αυτούσιο, με πρόθεμα :where(body:not([data-page])). */
+:where(body:not([data-page])){--xl:48px;--gut:48px;--rise:150px}
+.warn{color:var(--alert);font-weight:700}
+.shell{position:relative}
+i.ph-bold{line-height:1}
+.btn:disabled{opacity:.6;cursor:default}
 .btn.qd{height:40px;padding:0 16px;background:transparent;color:var(--n5);border-color:rgba(211,219,230,.3);font-weight:500}
-
-/* ---------- banner παύσης ---------- */
 .banner{background:#FBEFEB;color:var(--alert);font-weight:700;text-align:center;padding:12px var(--gut);border-bottom:1px solid var(--line)}
+.send:disabled{opacity:.6;cursor:default}
+.ask.full{width:100%}
+:where(body:not([data-page])) .ask{flex-shrink:0}
+.empty{color:var(--muted);padding:16px 22px}
+.row2{display:grid;gap:24px;align-items:stretch}
+.stage.low{align-self:start}
+.stage{min-width:0}
+.stage.chat h2{font-size:min(var(--xl),40px)}
+.stage .body.one{grid-template-columns:minmax(0,1fr)}
+.acts .msg{flex-basis:100%;color:var(--n5)}
+:where(body:not([data-page])) .shelfrow{flex-wrap:wrap;padding-bottom:0}
+.can{width:22px;height:38px;border-radius:7px 7px 4px 4px;background:linear-gradient(180deg,#EEF2F7 0%,#B9C6D8 100%);box-shadow:inset 0 3px 0 rgba(255,255,255,.6)}
+.can.gone{background:transparent;border:1.5px dashed #4E6A92;box-shadow:none}
+:where(body:not([data-page])) .qty{margin-top:14px}
+:where(body:not([data-page])) .qty div{display:grid;grid-template-columns:40px 1fr;align-items:baseline;padding:8px 0;border-top:1px solid rgba(211,219,230,.12);color:var(--n5)}
+:where(body:not([data-page])) .qty div.txt{display:block;white-space:pre-line;overflow-wrap:anywhere}
+:where(body:not([data-page])) .qty b{font-size:var(--l);color:#fff}
 
-/* ---------- top: μέσα στη βιτρίνα ---------- */
-.top{position:absolute;left:0;right:0;top:0;height:64px;z-index:5;background:var(--band);display:flex;align-items:center;gap:36px;padding:0 var(--gut);color:#fff;border-bottom:1px solid rgba(163,180,204,.16)}
-.brand{display:flex;align-items:baseline;gap:10px;white-space:nowrap}
-.brand b{font-size:var(--l);letter-spacing:-.02em}
-.brand span{color:var(--n4)}
+/* παλιό πλαίσιο σελίδας: πάνω μπάρα μέσα στη βιτρίνα */
+:where(body:not([data-page])) .top{position:absolute;left:0;right:0;top:0;height:64px;z-index:5;background:var(--band);display:flex;align-items:center;gap:36px;padding:0 var(--gut);color:#fff;border-bottom:1px solid rgba(163,180,204,.16)}
+:where(body:not([data-page])) .brand{display:flex;align-items:baseline;gap:10px;white-space:nowrap}
+:where(body:not([data-page])) .brand b{font-size:var(--l);letter-spacing:-.02em}
+:where(body:not([data-page])) .brand span{color:var(--n4)}
 .links{display:flex;height:100%}
 .links a{display:flex;align-items:center;padding:0 14px;color:var(--n4);font-weight:500;position:relative}
 .links a:hover{color:#fff}
@@ -61,66 +405,17 @@ i.ph,i.ph-bold,i.ph-fill{line-height:1}
 .live{display:flex;align-items:center;gap:8px;color:var(--n4);white-space:nowrap}
 .live i{width:8px;height:8px;border-radius:50%;background:#9AA6B6}
 .live i.on{background:#55B48A}
-.ibtn{display:none;width:44px;height:44px;border-radius:50%;border:1px solid rgba(211,219,230,.3);background:transparent;color:#fff;align-items:center;justify-content:center;cursor:pointer}
-.ibtn i{font-size:18px}
+:where(body:not([data-page])) .ibtn{display:none;width:44px;height:44px;border-radius:50%;border:1px solid rgba(211,219,230,.3);background:transparent;color:#fff;align-items:center;justify-content:center;cursor:pointer}
+:where(body:not([data-page])) .ibtn i{font-size:18px}
+:where(body:not([data-page])) .band{background:linear-gradient(180deg,var(--band) 0%,var(--band2) 100%);color:#fff;padding:96px var(--gut) var(--rise);position:relative}
+:where(body:not([data-page])) .band:after{content:"";position:absolute;left:0;right:0;bottom:0;height:1px;background:rgba(163,180,204,.18)}
+:where(body:not([data-page])) .band .in{max-width:1344px;margin:0 auto;display:flex;align-items:flex-end;justify-content:space-between;gap:40px;padding-bottom:28px}
+:where(body:not([data-page])) .band h1{font-size:var(--xl);line-height:1.06;letter-spacing:-.03em;font-weight:700;margin-top:6px;text-wrap:balance}
+:where(body:not([data-page])) .band p.lead{font-size:var(--l);line-height:1.35;letter-spacing:-.01em;color:var(--n5);margin-top:6px;max-width:860px}
+:where(body:not([data-page])) .band p.lead b{color:#fff}
+:where(body:not([data-page])) .wrap{max-width:calc(1344px + 2*var(--gut));margin:calc(-1*var(--rise)) auto 0;padding:0 var(--gut);position:relative}
 
-/* ---------- ζώνη-βιτρίνα ---------- */
-.band{background:linear-gradient(180deg,var(--band) 0%,var(--band2) 100%);color:#fff;padding:96px var(--gut) var(--rise);position:relative}
-.band:after{content:"";position:absolute;left:0;right:0;bottom:0;height:1px;background:rgba(163,180,204,.18)}
-.band .in{max-width:1344px;margin:0 auto;display:flex;align-items:flex-end;justify-content:space-between;gap:40px;padding-bottom:28px}
-.kick{color:var(--n4);display:flex;align-items:center;gap:8px}
-.kick i{font-size:18px;color:var(--n5)}
-.band h1{font-size:var(--xl);line-height:1.06;letter-spacing:-.03em;font-weight:700;margin-top:6px;text-wrap:balance}
-.band p.lead{font-size:var(--l);line-height:1.35;letter-spacing:-.01em;color:var(--n5);margin-top:6px;max-width:860px}
-.band p.lead b{color:#fff}
-.wrap{max-width:calc(1344px + 2*var(--gut));margin:calc(-1*var(--rise)) auto 0;padding:0 var(--gut);position:relative}
-
-/* ask field */
-.ask{display:flex;align-items:center;gap:10px;width:400px;flex-shrink:0;height:52px;padding:0 6px 0 18px;background:var(--surf);border:1px solid var(--line);border-radius:999px;color:var(--muted)}
-.ask.full{width:100%}
-.ask input{flex:1;min-width:0;border:0;background:transparent;font:inherit;font-size:16px;color:var(--ink);outline:none;text-overflow:ellipsis}
-.ask input::placeholder{color:var(--muted);opacity:1}
-.ask:focus-within{outline:2px solid var(--accent);outline-offset:2px}
-.send{width:40px;height:40px;border-radius:50%;background:var(--band);color:#fff;display:flex;align-items:center;justify-content:center;border:0;flex-shrink:0;cursor:pointer}
-.send:disabled{opacity:.6;cursor:default}
-.send i{font-size:18px}
-
-/* ---------- κάρτα: άκρη + σκιά σε στρώσεις, κεφαλίδα σε τονισμένη λωρίδα ---------- */
-.card{background:var(--surf);border:1px solid var(--line);border-radius:18px;box-shadow:var(--sh-card);overflow:hidden;display:flex;flex-direction:column}
-.hd{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:52px;padding:0 22px;background:var(--strip);border-bottom:1px solid var(--line)}
-.hd b{display:flex;align-items:center;gap:10px}
-.hd b i{font-size:18px;color:var(--n2)}
-.row2{display:grid;gap:24px;align-items:stretch}
-.mt{margin-top:24px}
-.empty{color:var(--muted);padding:16px 22px}
-
-/* ---------- σκηνή απόφασης: ανυψωμένη, ανοιχτότερο μπλε από τη βιτρίνα ---------- */
-.stage{background:var(--stage);color:#fff;border-radius:22px;border:1px solid rgba(211,219,230,.16);box-shadow:var(--sh-stage);overflow:hidden;display:flex;flex-direction:column;min-width:0}
-.stage.low{align-self:start}
-.stage .shd{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:52px;padding:0 32px;background:var(--stage-hd);border-bottom:1px solid rgba(211,219,230,.12);color:var(--n4)}
-.stage .shd span{display:flex;align-items:center;gap:10px}
-.stage .shd i{font-size:18px;color:var(--n5)}
-.stage .body{padding:26px 32px 30px;flex:1;display:grid;grid-template-columns:1fr 272px;gap:32px}
-.stage .body.one{grid-template-columns:minmax(0,1fr)}
-.stage h2{font-size:var(--xl);line-height:1.04;letter-spacing:-.03em;font-weight:700;text-wrap:balance}
-.stage.chat h2{font-size:min(var(--xl),40px)}
-.stage .why{font-size:var(--l);line-height:1.35;color:var(--n5);margin-top:12px}
-.acts{display:flex;align-items:center;gap:12px;margin-top:26px;flex-wrap:wrap}
-.acts .msg{flex-basis:100%;color:var(--n5)}
-.sft{display:flex;align-items:center;gap:12px;min-height:56px;padding:0 32px;background:var(--stage-hd);border-top:1px solid rgba(211,219,230,.12);color:var(--n5)}
-.sft i{font-size:18px}
-/* εσοχή: το εσωτερικό του ψυγείου */
-.well{background:var(--well);border:1px solid rgba(211,219,230,.10);border-radius:14px;box-shadow:inset 0 2px 6px rgba(0,0,0,.35);padding:14px 16px 0}
-.well .m{color:var(--n4)}
-.shelfrow{display:flex;flex-wrap:wrap;gap:7px;align-items:flex-end;margin-top:10px;padding-bottom:0;border-bottom:3px solid #2B4670}
-.can{width:22px;height:38px;border-radius:7px 7px 4px 4px;background:linear-gradient(180deg,#EEF2F7 0%,#B9C6D8 100%);box-shadow:inset 0 3px 0 rgba(255,255,255,.6)}
-.can.gone{background:transparent;border:1.5px dashed #4E6A92;box-shadow:none}
-.qty{margin-top:14px}
-.qty div{display:grid;grid-template-columns:40px 1fr;align-items:baseline;padding:8px 0;border-top:1px solid rgba(211,219,230,.12);color:var(--n5)}
-.qty div.txt{display:block;white-space:pre-line;overflow-wrap:anywhere}
-.qty b{font-size:var(--l);color:#fff}
-
-/* ---------- ομάδα ---------- */
+/* ομάδα, χάρακας, ιστορία μέρας, συνομιλία: ακόμα στην παλιά μορφή (δεν υπάρχουν στο κοινό στυλ) */
 .who{display:grid;grid-template-columns:44px minmax(0,1fr) auto;gap:14px;align-items:center;padding:0 22px;min-height:76px;border-top:1px solid var(--hair);flex:1}
 .who:first-of-type{border-top:0}
 .who.now-ask{background:var(--tint);box-shadow:inset 0 1px 0 var(--line),inset 0 -1px 0 var(--line)}
@@ -137,8 +432,6 @@ i.ph,i.ph-bold,i.ph-fill{line-height:1}
 .mini{display:flex;gap:3px;justify-content:flex-end;margin-bottom:5px}
 .mini i{width:7px;height:13px;border-radius:2px;background:var(--n2)}
 .mini i.g{background:transparent;border:1px dashed #8597B0}
-
-/* ---------- ο χάρακας της μέρας ---------- */
 .ruler{position:relative;height:60px;margin:18px 28px 0}
 .ruler .tr{position:absolute;left:0;right:0;top:18px;height:4px;border-radius:2px;background:var(--hair)}
 .ruler .ps{position:absolute;left:0;top:18px;height:4px;border-radius:2px;background:var(--n3)}
@@ -155,8 +448,6 @@ i.ph,i.ph-bold,i.ph-fill{line-height:1}
 .story>div:first-child{border-left:0;padding-left:28px}
 .story .tm{display:flex;gap:8px;align-items:baseline;margin-bottom:4px}
 .story p.empty{grid-column:1/-1;padding:14px 28px 18px}
-
-/* ---------- συνομιλία ---------- */
 .cm{padding:16px 22px 4px;border-top:1px solid var(--hair)}
 .cm:first-child{border-top:0}
 .cm.me{background:var(--strip);padding-bottom:14px}
@@ -174,58 +465,54 @@ i.ph,i.ph-bold,i.ph-fill{line-height:1}
 .step .r{display:flex;align-items:center;gap:8px;white-space:nowrap}
 .step.w{background:var(--tint)}
 .step.w .ic{box-shadow:0 0 0 4px var(--tint)}
-
-/* ---------- μπάρα καρτελών (κινητό) ---------- */
 .tabs{display:none;position:fixed;left:0;right:0;bottom:0;z-index:9;height:calc(68px + env(safe-area-inset-bottom));padding-bottom:env(safe-area-inset-bottom);grid-template-columns:repeat(5,1fr);background:rgba(255,255,255,.88);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);border-top:1px solid var(--line);box-shadow:0 -6px 18px -12px rgba(10,27,51,.25)}
 .tabs a{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;color:var(--muted);font-size:var(--s);min-height:44px}
 .tabs a i{font-size:22px}
 .tabs a.on{color:var(--band);font-weight:700}
-
-/* ---------- σελίδες σε δύο στήλες (υπολογιστής) ---------- */
 .g-home{grid-template-columns:minmax(0,1fr) 392px}
 .g-chat{grid-template-columns:minmax(0,1fr) 540px;align-items:start}
 .g-chat.solo{grid-template-columns:minmax(0,820px)}
 .col{display:flex;flex-direction:column;gap:24px;min-width:0}
+.sim{display:inline-block;margin-left:10px;padding:2px 10px;border:1px solid var(--n3);border-radius:999px;font-size:12px;font-weight:500;line-height:1.5;letter-spacing:0;color:var(--n4);white-space:nowrap;vertical-align:middle}
 
-/* ---------- tablet ---------- */
+/* παλιά tablet και κινητό των σημερινών σελίδων */
 @media (max-width:1100px){
-  :root{--gut:32px;--xl:40px;--rise:120px}
+  :where(body:not([data-page])){--gut:32px;--xl:40px;--rise:120px}
   .links,.live{display:none}
-  .top{gap:16px}
+  :where(body:not([data-page])) .top{gap:16px}
   .right .btn.qd{display:none}
-  .ibtn{display:flex}
+  :where(body:not([data-page])) .ibtn{display:flex}
   .tabs{display:grid}
-  .screen{padding-bottom:110px}
+  :where(body:not([data-page])) .screen{padding-bottom:110px}
   .g-home,.g-chat,.g-chat.solo{grid-template-columns:minmax(0,1fr)}
-  .band .in{flex-direction:column;align-items:stretch;gap:20px}
-  .ask{width:100%}
+  :where(body:not([data-page])) .band .in{flex-direction:column;align-items:stretch;gap:20px}
+  :where(body:not([data-page])) .ask{width:100%}
   .story{grid-template-columns:1fr 1fr}
   .story>div{border-top:1px solid var(--hair)}
   .story>div:nth-child(odd){border-left:0;padding-left:28px}
   .story>div:nth-child(-n+2){border-top:0}
 }
-/* ---------- κινητό ---------- */
 @media (max-width:720px){
-  :root{--gut:16px;--xl:30px;--l:16px;--rise:96px}
-  .top{height:60px}
-  .brand span{display:none}
-  .band{padding-top:76px}
-  .band h1{line-height:1.08}
-  .wrap{padding:0 12px}
+  :where(body:not([data-page])){--gut:16px;--xl:30px;--l:16px;--rise:96px}
+  :where(body:not([data-page])) .top{height:60px}
+  :where(body:not([data-page])) .brand span{display:none}
+  :where(body:not([data-page])) .band{padding-top:76px}
+  :where(body:not([data-page])) .band h1{line-height:1.08}
+  :where(body:not([data-page])) .wrap{padding:0 12px}
   .row2,.col{gap:16px}
-  .mt{margin-top:16px}
-  .hd{padding:0 16px}
-  .stage .shd,.sft{padding:0 18px}
-  .stage .body{grid-template-columns:1fr;padding:20px 18px 22px;gap:18px}
-  .stage .acts{display:grid;grid-template-columns:1fr 2fr;margin-top:18px;order:3}
-  .stage .acts .btn.no{order:-1}
-  .stage .acts .msg{grid-column:1/-1;order:5}
-  .stage .body>div:first-child{display:contents}
-  .stage .body>div:nth-child(2){order:2}
-  .stage .acts .btn{height:52px;padding:0 12px}
-  .stage .acts.pay{grid-template-columns:repeat(3,1fr);gap:10px}
-  .stage .acts.pay .btn{padding:0 8px}
-  .stage .acts.pay .btn.no{order:4;grid-column:1/-1}
+  :where(body:not([data-page])) .mt{margin-top:16px}
+  :where(body:not([data-page])) .hd{padding:0 16px}
+  :where(body:not([data-page])) .stage .shd,:where(body:not([data-page])) .sft{padding:0 18px}
+  :where(body:not([data-page])) .stage .body{grid-template-columns:1fr;padding:20px 18px 22px;gap:18px}
+  :where(body:not([data-page])) .stage .acts{display:grid;grid-template-columns:1fr 2fr;margin-top:18px;order:3}
+  :where(body:not([data-page])) .stage .acts .btn.no{order:-1}
+  :where(body:not([data-page])) .stage .acts .msg{grid-column:1/-1;order:5}
+  :where(body:not([data-page])) .stage .body>div:first-child{display:contents}
+  :where(body:not([data-page])) .stage .body>div:nth-child(2){order:2}
+  :where(body:not([data-page])) .stage .acts .btn{height:52px;padding:0 12px}
+  :where(body:not([data-page])) .stage .acts.pay{grid-template-columns:repeat(3,1fr);gap:10px}
+  :where(body:not([data-page])) .stage .acts.pay .btn{padding:0 8px}
+  :where(body:not([data-page])) .stage .acts.pay .btn.no{order:4;grid-column:1/-1}
   .can{width:18px;height:30px}
   .who{padding:0 16px;min-height:68px;gap:12px}
   .ruler{display:none}
@@ -240,10 +527,7 @@ i.ph,i.ph-bold,i.ph-fill{line-height:1}
   .step{padding:12px 16px;grid-template-columns:40px 1fr;row-gap:4px}
   .step .r{grid-column:2}
   .tabs a{font-size:12px}
-  .stage .why{margin-top:-8px}
-  .sft span{flex:1;min-width:0}
+  :where(body:not([data-page])) .stage .why{margin-top:-8px}
+  :where(body:not([data-page])) .sft span{flex:1;min-width:0}
 }
-@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 @media (prefers-contrast:more){.tabs{background:#fff;backdrop-filter:none}}
-/* Η ετικέτα δίπλα σε ό,τι νούμερο πωλήσεων: το ταμείο του demo είναι προσομοίωση. */
-.sim{display:inline-block;margin-left:10px;padding:2px 10px;border:1px solid var(--n3);border-radius:999px;font-size:12px;font-weight:500;line-height:1.5;letter-spacing:0;color:var(--n4);white-space:nowrap;vertical-align:middle}
