@@ -44,7 +44,7 @@
 .eg-sub>b{font-size:var(--l);font-variant-numeric:tabular-nums}
 .eg-mi{width:32px;height:32px;border-radius:10px;display:inline-flex;align-items:center;justify-content:center;color:#fff;flex-shrink:0;background:linear-gradient(160deg,var(--k1),var(--k2))}
 .eg-mi i{font-size:17px}
-.eg-tr{display:grid;grid-template-columns:56px 28px fit-content(600px) auto minmax(0,1fr);gap:14px;align-items:center;min-height:48px;padding:6px 20px;border-top:1px solid var(--hair);background:var(--kr)}
+.eg-tr{display:grid;grid-template-columns:56px 28px fit-content(600px) minmax(0,1fr);gap:14px;align-items:center;min-height:48px;padding:6px 20px;border-top:1px solid var(--hair);background:var(--kr)}
 .eg-sub+.eg-tr{border-top:0}
 .eg-tr:nth-child(even of .eg-tr){background:var(--kr2)}
 .eg-tr.eg-yes{background:#CFDDF5!important;box-shadow:inset 4px 0 0 var(--m-syn)}
@@ -60,6 +60,7 @@
 .eg-a{display:flex;justify-content:flex-start;min-width:0}
 .eg-a .ud,.eg-un .ud{margin:0}
 .eg-a a,.eg-wr a{display:inline-flex;align-items:center;gap:4px;font-weight:700;color:var(--ink)}
+.eg-a a{margin-left:auto}
 .eg-gone{display:inline-flex;align-items:center;gap:6px;color:var(--muted)}
 .eg-al{color:var(--alert)!important}
 .eg-more{display:flex;justify-content:center;padding:10px;border-top:1px solid var(--hair);background:#D3DBE6}

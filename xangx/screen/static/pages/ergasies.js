@@ -214,10 +214,79 @@
     }
     groups.forEach(function (g) {
       var box = el("div", "eg-grp eg-k-" + kindOf(g.key).k);
+      box.dataset.key = g.key;
       box.appendChild(subBar(g));
-      limited(box, g.tasks.map(deskRow), PER_MEMBER, g.key);
+      g.tasks.map(deskRow).forEach(function (r, i) {
+        r.hidden = !opened[g.key] && i >= PER_MEMBER;
+        box.appendChild(r);
+      });
+      balanceBox(box);
       host.appendChild(box);
     });
+  }
+
+  /* Ισορροπία των δύο στηλών (μόνο στη σελίδα με δύο στήλες): όσο η λίστα «Τι έγινε» είναι ψηλότερη
+     από τη δεξιά στήλη κατά ≥ TOL px, κρύβεται η τελευταία ορατή γραμμή του μέλους με τις περισσότερες,
+     και το «Δες και τις άλλες N» του μέλους τις ανοίγει. Μέλος που το άνοιξε ο χρήστης δεν κρύβεται ξανά. */
+  var TOL = 56;
+  function sideBySide() {
+    var l = $("eg-list"), s = document.querySelector(".eg-g .stack");
+    return !!(s && l.offsetHeight && s.offsetHeight && Math.abs(l.getBoundingClientRect().top - s.getBoundingClientRect().top) < 8);
+  }
+  function gap() {
+    return $("eg-list").offsetHeight - document.querySelector(".eg-g .stack").offsetHeight;
+  }
+  function rowsOf(box) {
+    return [].slice.call(box.children).filter(function (c) { return c.classList.contains("eg-tr"); });
+  }
+  function balanceBox(box) {
+    var hid = rowsOf(box).filter(function (r) { return r.hidden; });
+    var more = box.querySelector(".eg-more");
+    if (!hid.length) { if (more) more.remove(); return; }
+    if (!more) {
+      more = el("div", "eg-more");
+      var b = el("button", "eg-morebtn");
+      b.type = "button";
+      b.addEventListener("click", function () {
+        opened[box.dataset.key] = true;
+        rowsOf(box).forEach(function (r) { r.hidden = false; });
+        more.remove();
+      });
+      more.appendChild(b);
+      box.appendChild(more);
+    }
+    more.firstChild.replaceChildren(document.createTextNode("Δες και τις άλλες " + hid.length + " "), icon("ph", "arrow-right"));
+  }
+  function balance() {
+    var boxes = [].slice.call(document.querySelectorAll("#eg-groups .eg-grp"));
+    boxes.forEach(function (box) {
+      [].slice.call(box.querySelectorAll(".eg-tr[data-bal]")).forEach(function (r) { r.hidden = false; delete r.dataset.bal; });
+      balanceBox(box);
+    });
+    if (!sideBySide()) return;
+    var guard = 200;
+    while (gap() >= TOL && guard-- > 0) {
+      /* πρώτα μένει τουλάχιστον μία γραμμή ανά μέλος· μόνο αν δεν φτάνει, κρύβονται και οι τελευταίες */
+      var best = null, bestN = 1;
+      for (var floor = 1; floor >= 0 && !best; floor--) {
+        bestN = floor;
+        boxes.forEach(function (box) {
+          if (opened[box.dataset.key]) return;
+          var vis = rowsOf(box).filter(function (r) { return !r.hidden; });
+          if (vis.length > bestN) { best = {box: box, last: vis[vis.length - 1]}; bestN = vis.length; }
+        });
+      }
+      if (!best) break;
+      best.last.hidden = true;
+      best.last.dataset.bal = "1";
+      balanceBox(best.box);
+      if (gap() < -TOL) {
+        best.last.hidden = false;
+        delete best.last.dataset.bal;
+        balanceBox(best.box);
+        break;
+      }
+    }
   }
 
   /* ---------- κινητό: πλακίδια μελών και οθόνη μέλους ---------- */
@@ -314,6 +383,7 @@
     tiles(groups);
     undoList($("egm-undo-body"), $("egm-undo-n"), undos, false, "_mundo");
     show();
+    balance();
     $("eg-stage").setAttribute("aria-busy", "false");
     $("eg-list").setAttribute("aria-busy", "false");
   }
@@ -350,6 +420,9 @@
 
   function init() {
     window.addEventListener("hashchange", show);
+    var rt = null;
+    window.addEventListener("resize", function () { clearTimeout(rt); rt = setTimeout(balance, 120); });
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(balance);
     load();
     listen();
   }
