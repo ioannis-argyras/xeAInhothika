@@ -98,19 +98,21 @@ def ingest_file(conn, path, source=None, sender=None):
     files = data_dir() / "files"
     files.mkdir(parents=True, exist_ok=True)
     target = files / f"{sha}{ext}"
-    if target.exists():
-        path.unlink()
-    else:
-        shutil.move(str(path), str(target))
+    if not target.exists():
+        shutil.copyfile(str(path), str(target))
     invoice_id = f"INV-{sha[:8]}"
     payload = {"invoice_id": invoice_id, "source": source or INBOX_EXT[ext],
                "file_ref": f"files/{sha}{ext}", "sha256": sha}
     if sender:
         payload["from"] = sender
-    return append_event(
+    result = append_event(
         conn, type="invoice.received", actor=ACTOR, payload=payload,
         subject=f"invoice:{invoice_id}", idem_key=f"file:{sha}",
     )
+    # Only now: if the event could not be written (e.g. "database is locked"), the file stays
+    # in the inbox and the next pass tries again, instead of the invoice being lost.
+    path.unlink()
+    return result
 
 
 def scan_inbox(conn):
@@ -443,10 +445,14 @@ def _mydata_afm(afm):
     return afm
 
 
-def mydata_check(conn, read_event):
+def mydata_check(conn, read_event, write_error=True):
+    """invoice.mydata_checked. With write_error=False (a retry) nothing is written while myDATA
+    is still unreachable, so the screen does not get the same line every 5 minutes."""
     p = read_event.payload
     result = mydata.check_invoice(_mydata_afm(p["supplier_afm"]), p["series"], p["number"],
                                   p["total_cents"])
+    if result["error"] and not write_error:
+        return None
     payload = {"invoice_id": p["invoice_id"], "env": "dev", "found": result["found"],
                "totals_match": result["totals_match"]}
     if result["mark"]:
@@ -459,6 +465,48 @@ def mydata_check(conn, read_event):
         subject=f"invoice:{p['invoice_id']}",
         idem_key=None if result["error"] else f"mydata:{p['invoice_id']}",
         caused_by=read_event.id,
+    )
+    return e
+
+
+def mydata_unanswered(conn):
+    """Invoices whose latest myDATA check could not reach myDATA, oldest first."""
+    latest = {}
+    for e in read_events(conn, types=["invoice.mydata_checked"]):
+        latest[e.payload["invoice_id"]] = e
+    return [iid for iid, e in latest.items() if e.payload.get("error")]
+
+
+def mydata_retry(conn, invoice_id):
+    """Ask myDATA again ("θα ξαναδοκιμάσω"). Returns the new event, or None while it is still
+    unreachable."""
+    read = _latest(conn, "invoice.read", invoice_id)
+    last = _latest(conn, "invoice.mydata_checked", invoice_id)
+    if read is None or last is None or not last.payload.get("error"):
+        return None
+    return mydata_check(conn, read, write_error=False)
+
+
+def flag_unread(conn, invoice_id, offline):
+    """One "Προσοχή" for the owner when an invoice cannot be read. Once per invoice and reason."""
+    received = _latest(conn, "invoice.received", invoice_id)
+    if received is None:
+        return None
+    from xangx.master.tools import greek_time
+
+    when = greek_time(received.at)[-5:]
+    if offline:
+        kind = "invoice_unread_offline"
+        note = (f"Δεν μπόρεσα να διαβάσω το τιμολόγιο που ήρθε στις {when}: δεν υπάρχει σύνδεση "
+                f"στο internet. Θα ξαναδοκιμάζω μόνος μου κάθε 5 λεπτά.")
+    else:
+        kind = "invoice_unread"
+        note = (f"Δεν μπόρεσα να διαβάσω το τιμολόγιο που ήρθε στις {when}. Στείλε μου μια πιο "
+                f"καθαρή φωτογραφία ή το PDF.")
+    e, _ = append_event(
+        conn, type="exception.flagged", actor="accountant",
+        payload={"kind": kind, "ref": f"invoice:{invoice_id}", "note": note},
+        subject=f"invoice:{invoice_id}", idem_key=f"{kind}:{invoice_id}", caused_by=received.id,
     )
     return e
 

@@ -480,6 +480,126 @@ class EmailIntake(unittest.TestCase):
             self.assertEqual(worker.poll_email(self.conn), [])
 
 
+class Offline(unittest.TestCase):
+    """Without internet nothing is lost (offline test 15/11/2026, docs/team/dokimes-manoli-2026-11-15.md)."""
+
+    # The same store, order and delivery as InvoiceFlow, without running its tests twice.
+    setUp, tearDown = InvoiceFlow.setUp, InvoiceFlow.tearDown
+    _receive, _types = InvoiceFlow._receive, InvoiceFlow._types
+
+    def _inbox(self):
+        return sorted(p.name for p in (Path(self.tmp) / "inbox").iterdir())
+
+    def test_locked_database_keeps_the_file_in_the_inbox(self):
+        import sqlite3
+
+        with mock.patch.object(core, "append_event",
+                               side_effect=sqlite3.OperationalError("database is locked")):
+            with self.assertRaises(sqlite3.OperationalError):
+                self._receive()
+        self.assertEqual(self._inbox(), ["a.pdf"])  # still there: the next pass takes it
+        self.assertEqual(self._types("invoice.received"), [])
+        [iid] = core.scan_inbox(self.conn)
+        self.assertEqual(self._inbox(), [])
+        self.assertEqual(len(self._types("invoice.received")), 1)
+        self.assertTrue((Path(self.tmp) / self._types("invoice.received")[0].payload["file_ref"]).exists())
+
+    def test_same_file_twice_is_one_invoice_and_leaves_the_inbox(self):
+        self._receive()
+        self.assertEqual(self._receive(), [])
+        self.assertEqual(self._inbox(), [])
+        self.assertEqual(len(self._types("invoice.received")), 1)
+
+    def _connection_error(self):
+        import anthropic
+        try:
+            import httpx2 as http
+        except ImportError:
+            self.skipTest("the SDK's HTTP library is not httpx2 here")
+        return anthropic.APIConnectionError(request=http.Request("POST", "https://example.invalid"))
+
+    def test_network_errors_are_temporary(self):
+        import sqlite3
+        from xangx.invoices import worker
+        self.assertTrue(worker.temporary(self._connection_error()))
+        self.assertTrue(worker.temporary(sqlite3.OperationalError("database is locked")))
+        self.assertFalse(worker.temporary(ValueError("unusable reply")))
+
+    def test_offline_read_is_tried_again_until_it_works(self):
+        from xangx.invoices import worker
+        [iid] = self._receive()
+        real = core.process_invoice
+        err = self._connection_error()
+        failures = {}
+        with mock.patch.object(core, "process_invoice", side_effect=err) as proc:
+            for now in (0, 1, 5, 6, 35, 154):  # tries at 0, 5 (after 5 s), 35 (after 30 s)
+                self.assertEqual(worker.run_once(self.conn, failures, now=now), [])
+            self.assertEqual(proc.call_count, 3)
+            self.assertFalse(failures[iid]["gave_up"])
+            self.assertEqual(failures[iid]["next"], 155)  # then after 2 minutes
+        [flag] = self._types("exception.flagged")
+        self.assertEqual(flag.payload["kind"], "invoice_unread_offline")
+        self.assertIn("δεν υπάρχει σύνδεση στο internet", flag.payload["note"])
+        self.assertNotIn("INV-", flag.payload["note"])
+        # The internet is back: the next try reads it, and there is no second flag.
+        with mock.patch.object(core, "process_invoice", side_effect=real):
+            self.assertEqual(worker.run_once(self.conn, failures, now=155), [iid])
+        self.assertEqual(failures, {})
+        self.assertEqual(len(self._types("invoice.read")), 1)
+        self.assertEqual(len(self._types("exception.flagged")), 1)
+
+    def test_offline_retries_every_5_minutes_without_end(self):
+        from xangx.invoices import worker
+        [iid] = self._receive()
+        failures = {}
+        with mock.patch.object(core, "process_invoice", side_effect=self._connection_error()):
+            now = last = 0
+            for _ in range(8):
+                last = now
+                worker.run_once(self.conn, failures, now=now)
+                now = failures[iid]["next"]
+        self.assertEqual(failures[iid]["tries"], 8)
+        self.assertEqual(now - last, 300)  # every 5 minutes
+        self.assertFalse(failures[iid]["gave_up"])
+        self.assertEqual(len(self._types("exception.flagged")), 1)
+
+    def test_unusable_file_stops_after_3_tries(self):
+        from xangx.invoices import worker
+        [iid] = self._receive()
+        failures = {}
+        with mock.patch.object(core, "process_invoice", side_effect=ValueError("unusable")) as proc:
+            for now in range(0, 60, 5):
+                worker.run_once(self.conn, failures, now=now)
+        self.assertEqual(proc.call_count, worker.MAX_TRIES)  # no paying for it again and again
+        self.assertTrue(failures[iid]["gave_up"])
+        [flag] = self._types("exception.flagged")
+        self.assertEqual(flag.payload["kind"], "invoice_unread")
+        self.assertIn("πιο καθαρή φωτογραφία", flag.payload["note"])
+
+    def test_mydata_is_asked_again_after_it_did_not_answer(self):
+        from xangx.invoices import worker
+        down = {"found": False, "totals_match": None, "mark": None, "error": "myDATA unreachable: URLError"}
+        up = {"found": True, "totals_match": True, "mark": "400001976566655", "error": None}
+        [iid] = self._receive()
+        with mock.patch.object(core.mydata, "check_invoice", return_value=down):
+            core.process_invoice(self.conn, iid)
+            self.assertEqual(core.mydata_unanswered(self.conn), [iid])
+            schedule = {}
+            self.assertEqual(worker.retry_mydata(self.conn, schedule, now=0), [])
+            # Still down: no new line on the screen.
+            self.assertEqual(len(self._types("invoice.mydata_checked")), 1)
+            self.assertEqual(schedule["next"], worker.MYDATA_RETRY_S)
+        with mock.patch.object(core.mydata, "check_invoice", return_value=up) as check:
+            self.assertEqual(worker.retry_mydata(self.conn, schedule, now=10), [])  # not yet
+            check.assert_not_called()
+            [new_id] = worker.retry_mydata(self.conn, schedule, now=worker.MYDATA_RETRY_S)
+        last = self._types("invoice.mydata_checked")[-1]
+        self.assertEqual((last.id, last.payload["found"], last.payload["mark"]),
+                         (new_id, True, "400001976566655"))
+        self.assertNotIn("error", last.payload)
+        self.assertEqual(core.mydata_unanswered(self.conn), [])
+
+
 class SendDemo(unittest.TestCase):
     """The script that puts the 3 demo invoices in myDATA dev. No network."""
 
