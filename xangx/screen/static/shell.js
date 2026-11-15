@@ -256,7 +256,7 @@
 
   function init() {
     var body = document.body;
-    var key = body.getAttribute("data-page");
+    var key = body.getAttribute("data-page") || body.getAttribute("data-shell");
     if (!key) return;
     var main = document.querySelector(".main");
     if (!main) {
