@@ -173,6 +173,46 @@ class OrdersTest(unittest.TestCase):
         sent = [e for e in self.events("order.sent") if e.payload["order_id"] == order_id]
         self.assertEqual(sent[0].payload["to"], "supplier-demo@example.com")
 
+    def _invoice_read(self, supplier_id, invoice_id, number, unit_cents):
+        afm = self.conn.execute("SELECT afm FROM suppliers WHERE id = ?", (supplier_id,)).fetchone()[0]
+        net = 48 * unit_cents
+        event, _ = append_event(
+            self.conn, type="invoice.read", actor="invoices",
+            payload={"invoice_id": invoice_id, "supplier_afm": afm, "series": "Α", "number": number,
+                     "date": "2026-11-15", "net_cents": net, "vat_by_rate": {"24": net * 24 // 100},
+                     "total_cents": net + net * 24 // 100, "checks": {}, "confidence": "high",
+                     "lines": [{"name": "Coca-Cola 330ml κουτί", "product_id": "cola-330", "qty": 48,
+                                "unit_cents": unit_cents, "net_cents": net, "vat_rate": 24}]})
+        return event
+
+    def test_price_rise_on_a2271_names_the_cheaper_supplier(self):
+        """Demo 2:15: after Α-2271 the screen says the cola rose 8,8% and Κάβα Βύρωνα has it at 0,58 €."""
+        from xangx.invoices.core import price_changes
+        from xangx.orders import worker as orders_worker
+        from xangx.screen.describe import describe, load_names
+
+        # Fixture: an older Κάβα invoice with the cola at 0,58 €, then Α-2271 at 0,62 € (was 0,57 €).
+        self._invoice_read("sup-kava", "INV-KAVA-OLD", "1180", 58)
+        a2271 = self._invoice_read("sup-ymittou", "INV-A-2271", "2271", 62)
+        rises = price_changes(self.conn, a2271)
+        self.assertEqual([(e.payload["product_id"], e.payload["pct"]) for e in rises], [("cola-330", 8.8)])
+
+        orders_worker.run_once(self.conn)
+        found = self.events("supplier.cheaper_found")
+        self.assertEqual(len(found), 1)
+        p = found[0].payload
+        self.assertEqual((p["from_supplier_id"], p["to_supplier_id"], p["to_cents"]),
+                         ("sup-ymittou", "sup-kava", 58))
+        self.assertEqual(p["caused_by_invoice_id"], "INV-A-2271")
+        text = describe(found[0], load_names(self.conn))
+        for part in ("Coca-Cola 330ml κουτί", "8,8%", "Διανομές Υμηττού Α.Ε.", "Κάβα Βύρωνα", "0,58"):
+            self.assertIn(part, text)
+        self.assertNotIn("Προμηθευτής", text)
+        self.assertNotIn("sup-", text)
+
+        orders_worker.run_once(self.conn)  # the same rise again: no second message
+        self.assertEqual(len(self.events("supplier.cheaper_found")), 1)
+
 
 
 # When P-0318 left in the demo data (set by RepliesTest.setUp). The seed puts it at 06:50 Greek
