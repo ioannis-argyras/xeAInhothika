@@ -382,15 +382,19 @@ def invoice_detail(invoice_id: str, until_id: int | None = None):
         raise HTTPException(404, "Δεν βρήκα αυτό το τιμολόγιο.")
     conn = _db()
     try:
-        b = _bundles(conn, until_id).get(invoice_id)
+        bundles = _bundles(conn, until_id)
+        b = bundles.get(invoice_id)
         if b is None or not (b.get("received") or b.get("read") or b.get("dup")):
             raise HTTPException(404, "Δεν βρήκα αυτό το τιμολόγιο.")
         names = load_names(conn)
         pending = _pending_credit(conn, invoice_id, until_id)
         item = _list_item(conn, invoice_id, b, pending)
+        from xangx.screen.api_tim import invoice_extras  # lazy: api_tim imports this module
+        extras = invoice_extras(conn, invoice_id, until_id, bundles, pending)
         out = {"invoice_id": invoice_id, "label": item["label"], "supplier": item["supplier"],
                "received_at": item["at"], "status": item["status"], "level": item["level"],
                "read": False, "lines": [], "checks": [], "credit": None,
+               **extras,
                "last_id": _last_id(conn, until_id),
                "paused": views.is_paused(conn, until_id=until_id), "now": _clock(conn, until_id)}
         if b.get("dup"):
