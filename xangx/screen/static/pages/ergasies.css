@@ -138,3 +138,19 @@
   .eg-mr em i{font-size:15px}
   .eg-mr em.eg-a2 i{color:var(--ok)}
 }
+
+/* Χθες: ήρεμο φόντο, μόνο ανάγνωση */
+.eg-left{display:flex;flex-direction:column;gap:var(--gap);min-width:0}
+.eg-yd[hidden]{display:none}
+.eg-yd{background:#E4E9F0}
+.eg-y3{display:grid;grid-template-columns:repeat(3,1fr);padding:8px 0}
+.eg-y3>div{display:flex;flex-direction:column;align-items:center;text-align:center;padding:8px;line-height:1.2}
+.eg-y3>div+div{border-left:1px solid var(--hair)}
+.eg-y3 b{font-size:var(--xl);letter-spacing:-.03em;line-height:1;font-variant-numeric:tabular-nums}
+.eg-y3 span{color:#33415A;margin-top:6px}
+.eg-y3 .eg-bad b{color:var(--alert)}
+.eg-yr{display:grid;grid-template-columns:56px 24px minmax(0,1fr);gap:14px;align-items:center;min-height:44px;padding:6px 20px;border-top:1px solid var(--hair);color:#33415A}
+.eg-yr.eg-bad{box-shadow:inset 4px 0 0 var(--alert)}
+.eg-yd .eg-more{background:#E4E9F0}
+.eg-ymore{color:#33415A}
+@media (max-width:1023px){.eg-yd{margin-top:16px}.eg-yr{padding:8px 16px;grid-template-columns:48px 24px minmax(0,1fr);gap:10px}}
