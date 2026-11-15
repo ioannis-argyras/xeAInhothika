@@ -1,0 +1,131 @@
+/* Σχέδιο: Συνομιλία στην κατεύθυνση της αρχικής Β, των Τιμολογίων Β και του Ραφιού Β (15/11/2026, Claude του Μανώλη).
+   Δεύτερη μορφή μετά το 1303 του Γιάννη («πολυ ασπρο και ασκοπος κενος χωρος»): σκηνή σε όλο το πλάτος με την
+   απόφαση μέσα της, όπως τα Τιμολόγια Β, και από κάτω μία σειρά κελιών «Νωρίτερα σήμερα».
+   Φορτώνεται μετά τα app.css, arxiki.css και undo.css. Νέες κλάσεις με πρόθεμα sy-. Χρώμα μέλους: Συνεργάτης (--m-syn). */
+#s-synomilia{--xl:44px;--l:20px;--gut:40px;--rise:112px;--gap:24px}
+@media (max-width:1023px){#s-synomilia{--xl:32px;--gut:16px;--rise:64px;--gap:16px}}
+#s-synomilia .bandB{padding-bottom:var(--rise)}
+#s-synomilia .bandB .in{padding-bottom:26px}
+#s-synomilia .bandB>*{max-width:1344px;margin-left:auto;margin-right:auto}
+.sy-nw{white-space:nowrap}
+
+/* βιτρίνα: πεδίο και έτοιμες ερωτήσεις */
+.sy-ask{width:560px;flex-shrink:0;display:flex;flex-direction:column;gap:12px}
+.sy-ask .ask{margin:0}
+.sy-sug{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap}
+.sy-q{min-height:40px;padding:0 16px;border-radius:20px;border:1px solid rgba(211,219,230,.35);background:rgba(211,219,230,.08);color:var(--n5);font:inherit;font-weight:500;cursor:pointer}
+.sy-q:hover{background:rgba(211,219,230,.16)}
+
+/* σκηνή: η τελευταία ερώτηση, με την απόφαση μέσα της */
+.sy-cb{display:grid;grid-template-columns:minmax(0,1fr) 440px;gap:32px;padding:24px 28px 28px;align-items:start}
+.sy-cl h2{margin-bottom:16px;font-size:32px;line-height:1.15}
+/* εσοχή: η απάντηση (τρίτο επίπεδο, σκούρο μέσα στο σκούρο) */
+.sy-well{display:flex;gap:14px;align-items:flex-start;padding:16px 18px;border-radius:12px;background:var(--well);box-shadow:inset 0 2px 8px rgba(0,0,0,.45);border:1px solid rgba(211,219,230,.12);color:var(--n5);margin-bottom:18px}
+.sy-well i{font-size:22px;color:#8FB4F0;margin-top:2px}
+.sy-well p{line-height:1.5;min-width:0;overflow-wrap:anywhere}
+.sy-well b{color:#fff}
+/* τα βήματα σε δύο στήλες */
+.sy-st{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:1fr 1fr;gap:4px 24px}
+.sy-st li{display:grid;grid-template-columns:32px minmax(0,1fr);gap:12px;align-items:center;min-height:44px;color:var(--n5)}
+.sy-d{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;background:linear-gradient(160deg,var(--m-syn),var(--m-syn2));box-shadow:inset 0 1px 0 rgba(255,255,255,.18)}
+.sy-d i{font-size:16px}
+.sy-st li.al .sy-d{background:linear-gradient(160deg,#C2452A,#8E2A12)}
+.sy-st li.al>span:nth-child(2){color:#FFB7A6;font-weight:700}
+.sy-st li.w .sy-d{background:var(--accent);color:var(--on-accent)}
+.sy-st li.w>span:nth-child(2){color:#fff;font-weight:700}
+/* δεξιά: συμπαγή πλακίδια, και η απόφαση σε πάνελ στο χρώμα της κεφαλίδας της σκηνής */
+.sy-cr{display:flex;flex-direction:column;gap:14px}
+.sy-tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.sy-tl{display:flex;flex-direction:column;gap:2px;padding:12px 14px;border-radius:12px;color:#fff;box-shadow:inset 0 1px 0 rgba(255,255,255,.14),0 2px 6px rgba(0,0,0,.3)}
+.sy-tl i{font-size:18px;opacity:.9}
+.sy-tl b{font-size:36px;line-height:1.05;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.sy-tl.syn{background:linear-gradient(160deg,var(--m-syn),var(--m-syn2))}
+.sy-tl.apo{background:linear-gradient(160deg,var(--m-apo),var(--m-apo2))}
+.sy-tl.sy-al{background:linear-gradient(160deg,#B23A1E,#8E2A12)}
+.sy-need{display:flex;flex-direction:column;gap:10px;padding:18px 20px 20px;border-radius:14px;background:linear-gradient(160deg,var(--m-syn),var(--m-syn2));box-shadow:inset 0 1px 0 rgba(255,255,255,.16),0 6px 16px -6px rgba(0,0,0,.5)}
+.sy-from{display:flex;align-items:center;gap:8px;color:#DCE6F5;font-weight:700}
+.sy-from i{color:var(--accent);font-size:18px}
+.sy-need h3{font-size:30px;line-height:1.2;letter-spacing:-.01em;color:#fff}
+.sy-ex{color:#fff;line-height:1.5;overflow-wrap:anywhere;white-space:pre-line}
+.sy-acts{flex-wrap:wrap}
+.sy-acts .msg{flex-basis:100%;color:#fff;font-weight:700}
+.sy-acts{display:flex;gap:10px;margin-top:6px}
+.sy-acts .btn.yes{flex:1}
+.sy-cur .sft .tx{flex:1}
+
+/* νωρίτερα σήμερα: μία σειρά κελιών, όπως το «Τι έγινε» των Τιμολογίων Β */
+.sy-h4{display:grid;grid-template-columns:repeat(var(--sy-n,4),minmax(0,1fr))}
+.sy-hc{display:flex;flex-direction:column;gap:4px;padding:18px 20px 20px;background:var(--tint)}
+.sy-hc:nth-child(even){background:var(--strip)}
+.sy-hc+.sy-hc{border-left:1px solid var(--line)}
+.sy-hc.sy-now{background:#FFF1C9;box-shadow:inset 0 4px 0 var(--accent)}
+.sy-w{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;margin-bottom:6px}
+.sy-w i{font-size:20px}
+.sy-w.syn{background:linear-gradient(160deg,var(--m-syn),var(--m-syn2))}
+.sy-w.log{background:linear-gradient(160deg,var(--m-log),var(--m-log2))}
+.sy-w.yes{background:var(--accent);color:var(--on-accent)}
+.sy-t{font-size:var(--l);font-variant-numeric:tabular-nums}
+.sy-ht{line-height:1.3}
+.sy-hx{color:#33415A;line-height:1.45;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:5;overflow:hidden;overflow-wrap:anywhere}
+.sy-none{padding:22px 24px;color:var(--muted);font-weight:600}
+
+@media (max-width:1180px){.sy-cb{grid-template-columns:1fr}.sy-ask{width:440px}.sy-h4{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* κινητό */
+@media (max-width:1023px){
+  #s-synomilia .mb{padding-top:80px}
+  #s-synomilia .mwrap{padding-bottom:84px}
+  .sy-mneed{display:flex;flex-direction:column;gap:6px;margin-bottom:16px;padding:16px;border-radius:16px;background:var(--stage);color:#fff;box-shadow:var(--sh-stage);border:1px solid rgba(211,219,230,.16)}
+  .sy-mneed[hidden]{display:none}
+  .sy-mk{display:flex;align-items:center;gap:8px;color:var(--accent);font-weight:700}
+  .sy-mk i{font-size:18px}
+  .sy-mneed>b{font-size:22px;line-height:1.25}
+  .sy-mneed>span{color:var(--n5)}
+  .sy-macts{display:grid;grid-template-columns:1fr auto;gap:10px;margin-top:10px}
+  /* η τελευταία ερώτηση: σκούρο πάνελ με εσοχή, όχι λευκή κάρτα */
+  .sy-mcur{padding:14px 16px 16px;border-radius:16px;background:var(--stage-hd);color:#fff;border:1px solid rgba(211,219,230,.16);box-shadow:var(--sh-card)}
+  .sy-mkk{display:flex;align-items:center;gap:8px;color:var(--n4)}
+  .sy-mq{margin-top:6px;font-size:20px;font-weight:700;line-height:1.3}
+  .sy-msteps{display:grid;grid-template-columns:32px minmax(0,1fr) auto;gap:12px;align-items:center;margin:12px 0;padding:10px 12px;border-radius:12px;background:var(--well);box-shadow:inset 0 2px 8px rgba(0,0,0,.45);color:var(--n5);min-height:52px}
+  .sy-msteps b{color:#fff}
+  .sy-msteps>i{color:var(--n4);font-size:18px}
+  .sy-mans{color:var(--n5);line-height:1.5}
+  .sy-mans b{color:#fff}
+  .sy-tile{display:grid;grid-template-columns:40px minmax(0,1fr) auto;gap:12px;align-items:center;margin-top:16px;padding:14px;border-radius:16px;background:var(--tint);border:1px solid var(--line);box-shadow:var(--sh-card);color:var(--ink)}
+  .sy-tile b{display:block}
+  .sy-tile small{display:block;color:var(--muted);font-size:14px}
+  .sy-tile>i{color:var(--muted);font-size:18px}
+  .sy-ti{width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;color:#fff;background:linear-gradient(160deg,var(--m-syn),var(--m-syn2))}
+  .sy-ti i{font-size:20px}
+  .sy-back{display:inline-flex;align-items:center;gap:6px;min-height:44px;margin:-4px 0 6px;color:#fff;font-weight:700;position:relative;background:linear-gradient(transparent,transparent)}
+  .sy-back i{font-size:18px}
+  .sy-mr{display:grid;grid-template-columns:40px minmax(0,1fr) 52px;gap:12px;align-items:center;padding:12px 16px;border-top:1px solid var(--hair);background:var(--tint)}
+  .sy-mr .sy-w{margin:0}
+  .sy-mr.syn{background:#E3EAF6;box-shadow:inset 4px 0 0 var(--m-syn)}
+  .sy-mr.log{background:#F1E9D8;box-shadow:inset 4px 0 0 var(--m-log)}
+  .sy-mr.sy-wait{background:var(--row-bad);box-shadow:inset 4px 0 0 var(--alert)}
+  .sy-n{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:48px;border-radius:10px;color:#fff;background:linear-gradient(160deg,var(--m-syn),var(--m-syn2));line-height:1}
+  .sy-n b{font-size:20px}
+  .sy-n small{font-size:12px;font-weight:700;margin-top:2px;opacity:.9}
+  .sy-mr.log .sy-n{background:linear-gradient(160deg,var(--m-log),var(--m-log2))}
+  .sy-mr.sy-wait .sy-n{background:linear-gradient(160deg,#B23A1E,#8E2A12)}
+  .card>.sy-mr:first-child{border-top:0}
+  .sy-mr .p b{display:block}
+  .sy-mr .p span{display:block;color:#2E3B4E}
+  .sy-mst{padding:12px 16px;border-radius:16px;background:var(--stage);box-shadow:var(--sh-card)}
+  .sy-mst .sy-st{grid-template-columns:1fr}
+  .sy-mday{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:16px}
+  .sy-mday>div{display:flex;flex-direction:column;align-items:flex-start;padding:12px 14px;border-radius:12px;color:#fff;background:linear-gradient(160deg,var(--m-syn),var(--m-syn2));box-shadow:var(--sh-card)}
+  .sy-mday>div.sy-al{background:linear-gradient(160deg,#B23A1E,#8E2A12)}
+  .sy-mday b{font-size:var(--xl);letter-spacing:-.03em;line-height:1;font-variant-numeric:tabular-nums}
+  .sy-mday span{margin-top:6px;opacity:.9}
+  .sy-mask[hidden]{display:none}
+  .ask.full.sy-mask{position:fixed;left:12px;right:12px;bottom:76px;z-index:20;margin:0;width:auto;box-sizing:border-box;box-shadow:0 6px 20px rgba(2,10,22,.25)}
+}
+@media (min-width:1024px){.sy-mask{display:none}}
+@media (max-width:1023px){
+  .sy-macts .msg{grid-column:1/-1;color:#fff;font-weight:700}
+  .sy-mr .p>span{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden;overflow-wrap:anywhere}
+  .sy-mq,.sy-mans,.sy-mneed>b,.sy-mneed>span{overflow-wrap:anywhere}
+  .sy-mneed>span{white-space:pre-line}
+}
