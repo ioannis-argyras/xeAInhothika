@@ -397,6 +397,21 @@ function loadScript(src) {
   return new Promise((ok, fail) => { const s = document.createElement('script'); s.src = src; s.onload = ok; s.onerror = fail; document.head.appendChild(s); });
 }
 
+// Only the part of the picture under the aim box is read, so a sticker next to it is not counted.
+function aimCrop(v) {
+  const vr = v.getBoundingClientRect(), aim = document.querySelector('#plVf .pl-aim');
+  if (!aim || !vr.width || !v.videoWidth) return {x: 0, y: 0, w: v.videoWidth, h: v.videoHeight};
+  const ar = aim.getBoundingClientRect();
+  const k = Math.max(vr.width / v.videoWidth, vr.height / v.videoHeight);
+  const ox = (v.videoWidth * k - vr.width) / 2, oy = (v.videoHeight * k - vr.height) / 2;
+  const m = 0.08 * ar.width;
+  let x = (ar.left - m - vr.left + ox) / k, y = (ar.top - m - vr.top + oy) / k;
+  let w = (ar.width + 2 * m) / k, h = (ar.height + 2 * m) / k;
+  x = Math.max(0, x); y = Math.max(0, y);
+  w = Math.min(v.videoWidth - x, w); h = Math.min(v.videoHeight - y, h);
+  return {x: Math.round(x), y: Math.round(y), w: Math.round(w), h: Math.round(h)};
+}
+
 async function nativeDetector() {
   if (!('BarcodeDetector' in window)) return null;
   try {
@@ -404,7 +419,13 @@ async function nativeDetector() {
     const want = ['ean_13', 'ean_8', 'upc_a', 'upc_e', 'code_128'].filter(f => have.includes(f));
     if (!want.length) return null;
     const det = new BarcodeDetector({formats: want});
-    return async v => { const r = await det.detect(v); return r.length ? r[0].rawValue : null; };
+    const c = document.createElement('canvas'), ctx = c.getContext('2d');
+    return async v => {
+      if (!v.videoWidth) return null;
+      const a = aimCrop(v); if (a.w < 8 || a.h < 8) return null;
+      c.width = a.w; c.height = a.h; ctx.drawImage(v, a.x, a.y, a.w, a.h, 0, 0, a.w, a.h);
+      const r = await det.detect(c); return r.length ? r[0].rawValue : null;
+    };
   } catch (e) { return null; }
 }
 
@@ -416,8 +437,9 @@ async function zxingDetector() {
   const opts = {formats: ['EAN13', 'EAN8', 'UPCA', 'UPCE', 'Code128'], tryHarder: true, maxNumberOfSymbols: 1};
   return async v => {
     if (!v.videoWidth) return null;
-    const w = Math.min(1280, v.videoWidth), h = Math.round(v.videoHeight * w / v.videoWidth);
-    c.width = w; c.height = h; ctx.drawImage(v, 0, 0, w, h);
+    const a = aimCrop(v); if (a.w < 8 || a.h < 8) return null;
+    const w = Math.min(1280, a.w), h = Math.round(a.h * w / a.w);
+    c.width = w; c.height = h; ctx.drawImage(v, a.x, a.y, a.w, a.h, 0, 0, w, h);
     const r = await ZXingWASM.readBarcodes(ctx.getImageData(0, 0, w, h), opts);
     const ok = r.find(x => x.isValid && x.text); return ok ? ok.text : null;
   };
