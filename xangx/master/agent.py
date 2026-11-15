@@ -411,10 +411,10 @@ def _tell_payments_due(conn, findings, day_start, today):
         who = names["supplier"].get(item["supplier_id"]) or str(item["supplier_id"])
         amount = format_eur(item["amount_cents"] or 0)
         if item["due_on"] == today:
-            text = f"Σήμερα λήγει η πληρωμή {amount} στον {who} ({number})"
+            text = f"Σήμερα λήγει η πληρωμή {amount} προς {who} ({number})"
         else:
             day = "/".join(reversed(item["due_on"].split("-")))
-            text = f"Έληξε στις {day} η πληρωμή {amount} στον {who} ({number})"
+            text = f"Έληξε στις {day} η πληρωμή {amount} προς {who} ({number})"
         append_event(
             conn, type="notification.sent", actor="master",
             payload={"channel": "all", "text": text},

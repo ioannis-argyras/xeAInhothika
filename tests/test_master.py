@@ -435,7 +435,7 @@ class PaymentsDueTest(MasterTestCase):
         self.remind("A-9", "2999-01-01")
         agent.morning_check(self.conn)
         agent.morning_check(self.conn)
-        self.assertEqual(self.told(), ["Σήμερα λήγει η πληρωμή 159,29 € στον Διανομές Υμηττού (A-2271)"])
+        self.assertEqual(self.told(), ["Σήμερα λήγει η πληρωμή 159,29 € προς Διανομές Υμηττού (A-2271)"])
         findings = read_events(self.conn, types=["check.morning_done"])[0].payload["findings"]
         self.assertIn({"type": "payment_due", "ref": "A-2271"}, findings)
 
@@ -445,7 +445,7 @@ class PaymentsDueTest(MasterTestCase):
         append_event(self.conn, type="payment.recorded", actor="owner",
                      payload={"invoice_id": "A-2", "method": "bank", "amount_cents": 15929})
         agent.morning_check(self.conn)
-        self.assertEqual(self.told(), ["Έληξε στις 10/11/2026 η πληρωμή 159,29 € στον Διανομές Υμηττού (A-1)"])
+        self.assertEqual(self.told(), ["Έληξε στις 10/11/2026 η πληρωμή 159,29 € προς Διανομές Υμηττού (A-1)"])
 
     def test_telegram_asks_with_four_buttons_and_records_the_answer(self):
         append_event(self.conn, type="payment.asked", actor="accountant", payload={
