@@ -12,12 +12,12 @@ from datetime import date, datetime
 
 import fastapi
 
-from xangx.accountant.core import credit_details
 from xangx.master.tools import greek_day_start_utc, greek_offset
 from xangx.screen.api_b1 import (
     TASK_TYPES, _bundles, _db, _hhmm, _is_task, _label, _local, _reference, _since, _team,
     invoices_today,
 )
+from xangx.screen.credit_box import credit_boxes
 from xangx.screen.describe import describe, load_names
 from xangx.shared import undo, views
 from xangx.shared.events import read_events
@@ -190,43 +190,6 @@ def _last_before(conn, day_start, until_id, last):
     return {key: (out[key] if last[key] is None else None) for key in MEMBERS}
 
 
-def _credit(conn, until_id, bundles):
-    """approval_id -> what the credit request says, for each pending request_credit."""
-    names_product = load_names(conn)["product"]
-    out = {}
-    for e in views.pending_approvals(conn, until_id=until_id):
-        p = e.payload
-        if p.get("action") != "request_credit":
-            continue
-        ref = str(p.get("ref") or "")
-        invoice_id = (p.get("args") or {}).get("invoice_id") or (
-            ref[len("invoice:"):] if ref.startswith("invoice:") else None)
-        d = credit_details(conn, invoice_id) if invoice_id else None
-        matched = (bundles.get(invoice_id) or {}).get("matched")
-        if d is None or matched is None:
-            continue
-        shortages = [i for i in matched.payload.get("issues", []) if i.get("kind") == "shortage"]
-        if not shortages:
-            continue
-        s = shortages[0]
-        missing = s["expected"] - s["actual"]
-        row = conn.execute("SELECT vat_rate FROM products WHERE id = ?", (s["product_id"],)).fetchone()
-        out[p.get("approval_id")] = {
-            "invoice_id": invoice_id,
-            "label": _label(bundles.get(invoice_id, {}), invoice_id),
-            "supplier": d["supplier"]["name"],
-            "subject": d["subject"],
-            "amount_cents": d["amount_cents"],
-            "product": names_product.get(s["product_id"]) or str(s["product_id"]),
-            "more": len(shortages) - 1,
-            "order_id": matched.payload.get("order_id"),
-            "expected": s["expected"], "actual": s["actual"], "missing": missing,
-            "unit_cents": round(s["amount_cents"] / missing) if missing else 0,
-            "vat_rate": int(row["vat_rate"]) if row else 0,
-        }
-    return out
-
-
 def _recent_and_month(conn, until_id, day_start, today, bundles):
     """The 3 latest invoices read before today, and this month's invoices (by invoice date)."""
     latest = {}
@@ -279,7 +242,7 @@ def home(until_id: int | None = None):
         last = _last(conn, day_start, until_id)
         return {
             "today": today.isoformat(),
-            "credit": _credit(conn, until_id, bundles),
+            "credit": credit_boxes(conn, until_id, bundles),
             "sales": _sales(conn, until_id),
             "stock": _stock(conn, until_id, today),
             "order": _order(conn, until_id, suppliers),
