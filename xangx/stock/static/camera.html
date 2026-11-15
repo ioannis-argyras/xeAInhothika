@@ -5,35 +5,69 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Κάμερα ραφιού · Xangxothaika</title>
 <link rel="stylesheet" href="/static/vendor/phosphor/style.css">
+<link rel="stylesheet" href="/static/vendor/phosphor/bold/style.css">
+<link rel="stylesheet" href="/static/vendor/phosphor/fill/style.css">
 <link rel="stylesheet" href="/static/app.css">
+<link rel="stylesheet" href="/static/arxiki.css">
 <link rel="stylesheet" href="/stock/style.css">
 </head>
 <body>
-<div class="page">
-  <div class="band"><div class="in w820">
+<div class="banner" id="paused-banner" role="status" hidden>Όλες οι ενέργειες είναι σε παύση. Πάτα «Συνέχισε» για να ξαναρχίσουν.</div>
+<div class="shell">
+<header class="top">
+  <a class="brand" href="/"><b>Xangxothaika</b><span>Mini Market 24/7 · Παγκράτι</span></a>
+  <nav class="links" aria-label="Κύρια">
+    <a href="/">Σήμερα</a><a href="/#synomilia">Συνομιλία</a><a href="/static/pages/ergasies.html">Εργασίες</a><a href="/static/pages/timologia.html">Τιμολόγια</a><a class="on" href="/stock/camera" aria-current="page">Ράφι</a><a href="/static/pages/mixani.html">Ιστορικό</a>
+  </nav>
+  <div class="right">
+    <span class="live"><i id="live-dot"></i><span id="live-text">Σύνδεση…</span></span>
+    <button class="btn qd" id="stop-btn" type="button"><i class="ph ph-pause"></i><span>Παύση όλων</span></button>
+    <button class="ibtn" id="stop-ibtn" type="button" aria-label="Παύση όλων"><i class="ph ph-pause"></i></button>
+  </div>
+</header>
+
+<section id="s-km" class="screen on" aria-labelledby="title">
+  <div class="band km-band"><div class="in">
     <div>
-      <div class="kick"><a class="back" href="/"><i class="ph ph-caret-left"></i>Πίσω</a><span><i class="ph ph-device-mobile-camera"></i> <span id="kick">Κάμερα ραφιού</span></span></div>
+      <div class="kick"><i class="ph ph-camera"></i><span id="kick">Μαγαζί · Κάμερα ραφιού</span></div>
       <h1 id="title">Κάμερα ραφιού</h1>
-      <p class="trial" id="trial" hidden>Δοκιμή · δεν αποθηκεύεται τίποτα</p>
+      <p class="lead" id="lead" hidden></p>
+      <p class="km-trial" id="trial" hidden>Δοκιμή · δεν γράφεται τίποτα</p>
+    </div>
+    <div id="km-slot-d"><div class="km-act" id="km-act">
+      <button class="btn yes km-shot" id="now" type="button"><i class="ph-bold ph-camera"></i>Φωτογραφία τώρα</button>
+      <span class="km-next" id="next" hidden>Η επόμενη μόνη της σε <b id="nextN">30″</b></span>
+    </div></div>
+  </div></div>
+  <div class="wrap km-wrap"><div class="km-g">
+    <div class="km-vf" aria-label="Ζωντανή εικόνα της κάμερας">
+      <div class="km-cam"><video id="v" autoplay playsinline muted></video></div>
+      <div class="km-st" id="strip"><span class="km-dot"></span><b>Ζωντανά</b><span id="st">Ανοίγω την κάμερα…</span></div>
+    </div>
+    <div id="km-slot-m"></div>
+    <div class="stack km-stack">
+      <section class="card km-res" aria-live="polite">
+        <div class="hd"><b><i class="ph ph-arrows-down-up"></i>Τι άλλαξε</b><span class="r" id="when"></span></div>
+        <div class="km-rows" id="res"><div class="km-same"><i class="ph ph-camera"></i><div><b>Δεν έχει τραβηχτεί ακόμα.</b></div></div></div>
+        <div class="cf"><span class="m">Ό,τι πάρουν το βλέπει και η αρχική.</span><a class="lk" href="/">Αρχική<i class="ph ph-arrow-right"></i></a></div>
+      </section>
+      <section class="card km-ways">
+        <div class="hd"><b><i class="ph ph-sliders-horizontal"></i>Άλλοι τρόποι</b></div>
+        <div class="km-way"><span id="autoLabel"><span class="km-d">Τραβά μόνη της κάθε 30″</span><span class="km-mm">Μόνη της κάθε 30″</span></span><button class="km-sw" id="auto" type="button" role="switch" aria-checked="true" aria-labelledby="autoLabel"></button></div>
+        <div class="km-way"><span class="km-d">Φωτογραφία από τη συλλογή</span><label class="btn q km-q"><i class="ph ph-image"></i><span class="km-d">Διάλεξε</span><span class="km-mm">Συλλογή</span><input type="file" id="file" accept="image/*" hidden></label></div>
+      </section>
     </div>
   </div></div>
-  <div class="wrap">
-    <div class="row2 g-cam">
-      <div class="vf"><video id="v" autoplay playsinline muted></video><span class="ts" id="st">Ανοίγω την κάμερα…</span></div>
-      <div class="col">
-        <section class="card">
-          <div style="padding:20px"><button class="btn yes wide" id="now" style="height:56px"><i class="ph ph-camera"></i>Φωτογραφία τώρα</button></div>
-          <div class="tog"><span id="autoLabel">Αυτόματα κάθε 30″</span><button class="sw" id="auto" role="switch" aria-checked="true" aria-labelledby="autoLabel"></button></div>
-          <div class="tog"><span>Από τη συλλογή</span><label class="btn q" style="height:44px"><i class="ph ph-image"></i>Διάλεξε<input type="file" id="file" accept="image/*" hidden></label></div>
-        </section>
-        <section class="card" aria-live="polite">
-          <div class="hd"><b><i class="ph ph-eye"></i>Τελευταία φωτογραφία</b><span class="m" id="when"></span></div>
-          <div id="res"><div class="res"><span class="m">Δεν έχει τραβηχτεί ακόμα.</span></div></div>
-        </section>
-      </div>
-    </div>
-  </div>
+</section>
 </div>
+
+<nav class="tabs" aria-label="Καρτέλες">
+  <a href="/"><i class="ph ph-sun-horizon"></i>Σήμερα</a>
+  <a href="/#synomilia"><i class="ph ph-chat-circle"></i>Συνομιλία</a>
+  <a href="/static/pages/ergasies.html"><i class="ph ph-list-checks"></i>Εργασίες</a>
+  <a href="/static/pages/timologia.html"><i class="ph ph-receipt"></i>Τιμολόγια</a>
+  <a class="on" href="/stock/camera" aria-current="page"><i class="ph-fill ph-package"></i>Ράφι</a>
+</nav>
 <script>
 const $ = id => document.getElementById(id);
 const params = new URLSearchParams(location.search);
@@ -42,11 +76,92 @@ const cam = params.get('cam') || 'cam-1';
 // previous photo stays as it was.
 const practice = params.get('dokimi') === '1';
 $('trial').hidden = !practice;
-const v = $('v'); let timer = null, busy = false;
-const say = t => $('st').textContent = t;
-$('kick').textContent = practice ? 'Δοκιμή κάμερας ραφιού' : 'Κάμερα ραφιού';
+const v = $('v');
+let timer = null, busy = false, nextAt = 0;
+let camProblem = '', sendProblem = '';
+$('kick').textContent = practice ? 'Μαγαζί · Δοκιμή κάμερας ραφιού' : 'Μαγαζί · Κάμερα ραφιού';
+
+function el(tag, cls, text) {
+  const n = document.createElement(tag);
+  if (cls) n.className = cls;
+  if (text != null) n.textContent = text;
+  return n;
+}
+function icon(kind, name) { return el('i', kind + ' ph-' + name); }
+const autoOn = () => $('auto').getAttribute('aria-checked') === 'true';
+
+// ---- shell: «Ζωντανά» and pause (same as the Εργασίες page) ----
+let paused = false;
+let liveText = 'Σύνδεση…', liveOn = false;
+function drawLive() {
+  $('live-dot').className = liveOn ? 'on' : '';
+  const hm = new Date().toLocaleTimeString('el-GR', {hour12: false, hour: '2-digit', minute: '2-digit'});
+  $('live-text').textContent = liveOn ? liveText + ' · ' + hm : liveText;
+}
+function setLive(on, text) { liveOn = on; liveText = text; drawLive(); }
+function setPaused(p) {
+  paused = !!p;
+  $('paused-banner').hidden = !paused;
+  const label = paused ? 'Συνέχισε' : 'Παύση όλων', icn = paused ? 'play' : 'pause';
+  $('stop-btn').replaceChildren(icon('ph', icn), el('span', null, label));
+  $('stop-ibtn').replaceChildren(icon('ph', icn));
+  $('stop-ibtn').setAttribute('aria-label', label);
+}
+function togglePause() {
+  $('stop-btn').disabled = $('stop-ibtn').disabled = true;
+  fetch(paused ? '/api/resume' : '/api/pause', {method: 'POST'}).then(r => r.json()).then(d => {
+    if (d && d.ok) setPaused(d.paused);
+  }).catch(() => {}).then(() => { $('stop-btn').disabled = $('stop-ibtn').disabled = false; });
+}
+$('stop-btn').addEventListener('click', togglePause);
+$('stop-ibtn').addEventListener('click', togglePause);
+function listen() {
+  fetch('/api/screen/tasks').then(r => r.ok ? r.json() : null).then(d => { if (d) setPaused(d.paused); }).catch(() => {});
+  if (!window.EventSource) { setLive(true, 'Ζωντανά'); return; }
+  const es = new EventSource('/api/events/stream');
+  es.onopen = () => setLive(true, 'Ζωντανά');
+  es.onmessage = m => {
+    try {
+      const ev = JSON.parse(m.data);
+      if (ev.type === 'system.paused') setPaused(true);
+      if (ev.type === 'system.resumed') setPaused(false);
+    } catch (e) { /* one bad message does not stop the page */ }
+  };
+  es.onerror = () => setLive(false, 'Σύνδεση…');
+}
+listen();
+
+// One yellow button: under the title on a computer, under the frame on a phone.
+const mq = window.matchMedia('(max-width:1023px)');
+function place() { ($('km-slot-' + (mq.matches ? 'm' : 'd'))).appendChild($('km-act')); }
+mq.addEventListener('change', place); place();
+
+// ---- title and lead ----
+let shelfRows = 0;
+function lead() {
+  const p = $('lead');
+  if (!shelfRows) { p.hidden = true; return; }
+  p.hidden = false; p.replaceChildren();
+  p.append('Βλέπει ', el('b', null, shelfRows + (shelfRows === 1 ? ' σειρά' : ' σειρές')),
+           autoOn() ? '. Τραβά μόνη της κάθε 30″, ή πάτα εσύ.' : '. Πάτα εσύ για φωτογραφία.');
+}
 fetch('/stock/camera/shelf?cam=' + encodeURIComponent(cam)).then(r => r.ok ? r.json() : null)
-  .then(j => { if (j) { $('title').textContent = j.name; document.title = j.name + ' · Κάμερα ραφιού'; } }).catch(() => {});
+  .then(j => { if (j) { $('title').textContent = j.name; document.title = j.name + ' · Κάμερα ραφιού'; shelfRows = j.positions || 0; lead(); } }).catch(() => {});
+
+// ---- status strip ----
+function render() {
+  let text, bad = false;
+  if (sendProblem) { text = sendProblem; bad = true; }
+  else if (camProblem) { text = camProblem; bad = true; }
+  else if (busy) text = 'Στέλνω και ρωτάω τι άλλαξε…';
+  else if (autoOn() && nextAt) text = 'η επόμενη μόνη της σε ' + Math.max(0, Math.ceil((nextAt - Date.now()) / 1000)) + '″';
+  else text = 'Η κάμερα είναι έτοιμη.';
+  $('st').textContent = text;
+  $('strip').classList.toggle('bad', bad);
+  $('next').hidden = !(autoOn() && nextAt);
+  $('nextN').textContent = Math.max(0, Math.ceil((nextAt - Date.now()) / 1000)) + '″';
+}
+setInterval(() => { render(); drawLive(); }, 1000);
 
 // Camera errors in plain words (the browser gives only an English name).
 function cameraProblem(name) {
@@ -58,11 +173,12 @@ function cameraProblem(name) {
 }
 
 async function start() {
-  if (!window.isSecureContext) { say('Χωρίς HTTPS ο browser δεν δίνει κάμερα. Χρησιμοποίησε «Από τη συλλογή».'); return; }
+  if (!window.isSecureContext) { camProblem = 'Χωρίς HTTPS ο browser δεν δίνει κάμερα. Χρησιμοποίησε «Από τη συλλογή».'; render(); return; }
   try {
     v.srcObject = await navigator.mediaDevices.getUserMedia({video: {facingMode: {ideal: 'environment'}, width: {ideal: 1920}}, audio: false});
-    say('Η κάμερα είναι έτοιμη.');
-  } catch (e) { say(cameraProblem(e.name)); }
+    camProblem = '';
+  } catch (e) { camProblem = cameraProblem(e.name); }
+  render();
 }
 
 // Shrink to 1024 px wide, JPEG quality 0.8, then base64.
@@ -81,52 +197,83 @@ async function fromFile(file) {
   return toB64(img, img.width, img.height);
 }
 
-function line(bold, muted) {
-  const d = document.createElement('div'); d.className = 'res';
-  if (bold) { const b = document.createElement('b'); b.textContent = bold; d.appendChild(b); }
-  if (muted) { const m = document.createElement('span'); m.className = 'm'; m.textContent = muted; d.appendChild(m); }
+// ---- what changed ----
+// «Ψυγείο 1 · 1η σειρά»: the row number is the one before «η σειρά»; the label is the last part.
+function rowNumber(name) {
+  const m = /(\d+)\s*η\s+σειρά/.exec(name) || /(\d+)(?!.*\d)/.exec(name);
+  return m ? m[1] : '•';
+}
+function rowLabel(name) { const p = String(name).split(' · '); return p[p.length - 1]; }
+function changedRow(r, sign, count, word) {
+  const row = el('div', 'km-r chg');
+  row.appendChild(el('span', 'km-n', rowNumber(r.position_name)));
+  const t = el('div', 't');
+  t.appendChild(el('b', null, r.product_name));
+  t.appendChild(el('span', null, rowLabel(r.position_name)));
+  if (r.confidence !== 'high') {
+    const d = el('span', 'km-doubt'); d.append(icon('ph', 'question'), 'δεν είμαι σίγουρος'); t.appendChild(d);
+  }
+  row.appendChild(t);
+  const val = el('div', 'v'); val.append(el('b', null, sign + count), el('span', null, word));
+  row.appendChild(val);
+  return row;
+}
+function same(bold, muted, ic) {
+  const d = el('div', 'km-same'), t = el('div');
+  d.appendChild(icon('ph', ic || 'equals'));
+  t.appendChild(el('b', null, bold));
+  if (muted) t.appendChild(el('span', null, muted));
+  d.appendChild(t);
   return d;
 }
 function show(j) {
   const box = $('res'); box.replaceChildren();
-  if (j.first) { box.appendChild(line(null, 'Πρώτη φωτογραφία: την κρατώ για σύγκριση.')); return; }
-  const moved = (j.results || []).filter(r => r.taken > 0 || r.added > 0);
-  if (!moved.length) { box.appendChild(line(null, 'Καμία αλλαγή στο ράφι.')); return; }
+  if (j.first) { box.appendChild(same('Την κράτησα για σύγκριση. Η επόμενη θα δείξει τι άλλαξε.', '', 'bookmark-simple')); return; }
+  if (j.same) { box.appendChild(same('Ίδια φωτογραφία με την προηγούμενη.', '', 'equals')); return; }
+  const all = j.results || [];
+  const moved = all.filter(r => r.taken > 0 || r.added > 0);
   for (const r of moved) {
-    const parts = [];
-    if (r.taken > 0) parts.push('πήραν ' + r.taken);
-    if (r.added > 0) parts.push('γέμισαν ' + r.added);
-    box.appendChild(line(r.position_name + ': ' + parts.join(', ') + ' ' + r.product_name));
+    if (r.taken > 0) box.appendChild(changedRow(r, '−', r.taken, 'πήραν'));
+    if (r.added > 0) box.appendChild(changedRow(r, '+', r.added, 'γέμισαν'));
+  }
+  const rest = all.filter(r => !(r.taken > 0 || r.added > 0));
+  if (!moved.length) { box.appendChild(same('Καμία αλλαγή στο ράφι.', '', 'equals')); return; }
+  if (rest.length) {
+    box.appendChild(same(rest.length === 1 ? 'Ίδια η άλλη σειρά' : 'Ίδιες οι άλλες ' + rest.length + ' σειρές',
+                         rest.map(r => r.product_name).join(' · ')));
   }
 }
 
 async function send(b64) {
-  if (busy) return; busy = true; $('now').disabled = true;
-  const t0 = Date.now(); say('Στέλνω και ρωτάω τι άλλαξε…');
+  if (busy) return; busy = true; $('now').disabled = true; render();
+  const t0 = Date.now();
   try {
     const r = await fetch('/stock/camera/photo', {method: 'POST', headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({camera_id: cam, image_b64: b64, practice})});
     let j = {};
     try { j = await r.json(); } catch (e) {}
-    if (!r.ok) { say(j.detail || 'Ο server δεν μπόρεσε να τη διαβάσει (σφάλμα ' + r.status + '). Δοκίμασε ξανά.'); return; }
+    if (!r.ok) { sendProblem = j.detail || 'Ο server δεν μπόρεσε να τη διαβάσει (σφάλμα ' + r.status + '). Δοκίμασε ξανά.'; return; }
+    sendProblem = '';
     show(j);
-    const now = new Date().toLocaleTimeString('el-GR', {hour12: false});
-    $('when').textContent = now;
-    say(now + ' · ' + ((Date.now() - t0) / 1000).toFixed(1).replace('.', ',') + '″');
-  } catch (e) { say('Η φωτογραφία δεν έφτασε: χάθηκε η σύνδεση με το μαγαζί. Πάτα ξανά όταν επανέλθει.'); }
-  finally { busy = false; $('now').disabled = false; }
+    const now = new Date().toLocaleTimeString('el-GR', {hour12: false, hour: '2-digit', minute: '2-digit'});
+    $('when').textContent = now + ' · ' + ((Date.now() - t0) / 1000).toFixed(1).replace('.', ',') + '″';
+  } catch (e) { sendProblem = 'Η φωτογραφία δεν έφτασε: χάθηκε η σύνδεση με το μαγαζί. Πάτα ξανά όταν επανέλθει.'; }
+  finally { busy = false; $('now').disabled = false; render(); }
 }
 
-$('now').onclick = () => { try { send(fromCamera()); } catch (e) { say('Σφάλμα: ' + e.message); } };
-$('file').onchange = e => { const f = e.target.files[0]; if (f) fromFile(f).then(send).catch(err => say('Σφάλμα: ' + err.message)); e.target.value = ''; };
+$('now').onclick = () => { try { send(fromCamera()); } catch (e) { sendProblem = 'Σφάλμα: ' + e.message; render(); } };
+$('file').onchange = e => { const f = e.target.files[0]; if (f) fromFile(f).then(send).catch(err => { sendProblem = 'Σφάλμα: ' + err.message; render(); }); e.target.value = ''; };
 function setAuto() {
-  clearInterval(timer);
-  if ($('auto').getAttribute('aria-checked') === 'true') timer = setInterval(() => { try { send(fromCamera()); } catch (e) {} }, 30000);
+  clearInterval(timer); nextAt = 0;
+  if (autoOn()) {
+    nextAt = Date.now() + 30000;
+    timer = setInterval(() => { nextAt = Date.now() + 30000; try { send(fromCamera()); } catch (e) {} }, 30000);
+  }
+  lead(); render();
 }
 if (practice) $('auto').setAttribute('aria-checked', 'false');
 $('auto').onclick = () => {
-  const on = $('auto').getAttribute('aria-checked') !== 'true';
-  $('auto').setAttribute('aria-checked', String(on)); setAuto();
+  $('auto').setAttribute('aria-checked', String(!autoOn())); setAuto();
 };
 start().then(setAuto);
 </script>

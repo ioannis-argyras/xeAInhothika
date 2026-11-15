@@ -56,3 +56,95 @@ dialog .acts{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:18px
   .g-par .got{order:5}
   .band{padding-top:20px}
 }
+
+/* ===== Camera page in design B (approved by Giannis 15/11/2026): design/stadio1-v2/B-kamera. Only km- classes, scoped by #s-km. ===== */
+#s-km{--xl:44px;--l:20px;--gut:40px;--rise:112px;--gap:24px;
+  --km-fr:#06121F;--km-fr2:#0B1E33;--km-chg:#E1F0F1;--km-live:#3CCB7F}
+@media (max-width:1023px){#s-km{--xl:32px;--gut:16px;--rise:64px;--gap:16px}}
+#s-km .km-band{padding-bottom:var(--rise)}
+#s-km .km-band .in{padding-bottom:26px}
+#s-km .km-band>*,#s-km .km-wrap>*{max-width:1344px;margin-left:auto;margin-right:auto}
+
+.km-act{display:flex;flex-direction:column;align-items:flex-end;gap:10px;flex-shrink:0}
+.km-next{color:var(--n4)}
+.km-next b{color:#fff}
+.km-shot{min-height:56px;padding:0 30px;font-size:var(--l)}
+.km-shot i{font-size:22px}
+.km-trial{display:inline-block;margin-top:14px;padding:8px 14px;border-radius:12px;background:var(--m-log);color:#fff;font-weight:700}
+#km-slot-m{display:none}
+
+.km-g{display:grid;grid-template-columns:minmax(0,1fr) var(--col);gap:var(--gap);align-items:start}
+
+/* frame: dark focus surface hanging from the band; the live video fills it */
+.km-vf{position:relative;aspect-ratio:16/9;border-radius:22px;overflow:hidden;
+  background:radial-gradient(120% 90% at 50% 20%,var(--km-fr2) 0%,var(--km-fr) 70%);
+  border:1px solid rgba(211,219,230,.16);box-shadow:var(--sh-stage);display:flex;flex-direction:column}
+.km-cam{position:relative;flex:1;min-height:0}
+.km-cam video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.km-dot{width:10px;height:10px;border-radius:50%;background:var(--km-live);box-shadow:0 0 0 3px rgba(60,203,127,.25);flex-shrink:0}
+.km-st{display:flex;align-items:center;gap:10px;min-height:52px;padding:10px 20px;background:var(--m-apo2);color:#fff;border-top:1px solid rgba(255,255,255,.12)}
+.km-st b{flex-shrink:0}
+.km-st span:last-child{color:var(--n5)}
+.km-st.bad{background:var(--alert)}
+.km-st.bad .km-dot{background:#fff;box-shadow:none}
+.km-st.bad span:last-child{color:#fff}
+
+/* what changed: one line per changed row, the change as a big number with a sign */
+.km-res .hd>b i{color:var(--m-apo)}
+.km-rows{display:flex;flex-direction:column}
+.km-r{display:grid;grid-template-columns:40px minmax(0,1fr) 72px;gap:14px;align-items:center;min-height:68px;padding:10px 20px;border-top:1px solid var(--hair);background:var(--surf)}
+.km-r:first-child{border-top:0}
+.km-r.chg{background:var(--km-chg);box-shadow:inset 5px 0 0 var(--m-apo)}
+.km-n{width:40px;height:40px;border-radius:50%;background:var(--m-apo);color:#fff;font-weight:700;font-size:var(--l);
+  display:flex;align-items:center;justify-content:center;line-height:1;box-shadow:inset 0 1px 0 rgba(255,255,255,.16)}
+.km-r .t{min-width:0}
+.km-r .t b{display:block;line-height:1.3}
+.km-r .t span{display:block;color:var(--muted)}
+.km-r .t .km-doubt{display:flex;align-items:center;gap:6px;margin-top:2px;color:var(--m-log2);font-weight:700}
+.km-doubt i{font-size:18px}
+.km-r .v{display:flex;flex-direction:column;align-items:center;line-height:1}
+.km-r .v b{font-size:var(--xl);letter-spacing:-.03em;color:var(--m-apo2)}
+.km-r .v span{margin-top:4px;color:var(--muted);font-weight:700}
+.km-same{display:grid;grid-template-columns:40px minmax(0,1fr);gap:14px;align-items:center;min-height:60px;padding:10px 20px;border-top:1px solid var(--hair);background:var(--zebra)}
+.km-same:first-child{border-top:0}
+.km-same i{justify-self:center;font-size:22px;color:var(--n3)}
+.km-same b{display:block;line-height:1.3}
+.km-same span{display:block;color:var(--muted)}
+
+/* other ways: switch and a white button in one box */
+.km-way{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:64px;padding:0 20px;border-top:1px solid var(--hair)}
+.km-ways .hd+.km-way{border-top:0}
+.km-mm{display:none}
+.km-sw{width:52px;height:32px;border-radius:999px;background:var(--m-apo);position:relative;flex-shrink:0;border:0;cursor:pointer}
+.km-sw:after{content:"";position:absolute;right:3px;top:3px;width:26px;height:26px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.3)}
+.km-sw[aria-checked="false"]{background:var(--n4)}
+.km-sw[aria-checked="false"]:after{right:auto;left:3px}
+.km-q{min-height:44px;padding:0 16px;font-weight:700}
+
+/* phone: 4:3 frame hanging from the band, the yellow button right under it, then the switch row, then the result */
+@media (max-width:1023px){
+  #s-km .km-band{padding:80px 16px 84px}
+  #s-km .km-band .in{padding-bottom:0;gap:0}
+  #s-km .km-band .in>:first-child{max-width:640px;width:100%;margin:0 auto}
+  #s-km .km-band h1{font-size:var(--xl);margin-top:2px}
+  #s-km .km-band .lead{font-size:var(--s);margin-top:4px}
+  #s-km .km-wrap{margin-top:-68px;padding:0 16px}
+  .km-g{display:flex;flex-direction:column;align-items:stretch;gap:0}
+  .km-stack{display:contents}
+  .km-vf{order:1;aspect-ratio:4/3;border-radius:20px}
+  .km-st{min-height:48px;padding:10px 16px}
+  #km-slot-m{display:block;order:2}
+  #km-slot-m .km-act{align-items:stretch;margin-top:14px}
+  #km-slot-m .km-shot{width:100%}
+  #km-slot-m .km-next{display:none}
+  .km-ways{order:3;flex-direction:row;align-items:center;gap:12px;margin-top:12px;min-height:48px;background:none;border:0;box-shadow:none;overflow:visible}
+  .km-ways .hd,.km-d{display:none}
+  .km-mm{display:inline}
+  .km-ways .km-way{padding:0;min-height:48px;border:0}
+  .km-ways .hd+.km-way{flex:1}
+  .km-ways .hd+.km-way>span{font-weight:700}
+  .km-res{order:4;margin-top:16px;margin-bottom:24px}
+  .km-res .cf{display:none}
+  .km-r{grid-template-columns:40px minmax(0,1fr) 60px;padding:10px 16px}
+}
+@media (prefers-reduced-motion:reduce){.km-sw:after{transition:none}}
