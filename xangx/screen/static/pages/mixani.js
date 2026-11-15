@@ -39,7 +39,6 @@
   var stateTimer = null;
   var stateCache = {};
   var dayState = null;   // the state of the whole day, for the numbers of the lead
-  var paused = false;
   var views = [];
   var reduced = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
@@ -551,40 +550,14 @@
       }
       setMinute(minute);
       /* οι αριθμοί της πρότασης και η παύση: η ζωντανή κατάσταση της μέρας, όχι η παλιά της επανάληψης */
-      getJSON("/api/state").then(function (s) { dayState = s; paintLead(); setPaused(!!s.paused); }).catch(function () { /* το κείμενο μένει χωρίς αριθμούς */ });
+      getJSON("/api/state").then(function (s) { dayState = s; paintLead(); }).catch(function () { /* το κείμενο μένει χωρίς αριθμούς */ });
       return loadState(minute);
     });
   }
 
-  /* ---------- πλήκτρο παύσης και ζωντανή ένδειξη (όπως στην αρχική) ---------- */
-  function setPaused(p) {
-    paused = p;
-    var label = p ? "Συνέχισε" : "Παύση όλων";
-    var icon = "ph ph-" + (p ? "play" : "pause");
-    $("stop-btn").querySelector("span").textContent = label;
-    $("stop-btn").querySelector("i").className = icon;
-    $("stop-ibtn").setAttribute("aria-label", label);
-    $("stop-ibtn").querySelector("i").className = icon;
-    $("paused-banner").hidden = !p;
-  }
-  function togglePause() {
-    post(paused ? "/api/resume" : "/api/pause").then(function (r) { setPaused(!!r.paused); });
-  }
-  $("stop-btn").addEventListener("click", togglePause);
-  $("stop-ibtn").addEventListener("click", togglePause);
-
-  var liveOn = false;
-  function renderLive() {
-    $("live-dot").className = liveOn ? "on" : "";
-    var now = new Date().toLocaleTimeString("el-GR", {hour: "2-digit", minute: "2-digit", hour12: false,
-                                                       timeZone: "Europe/Athens"});
-    $("live-text").textContent = liveOn ? "Ζωντανά · " + now : "Χωρίς σύνδεση";
-  }
   var reloadTimer = null;
   function connectStream() {
     var es = new EventSource("/api/events/stream");
-    es.onopen = function () { liveOn = true; renderLive(); };
-    es.onerror = function () { liveOn = false; renderLive(); };
     es.onmessage = function (msg) {
       var e;
       try { e = JSON.parse(msg.data); } catch (err) { return; }
@@ -593,7 +566,6 @@
       reloadTimer = setTimeout(function () { loadReplay(true); }, 400);
     };
   }
-  setInterval(renderLive, 30000);
   /* το «τώρα» προχωρά και όταν δεν έρχεται γεγονός */
   setInterval(function () {
     if (playing || dragging) return;
