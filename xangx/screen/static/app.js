@@ -66,9 +66,27 @@ function route() {
     a.classList.toggle("on", on);
     a.querySelector("i").className = (on ? "ph-fill" : "ph") + " ph-" + a.dataset.i;
   });
+  syncMenu();
   window.scrollTo(0, 0);
 }
+// The left menu and the phone tab bar are built by shell.js (deferred), so this also runs once after it.
+function syncMenu() {
+  document.querySelectorAll(".side a.nv").forEach((a) => {
+    const on = a.getAttribute("href") === (current === "synomilia" ? "/#synomilia" : "/");
+    a.classList.toggle("on", on);
+    if (on) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current");
+  });
+  const title = document.querySelector(".mtop > b");
+  if (title) title.textContent = current === "synomilia" ? "Συνομιλία" : "Αρχική";
+  document.querySelectorAll(".tabbar a.tb").forEach((a) => {
+    if (a.getAttribute("href") !== "/") return;
+    const on = current === "arxiki";
+    a.classList.toggle("on", on);
+    if (on) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current");
+  });
+}
 window.addEventListener("hashchange", route);
+if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", syncMenu);
 
 /* ---------- σκηνή της απόφασης ---------- */
 let paused = false;
@@ -255,24 +273,7 @@ function renderStages(state) {
   syDecision(first || null);
 }
 
-/* ---------- κεφαλίδα ---------- */
-function renderPaused() {
-  const label = paused ? "Συνέχισε" : "Παύση όλων";
-  const name = paused ? "play" : "pause";
-  const btn = $("stop-btn");
-  btn.querySelector("span").textContent = label;
-  btn.querySelector("i").className = "ph ph-" + name;
-  $("stop-ibtn").setAttribute("aria-label", label);
-  $("stop-ibtn").querySelector("i").className = "ph ph-" + name;
-  $("paused-banner").hidden = !paused;
-}
-
 let liveOn = false;
-function renderLive() {
-  $("live-dot").className = liveOn ? "on" : "";
-  $("live-text").textContent = liveOn
-    ? "Ζωντανά" + (lastState ? " · " + lastState.day.now : "") : "Ξανασυνδέομαι…";
-}
 
 function plural(n, one, many) { return n + " " + (n === 1 ? one : many); }
 
@@ -306,8 +307,6 @@ function render(state) {
   renderStages(state);
   window.xangxHome(state);
   renderRounds(state.rounds || []);
-  renderPaused();
-  renderLive();
 }
 
 async function refresh() {
@@ -331,20 +330,16 @@ async function togglePause() {
   } catch (e) { /* the refresh below shows the real state */ }
   refresh();
 }
-$("stop-btn").addEventListener("click", togglePause);
-$("stop-ibtn").addEventListener("click", togglePause);
 
 /* ---------- ζωντανή ροή ---------- */
 function connectStream() {
   const es = new EventSource("/api/events/stream");
   es.onopen = () => {
     liveOn = true;
-    renderLive();
     refreshSoon();
   };
   es.onerror = () => {
     liveOn = false;
-    renderLive();
   };
   es.onmessage = (msg) => {
     let e;
