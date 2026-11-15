@@ -302,7 +302,9 @@
   }
   function allRow(r, today, mobile, inToday) {
     var need = r.level === "need";
-    var a = el("a", "tr2" + (need ? " bad hot" : ""));
+    var ps = r.pay && r.pay.state;
+    var a = el("a", "tr2" + (need ? " bad hot" : "") + " " +
+      (need ? "tb-s-need" : r.level === "warn" ? "tb-s-bad" : ps === "due" ? "tb-s-due" : ps === "paid" ? "tb-s-paid" : "tb-s-ok"));
     a.href = href(r.invoice_id);
     var who = r.supplier || "Δεν διαβάστηκε ακόμα";
     var num = el("span", "num");
