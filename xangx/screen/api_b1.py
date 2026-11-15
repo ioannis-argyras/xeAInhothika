@@ -368,15 +368,15 @@ def _checks(b, names, supplier=None):
         name = names["product"].get(p.get("product_id")) or "Είδος"
         out.append({"ok": False, "lead": f"{name} {_pct(p['pct'])}.",
                     "text": f"Ήταν {format_eur(p['old_cents'])}, τώρα {format_eur(p['new_cents'])}.",
-                    "value": ""})
+                    "value": "", "kind": "price"})
     for e in b["flags"]:
         out.append({"ok": False, "text": _mask(str(e.payload.get("note") or "")), "value": ""})
     if b.get("reminder"):
         out.append({"ok": True, "text": "Υπενθύμιση πληρωμής " + _ddmmyyyy(b["reminder"].payload.get("due_on")),
-                    "value": ""})
+                    "value": "", "kind": "reminder"})
     if b.get("credit"):
         out.append({"ok": True, "text": "Ζητήθηκε πιστωτικό "
-                    + format_eur(b["credit"].payload.get("amount_cents") or 0), "value": ""})
+                    + format_eur(b["credit"].payload.get("amount_cents") or 0), "value": "", "kind": "credit"})
     return out
 
 

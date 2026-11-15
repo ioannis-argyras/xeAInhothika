@@ -878,14 +878,18 @@
     row.append(s, el("span", null, withValue && c.value ? String(c.value) : ""));
     return row;
   }
+  var NOT_A_CHECK = { price: 1, reminder: 1, credit: 1 };
+  function checkList(d) {
+    return (d.checks || []).filter(function (c) { return !NOT_A_CHECK[c.kind]; });
+  }
   function checksDesk(d) {
-    var card = $("d-checks"), list = d.checks || [];
+    var card = $("d-checks"), list = checkList(d);
     card.hidden = !list.length;
     clearCard(card);
     list.forEach(function (c) { card.appendChild(checkRow(c, true)); });
   }
   function checksMob(d) {
-    var list = d.checks || [];
+    var list = checkList(d);
     if (!list.length) return null;
     var bad = list.filter(function (c) { return !c.ok; }), ok = list.filter(function (c) { return c.ok; });
     var card = el("section", "card mt16");
