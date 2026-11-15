@@ -12,13 +12,14 @@ from datetime import date, datetime
 
 import fastapi
 
+from xangx.accountant.core import credit_details
 from xangx.master.tools import greek_day_start_utc, greek_offset
 from xangx.screen.api_b1 import (
-    TASK_TYPES, _bundles, _db, _hhmm, _is_task, _label, _reference, _since, _team,
+    TASK_TYPES, _bundles, _db, _hhmm, _is_task, _label, _local, _reference, _since, _team,
     invoices_today,
 )
 from xangx.screen.describe import describe, load_names
-from xangx.shared import undo
+from xangx.shared import undo, views
 from xangx.shared.events import read_events
 from xangx.stock.trends import sales_trends
 
@@ -29,6 +30,9 @@ MEMBERS = ("master", "stock", "orders", "invoices", "accountant")
 UNDO_MAX = 3
 EXPIRING_MAX = 3
 DOCS_MAX = 3
+RECENT_MAX = 3
+MONTHS = ("Ιανουάριος", "Φεβρουάριος", "Μάρτιος", "Απρίλιος", "Μάιος", "Ιούνιος", "Ιούλιος",
+          "Αύγουστος", "Σεπτέμβριος", "Οκτώβριος", "Νοέμβριος", "Δεκέμβριος")
 
 
 def _first_word(name):
@@ -113,7 +117,7 @@ def _reminders(conn, until_id, today, now, bundles, suppliers):
     undone = undo.undone_ids(conn, until_id)
     paid = {e.payload.get("invoice_id")
             for e in read_events(conn, until_id=until_id, types=["payment.recorded"])
-            if e.payload.get("method") != "not_yet"}
+            if e.payload.get("method") != "not_yet" and e.id not in undone}
     index = undo.Index(conn, until_id)
     out = []
     for e in read_events(conn, until_id=until_id, types=["payment.reminder_set"]):
@@ -169,6 +173,85 @@ def _last(conn, day_start, until_id):
     return out
 
 
+def _last_before(conn, day_start, until_id, last):
+    """The last job before today for each member who has none today: {"date": "DD/MM", "text"}."""
+    out = {key: None for key in MEMBERS}
+    if all(last[key] is not None for key in MEMBERS):
+        return out
+    names = load_names(conn)
+    for e in read_events(conn, until_id=until_id, types=TASK_TYPES + ("agent.planned",)):
+        key, _ = _team(e)
+        if e.at >= day_start or not _is_task(e) or key not in out:
+            continue
+        text = "Πρωινός έλεγχος" if e.type == "check.morning_done" else describe(e, names)
+        out[key] = {"date": _local(e.at).strftime("%d/%m"), "text": text}
+    return {key: (out[key] if last[key] is None else None) for key in MEMBERS}
+
+
+def _credit(conn, until_id, bundles):
+    """approval_id -> what the credit request says, for each pending request_credit."""
+    names_product = load_names(conn)["product"]
+    out = {}
+    for e in views.pending_approvals(conn, until_id=until_id):
+        p = e.payload
+        if p.get("action") != "request_credit":
+            continue
+        ref = str(p.get("ref") or "")
+        invoice_id = (p.get("args") or {}).get("invoice_id") or (
+            ref[len("invoice:"):] if ref.startswith("invoice:") else None)
+        d = credit_details(conn, invoice_id) if invoice_id else None
+        matched = (bundles.get(invoice_id) or {}).get("matched")
+        if d is None or matched is None:
+            continue
+        shortages = [i for i in matched.payload.get("issues", []) if i.get("kind") == "shortage"]
+        if not shortages:
+            continue
+        s = shortages[0]
+        missing = s["expected"] - s["actual"]
+        row = conn.execute("SELECT vat_rate FROM products WHERE id = ?", (s["product_id"],)).fetchone()
+        out[p.get("approval_id")] = {
+            "invoice_id": invoice_id,
+            "label": _label(bundles.get(invoice_id, {}), invoice_id),
+            "supplier": d["supplier"]["name"],
+            "subject": d["subject"],
+            "amount_cents": d["amount_cents"],
+            "product": names_product.get(s["product_id"]) or str(s["product_id"]),
+            "more": len(shortages) - 1,
+            "order_id": matched.payload.get("order_id"),
+            "expected": s["expected"], "actual": s["actual"], "missing": missing,
+            "unit_cents": round(s["amount_cents"] / missing) if missing else 0,
+            "vat_rate": int(row["vat_rate"]) if row else 0,
+        }
+    return out
+
+
+def _recent_and_month(conn, until_id, day_start, today, bundles):
+    """The 3 latest invoices read before today, and this month's invoices (by invoice date)."""
+    latest = {}
+    for e in read_events(conn, until_id=until_id, types=["invoice.read"]):
+        latest[e.payload.get("invoice_id")] = e
+    before = sorted((e for e in latest.values() if e.at < day_start),
+                    key=lambda e: (e.at, e.id), reverse=True)[:RECENT_MAX]
+    recent = [{"label": _label(bundles.get(e.payload.get("invoice_id"), {}), e.payload.get("invoice_id")),
+               "date": _local(e.at).date().isoformat()} for e in before]
+    prefix = today.strftime("%Y-%m")
+    mine = [e for e in latest.values() if str(e.payload.get("date") or "")[:7] == prefix]
+    month = {"name": MONTHS[today.month - 1], "count": len(mine),
+             "total_cents": sum(e.payload.get("total_cents") or 0 for e in mine)}
+    return recent, month
+
+
+def _last_paid(conn, until_id, bundles):
+    undone = undo.undone_ids(conn, until_id)
+    for e in reversed(read_events(conn, until_id=until_id, types=["payment.recorded"])):
+        if e.payload.get("method") == "not_yet" or e.id in undone:
+            continue
+        iid = e.payload.get("invoice_id")
+        return {"label": _label(bundles.get(iid, {}), iid), "amount_cents": e.payload.get("amount_cents"),
+                "date": _local(e.at).date().isoformat()}
+    return None
+
+
 @router.get("/api/screen/home")
 def home(until_id: int | None = None):
     conn = _db()
@@ -190,7 +273,11 @@ def home(until_id: int | None = None):
             return {k: r[k] for k in keys}
 
         keys = ("label", "supplier", "amount_cents", "due_on", "days")
+        recent, month = _recent_and_month(conn, until_id, day_start, today, bundles)
+        last = _last(conn, day_start, until_id)
         return {
+            "today": today.isoformat(),
+            "credit": _credit(conn, until_id, bundles),
             "sales": _sales(conn, until_id),
             "stock": _stock(conn, until_id, today),
             "order": _order(conn, until_id, suppliers),
@@ -198,12 +285,15 @@ def home(until_id: int | None = None):
                 "need_you": sum(1 for i in invoices if i["level"] != "ok"),
                 "today": len(invoices),
                 "docs": [{"label": i["label"], "need": i["level"] != "ok"}
-                         for i in invoices[:DOCS_MAX]]},
-            "payments": {"next": pick(reminders[0], *keys) if reminders else None},
+                         for i in invoices[:DOCS_MAX]],
+                "recent": recent, "month": month},
+            "payments": {"next": pick(reminders[0], *keys) if reminders else None,
+                         "last_paid": _last_paid(conn, until_id, bundles)},
             "undo": {"can_total": max(can_total, len(items)),
                      "items": [{"event_id": r["event_id"], **pick(r, *keys)} for r in items]},
             "iban": _iban(conn, day_start, until_id, bundles, suppliers),
-            "last": _last(conn, day_start, until_id),
+            "last": last,
+            "last_before": _last_before(conn, day_start, until_id, last),
         }
     finally:
         conn.close()

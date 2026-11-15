@@ -6,17 +6,22 @@ import tempfile
 import unittest
 from unittest import mock
 
+from datetime import datetime, timedelta, timezone
+
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 from tests.test_screen_b1 import build_scene
+from xangx.accountant import core as accountant
 from xangx.demo.seed import seed_all
+from xangx.master.tools import greek_day_start_utc, greek_offset
 from xangx.screen import api_home
 from xangx.screen.describe import describe
 from xangx.shared.db import connect, init_db
 from xangx.shared.events import Event, append_event, read_events
 
-KEYS = {"sales", "stock", "order", "invoices", "payments", "undo", "iban", "last"}
+KEYS = {"sales", "stock", "order", "invoices", "payments", "undo", "iban", "last", "today",
+        "credit", "last_before"}
 
 
 class ScreenHomeTest(unittest.TestCase):
@@ -71,12 +76,15 @@ class ScreenHomeTest(unittest.TestCase):
     def test_all_the_keys_are_there(self):
         data = self.home()
         self.assertEqual(set(data), KEYS)
+        self.assertRegex(data["today"], r"^\d{4}-\d\d-\d\d$")
         self.assertEqual(
             set(data["sales"]),
             {"from", "to", "per_day", "total_cents", "receipts", "avg_cents", "yesterday",
              "same_day"})
         self.assertEqual(set(data["stock"]), {"low", "expiring"})
-        self.assertEqual(set(data["invoices"]), {"need_you", "today", "docs"})
+        self.assertEqual(set(data["invoices"]), {"need_you", "today", "docs", "recent", "month"})
+        self.assertEqual(set(data["payments"]), {"next", "last_paid"})
+        self.assertEqual(set(data["last_before"]), {"master", "stock", "orders", "invoices", "accountant"})
         self.assertEqual(set(data["undo"]), {"can_total", "items"})
         self.assertEqual(set(data["last"]), {"master", "stock", "orders", "invoices", "accountant"})
 
@@ -145,6 +153,98 @@ class ScreenHomeTest(unittest.TestCase):
         last = self.home()["last"]
         self.assertRegex(last["orders"]["at"], r"^\d\d:\d\d$")
         self.assertTrue(last["orders"]["text"])
+
+    def _undo(self, event):
+        append_event(self.conn, type="action.undone", actor="owner",
+                     payload={"event_id": event.id, "how": "test"})
+
+    def test_paid_ignores_undone_payment(self):
+        base = read_events(self.conn, types=["payment.reminder_set"])[-1].payload
+        append_event(self.conn, type="payment.reminder_set", actor="accountant",
+                     subject="invoice:X-undone", idem_key="home-test:X-undone",
+                     payload={"supplier_id": base["supplier_id"], "invoice_id": "X-undone",
+                              "due_on": "2000-01-01", "amount_cents": 1000})
+        paid, _ = append_event(self.conn, type="payment.recorded", actor="owner",
+                               payload={"invoice_id": "X-undone", "method": "cash",
+                                        "amount_cents": 1000})
+        self.assertNotEqual(self.home()["payments"]["next"]["label"], "X-undone")
+        self._undo(paid)
+        self.assertEqual(self.home()["payments"]["next"]["label"], "X-undone")
+
+    def test_credit_for_pending_approval(self):
+        data = self.home()
+        approval_id = self.ids["credit_approval"]
+        c = data["credit"][approval_id]
+        details = accountant.credit_details(self.conn, self.ids["Α-2271"])
+        self.assertEqual((c["expected"], c["actual"], c["missing"]), (10, 9, 1))
+        self.assertEqual(c["amount_cents"], details["amount_cents"])
+        self.assertEqual(c["supplier"], details["supplier"]["name"])
+        self.assertEqual(c["subject"], details["subject"])
+        self.assertEqual(c["label"], "Α-2271")
+        self.assertEqual(c["order_id"], "P-0318")
+        self.assertEqual(c["more"], 0)
+        self.assertTrue(c["product"])
+        self.assertGreater(c["unit_cents"], 0)
+        self.assertNotIn("email", c)
+        self.assertNotIn("to", c)
+        self.assertNotIn(details["supplier"]["email"], json.dumps(data, ensure_ascii=False))
+        append_event(self.conn, type="approval.decided", actor="owner",
+                     payload={"approval_id": approval_id, "decision": "no", "channel": "web"})
+        self.assertEqual(self.home()["credit"], {})
+
+    def _old_invoice(self, invoice_id, number, days_ago, total):
+        # Just before the start of the Greek day `days_ago` days back: newer than the seed's
+        # invoices of that day, which are read at about 06:00.
+        now = datetime.now(timezone.utc)
+        start = datetime.strptime(greek_day_start_utc(now), "%Y-%m-%dT%H:%M:%S.000Z")
+        at = start.replace(tzinfo=timezone.utc) - timedelta(days=days_ago - 1, minutes=1)
+        today = (datetime.now(timezone.utc) + greek_offset(datetime.now(timezone.utc))).date()
+        append_event(self.conn, type="invoice.read", actor="system",
+                     at=at.strftime("%Y-%m-%dT%H:%M:%S.000Z"),
+                     payload={"invoice_id": invoice_id, "supplier_afm": "000000000",
+                              "series": "Τ", "number": number, "date": today.isoformat(),
+                              "lines": [], "net_cents": total, "vat_by_rate": {},
+                              "total_cents": total, "checks": {}, "confidence": 1})
+        return at
+
+    def test_recent_month_and_last_paid(self):
+        yesterday = self._old_invoice("T-1", "7001", 1, 1000)
+        before = self._old_invoice("T-2", "7002", 2, 2000)
+        append_event(self.conn, type="payment.reminder_set", actor="accountant",
+                     subject="invoice:T-1", idem_key="home-test:T-1",
+                     payload={"supplier_id": "sup-ymittou", "invoice_id": "T-1",
+                              "due_on": "2099-01-01", "amount_cents": 1000})
+        append_event(self.conn, type="payment.recorded", actor="owner",
+                     payload={"invoice_id": "T-1", "method": "cash", "amount_cents": 1000})
+        data = self.home()
+        recent = data["invoices"]["recent"]
+        self.assertEqual(recent[0]["label"], "Τ-7001")
+        self.assertLessEqual(len(recent), 3)
+        dates = {r["label"]: r["date"] for r in recent}
+        self.assertEqual(dates["Τ-7001"], (yesterday + greek_offset(yesterday)).date().isoformat())
+        self.assertEqual(dates["Τ-7002"], (before + greek_offset(before)).date().isoformat())
+        self.assertLess(dates["Τ-7002"], dates["Τ-7001"])
+        self.assertEqual([r["date"] for r in recent], sorted((r["date"] for r in recent), reverse=True))
+        month = data["invoices"]["month"]
+        names = ("Ιανουάριος", "Φεβρουάριος", "Μάρτιος", "Απρίλιος", "Μάιος", "Ιούνιος", "Ιούλιος",
+                 "Αύγουστος", "Σεπτέμβριος", "Οκτώβριος", "Νοέμβριος", "Δεκέμβριος")
+        self.assertEqual(month["name"], names[int(data["today"][5:7]) - 1])
+        self.assertGreaterEqual(month["count"], 2)
+        self.assertGreaterEqual(month["total_cents"], 3000)
+        last = data["payments"]["last_paid"]
+        self.assertEqual((last["label"], last["amount_cents"]), ("Τ-7001", 1000))
+        self.assertEqual(last["date"], data["today"])
+
+    def test_last_before_today(self):
+        self.assertIsNone(self.home()["last"]["master"])
+        at = datetime.now(timezone.utc) - timedelta(days=1)
+        append_event(self.conn, type="check.morning_done", actor="system",
+                     at=at.strftime("%Y-%m-%dT%H:%M:%S.000Z"), payload={"findings": []})
+        data = self.home()
+        self.assertEqual(data["last_before"]["master"],
+                         {"date": (at + greek_offset(at)).strftime("%d/%m"),
+                          "text": "Πρωινός έλεγχος"})
+        self.assertIsNone(data["last_before"]["orders"])  # it worked today
 
 
 class MonthFolderTextTest(unittest.TestCase):
