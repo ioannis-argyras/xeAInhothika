@@ -206,48 +206,66 @@
     return (d.iban || []).find((r) => r.invoice_label === label) || null;
   }
 
+  /* η συμπαγής λωρίδα του νέου IBAN (σχέδιο Β): «same» όταν είναι στο ίδιο τιμολόγιο με το «Πλήρωσες;» από πάνω */
+  function ibanStrip(iban, label, same) {
+    const strip = h("div", "ibanB");
+    const ibt = h("p", "ibt");
+    ibt.append(ic("warning"), document.createTextNode(same ? "Νέο IBAN στο ίδιο τιμολόγιο" : "Νέο IBAN στο " + label));
+    strip.appendChild(ibt);
+    const ibx = h("div", "ibx");
+    if (iban.known_last4) {
+      const a = h("div");
+      a.append(h("span", null, "γνωστό"), h("b", null, "…" + iban.known_last4));
+      ibx.append(a, ic("arrow-right"));
+    }
+    const c = h("div");
+    c.append(h("span", null, "στο " + label), h("b", null, "…" + iban.new_last4));
+    ibx.appendChild(c);
+    const lk = h("a", "lk");
+    lk.href = TIMOLOGIA;
+    lk.append(document.createTextNode("Έλεγχος στο " + label + " "), ic("arrow-right"));
+    strip.append(ibx, h("p", null, "Δεν το αλλάζω χωρίς εσένα."), lk);
+    return strip;
+  }
+
   function renderPay(state, d) {
     const box = byId("hb-pay");
     const list = state.pending_payments || [];
-    byId("hb-top").classList.toggle("hb-solo", !list.length);
-    box.hidden = !list.length;
+    const ibans = d.iban || [];
+    // Το νέο IBAN φαίνεται και όταν δεν περιμένει «Πλήρωσες;» (στιγμή 1:40 του demo, εύρημα του Μανώλη 15/11).
+    const show = list.length > 0 || ibans.length > 0;
+    byId("hb-top").classList.toggle("hb-solo", !show);
+    box.hidden = !show;
     box.replaceChildren();
-    if (!list.length) return;
-    const p = parsePay(list[0]);
-    const hd = h("div", "hd");
-    const b = h("b");
-    b.append(ic("wallet"), document.createTextNode("Πλήρωσες; Πώς;"));
-    hd.append(b, h("span", "r", plural(list.length, "τιμολόγιο", "τιμολόγια")));
-    const row = h("div", "askrow");
-    const top = h("div", "hb-askt");
-    top.append(h("p", "m", p.label + " · " + p.supplier),
-      h("p", "hb-amt", (p.amount + " " + p.how).trim()));
-    const pay = payButtons(list[0], "pm", true);
-    const grid = h("div", "hb-pms");
-    grid.append.apply(grid, pay.buttons);
-    row.append(top, grid, pay.msg);
-    box.append(hd, row);
-    const iban = ibanFor(d, p.label);
-    if (iban) {
-      const strip = h("div", "ibanB");
-      const ibt = h("p", "ibt");
-      ibt.append(ic("warning"), document.createTextNode("Νέο IBAN στο ίδιο τιμολόγιο"));
-      strip.appendChild(ibt);
-      const ibx = h("div", "ibx");
-      if (iban.known_last4) {
-        const a = h("div");
-        a.append(h("span", null, "γνωστό"), h("b", null, "…" + iban.known_last4));
-        ibx.append(a, ic("arrow-right"));
-      }
-      const c = h("div");
-      c.append(h("span", null, "στο " + p.label), h("b", null, "…" + iban.new_last4));
-      ibx.appendChild(c);
-      const lk = h("a", "lk");
-      lk.href = TIMOLOGIA;
-      lk.append(document.createTextNode("Έλεγχος στο " + p.label + " "), ic("arrow-right"));
-      strip.append(ibx, h("p", null, "Δεν το αλλάζω χωρίς εσένα."), lk);
-      box.appendChild(strip);
+    if (!show) return;
+    box.setAttribute("aria-label", list.length ? "Πλήρωσες;" : "Νέο IBAN");
+    let shown = null;
+    if (list.length) {
+      const p = parsePay(list[0]);
+      shown = p.label;
+      const hd = h("div", "hd");
+      const b = h("b");
+      b.append(ic("wallet"), document.createTextNode("Πλήρωσες; Πώς;"));
+      hd.append(b, h("span", "r", plural(list.length, "τιμολόγιο", "τιμολόγια")));
+      const row = h("div", "askrow");
+      const top = h("div", "hb-askt");
+      top.append(h("p", "m", p.label + " · " + p.supplier),
+        h("p", "hb-amt", (p.amount + " " + p.how).trim()));
+      const pay = payButtons(list[0], "pm", true);
+      const grid = h("div", "hb-pms");
+      grid.append.apply(grid, pay.buttons);
+      row.append(top, grid, pay.msg);
+      box.append(hd, row);
+      const iban = ibanFor(d, p.label);
+      if (iban) box.appendChild(ibanStrip(iban, p.label, true));
+    } else {
+      const hd = h("div", "hd");
+      const b = h("b");
+      b.append(ic("bank"), document.createTextNode("Νέο IBAN"));
+      hd.append(b, h("span", "r", plural(ibans.length, "τιμολόγιο", "τιμολόγια")));
+      box.appendChild(hd);
     }
+    ibans.filter((r) => r.invoice_label !== shown).forEach((r) => box.appendChild(ibanStrip(r, r.invoice_label, false)));
   }
 
   /* ---------- η ομάδα ---------- */

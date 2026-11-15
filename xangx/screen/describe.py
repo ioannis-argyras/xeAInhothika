@@ -117,8 +117,10 @@ def _describe(t, p, name):
         return f"Σκαναρίστηκε το barcode {p['barcode']}"
     if t == "delivery.completed":
         short = len(p.get("shortages") or [])
-        extra = f", {short} ελλείψεις" if short else ""
-        return f"Τελείωσε η παραλαβή {p['delivery_id']}{extra}"
+        extra = (", 1 έλλειψη" if short == 1 else f", {short} ελλείψεις") if short else ""
+        did = str(p.get("delivery_id") or "")
+        order = did[2:] if did.startswith("D-") else did  # D-P-0318 -> P-0318, the paper the owner knows
+        return f"Τελείωσε η παραλαβή της {order}{extra}"
     if t == "order.proposed":
         return (f"Πρόταση παραγγελίας {p['order_id']} στο {name('supplier', p['supplier_id'])}: "
                 f"{format_eur(p['net_cents'])}")
@@ -134,7 +136,8 @@ def _describe(t, p, name):
         return (f"Διαβάστηκε το τιμολόγιο {name('invoice', p['invoice_id'])}: "
                 f"{format_eur(p['total_cents'])}")
     if t == "invoice.duplicate_suspected":
-        return f"Το τιμολόγιο {p['invoice_id']} μοιάζει διπλό με το {p['other_invoice_id']}"
+        return (f"Το τιμολόγιο {name('invoice', p['invoice_id'])} μοιάζει διπλό με το "
+                f"{name('invoice', p['other_invoice_id'])}")
     if t == "invoice.matched":
         found = p.get("issues") or []
         issues = len(found)
@@ -188,7 +191,7 @@ def _describe(t, p, name):
         how = {"cash": "μετρητά", "card": "κάρτα", "bank": "τράπεζα"}.get(p["method"], p["method"])
         return f"Πληρώθηκε το {num} με {how}"
     if t == "payment.reminder_set":
-        return f"Υπενθύμιση πληρωμής για το τιμολόγιο {p['invoice_id']}"
+        return f"Υπενθύμιση πληρωμής για το τιμολόγιο {name('invoice', p['invoice_id'])}"
     if t == "sale.recorded":
         return f"Πώληση {p['receipt_id']}: {format_eur(p['total_cents'])}"
     if t == "owner.said":

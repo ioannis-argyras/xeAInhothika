@@ -271,6 +271,18 @@ class ScreenHomeTest(unittest.TestCase):
         last = self.home()["last"]["accountant"]
         self.assertTrue(last is None or "διαβάσω" not in last["text"], last)
 
+    def test_hidden_instructions_only_when_there_are_some(self):
+        from xangx.screen import api_b1
+
+        def ev(type_, payload):
+            return Event(id=1, at="2026-11-15T06:00:00.000Z", store_id="store-1", actor="accountant",
+                         type=type_, subject=None, caused_by=None, idem_key=None, payload=payload, v=1)
+        read = ev("invoice.read", {"invoice_id": "X-1", "checks": {"arithmetic": True}})
+        b = {"read": read, "prices": [], "flags": [ev("exception.flagged", {"kind": "new_iban", "note": "x"})]}
+        self.assertNotIn("Κρυμμένες", api_b1._status(self.conn, "X-1", b, None)[1])
+        b["flags"].append(ev("exception.flagged", {"kind": "hidden_instructions", "note": "x"}))
+        self.assertIn("Κρυμμένες οδηγίες", api_b1._status(self.conn, "X-1", b, None)[1])
+
 
 class MonthFolderTextTest(unittest.TestCase):
     def event(self, month, count, total):
@@ -285,6 +297,32 @@ class MonthFolderTextTest(unittest.TestCase):
 
     def test_one_invoice(self):
         self.assertEqual(describe(self.event("2026-05", 1, 500)), "Φάκελος Μαΐου: 1 τιμολόγιο, 5,00 €")
+
+
+class PaperNamesTextTest(unittest.TestCase):
+    """Manolis's findings of 15/11: the owner reads the paper's number, never INV- or D- codes."""
+    NAMES = {"invoice": {"INV-aacc6ac9": "Α-2271", "INV-b2": "Α-2271β"}}
+
+    def event(self, type_, payload, actor="accountant"):
+        return Event(id=1, at="2026-11-15T06:00:00.000Z", store_id="store-1", actor=actor, type=type_,
+                     subject=None, caused_by=None, idem_key=None, payload=payload, v=1)
+
+    def test_reminder_names_the_paper(self):
+        e = self.event("payment.reminder_set", {"supplier_id": 1, "invoice_id": "INV-aacc6ac9",
+                                                 "due_on": "2026-12-15", "amount_cents": 15929})
+        self.assertEqual(describe(e, self.NAMES), "Υπενθύμιση πληρωμής για το τιμολόγιο Α-2271")
+
+    def test_delivery_with_one_shortage_is_singular_and_names_the_order(self):
+        e = self.event("delivery.completed", {"delivery_id": "D-P-0318", "lines": [], "shortages": [{"x": 1}],
+                                              "unknown_barcodes": []}, actor="stock")
+        self.assertEqual(describe(e), "Τελείωσε η παραλαβή της P-0318, 1 έλλειψη")
+        e.payload["shortages"] = [{"x": 1}, {"x": 2}]
+        self.assertEqual(describe(e), "Τελείωσε η παραλαβή της P-0318, 2 ελλείψεις")
+
+    def test_duplicate_names_both_papers(self):
+        e = self.event("invoice.duplicate_suspected", {"invoice_id": "INV-b2", "other_invoice_id": "INV-aacc6ac9"},
+                       actor="invoices")
+        self.assertEqual(describe(e, self.NAMES), "Το τιμολόγιο Α-2271β μοιάζει διπλό με το Α-2271")
 
 
 class EmptyDatabaseTest(unittest.TestCase):

@@ -199,7 +199,8 @@ def _status(conn, iid, b, pending):
     """(level, one line) for the list: ok, warn or wait."""
     items = []
     if b.get("dup"):
-        return "warn", f"Μοιάζει διπλό με το {b['dup'].payload.get('other_invoice_id')}"
+        other = b["dup"].payload.get("other_invoice_id")
+        return "warn", f"Μοιάζει διπλό με το {load_names(conn)['invoice'].get(other) or other}"
     read = b.get("read")
     if read is None:
         return "wait", "Δεν έχει διαβαστεί ακόμα"
@@ -218,7 +219,7 @@ def _status(conn, iid, b, pending):
     names = load_names(conn)["product"]
     for e in b["prices"]:
         items.append(f"{names.get(e.payload.get('product_id')) or 'Είδος'} {_pct(e.payload['pct'])}")
-    if b["flags"]:
+    if any((f.payload or {}).get("kind") == "hidden_instructions" for f in b["flags"]):
         items.append("Κρυμμένες οδηγίες, αγνοήθηκαν")
     mydata = b.get("mydata")
     if mydata and not mydata.payload.get("error") and not (

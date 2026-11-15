@@ -193,7 +193,7 @@
       if (credit.supplier) {
         var w = el("div");
         w.appendChild(icon("ph", "envelope-simple"));
-        w.appendChild(el("span", null, "Στέλνω email στον " + credit.supplier + " με το αίτημα"));
+        w.appendChild(el("span", null, "Στέλνω email προς " + credit.supplier + " με το αίτημα"));
         will.appendChild(w);
       }
       will.hidden = !credit.supplier;
