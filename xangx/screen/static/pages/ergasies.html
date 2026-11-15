@@ -9,48 +9,96 @@
 <link rel="stylesheet" href="/static/vendor/phosphor/bold/style.css">
 <link rel="stylesheet" href="/static/vendor/phosphor/fill/style.css">
 <link rel="stylesheet" href="/static/app.css">
+<link rel="stylesheet" href="/static/arxiki.css">
 <link rel="stylesheet" href="/static/pages/ergasies.css">
 <link rel="stylesheet" href="/static/undo.css">
 </head>
-<body>
-<div class="banner" id="paused-banner" role="status" hidden>Όλες οι ενέργειες είναι σε παύση. Πάτα «Συνέχισε» για να ξαναρχίσουν.</div>
-<div class="shell">
-<header class="top">
-  <a class="brand" href="/"><b class="wm">xe<em>A<span class="ii">I</span></em>nhothika</b><span>Mini Market 24/7 · Παγκράτι</span></a>
-  <nav class="links" aria-label="Κύρια">
-    <a href="/">Σήμερα</a><a href="/#synomilia">Συνομιλία</a><a class="on" href="/static/pages/ergasies.html" aria-current="page">Εργασίες</a><a href="/static/pages/timologia.html">Τιμολόγια</a><a href="/static/pages/rafi.html">Ράφι</a><a href="/static/pages/mixani.html">Ιστορικό</a>
-  </nav>
-  <div class="right">
-    <span class="live"><i id="live-dot"></i><span id="live-text">Σύνδεση…</span></span>
-    <button class="btn qd" id="stop-btn" type="button"><i class="ph ph-pause"></i><span>Παύση όλων</span></button>
-    <button class="ibtn" id="stop-ibtn" type="button" aria-label="Παύση όλων"><i class="ph ph-pause"></i></button>
-  </div>
-</header>
+<body data-shell="ergasies">
+<main class="main">
+<section id="ergasies" class="screen on" aria-labelledby="eg-h1">
 
-<section id="ergasies" class="screen on">
+<div class="desk">
   <div class="band"><div class="in">
     <div>
-      <div class="kick"><i class="ph ph-list-checks"></i><span id="kick">Εργασίες</span></div>
-      <h1 id="title" aria-live="polite">Φόρτωση…</h1>
+      <div class="kick"><i class="ph ph-list-checks"></i><span id="eg-kick">Εργασίες</span></div>
+      <h1 id="eg-h1">Εργασίες</h1>
+      <p class="lead">Ό,τι έγινε σήμερα, γράφεται. Από ποιον, πώς, και τι αναιρείται ακόμα.</p>
     </div>
-    <a class="btn qd" href="/static/pages/mixani.html"><i class="ph ph-clock-counter-clockwise"></i>Ξαναπαίξε τη μέρα</a>
+    <a class="btn eg-replay" href="/static/pages/mixani.html"><i class="ph ph-clock-counter-clockwise"></i>Ξαναπαίξε τη μέρα</a>
   </div></div>
+
   <div class="wrap">
-    <section class="card tbl tasks" aria-label="Εργασίες ανά ομάδα" id="tasks" aria-busy="true">
-      <div class="tr2 th"><span>Ώρα</span><span>Τι έγινε</span><span>Πώς</span><span class="n">Δες</span></div>
-      <div id="tasks-body"><p class="empty">Φόρτωση…</p></div>
-    </section>
+    <article class="stage eg-st" id="eg-stage" aria-label="Σήμερα" aria-busy="true">
+      <div class="shd"><span><i class="ph ph-sun-horizon"></i><span id="eg-shd-t">Σήμερα</span></span><span id="eg-shd-c"></span></div>
+      <div class="eg-sb">
+        <div class="eg-hero">
+          <p class="eg-n eg-n0" id="eg-n"><b>Φόρτωση…</b></p>
+          <p class="eg-nl" id="eg-nl"></p>
+          <div class="eg-bar" id="eg-bar" role="img" hidden></div>
+        </div>
+        <div class="eg-side">
+          <div class="eg-big eg-yes" id="eg-yes"><i class="ph-fill ph-hand-pointing"></i><b>0</b><span>με το «ναι» σου</span></div>
+          <div class="eg-big eg-ok" id="eg-err"><i class="ph-fill ph-check-circle"></i><b>0</b><span>λάθη</span></div>
+        </div>
+      </div>
+    </article>
+
+    <div class="eg-g mt">
+      <section class="card eg-list" aria-label="Τι έγινε" id="eg-list" aria-busy="true">
+        <div class="hd"><b><i class="ph ph-rows"></i>Τι έγινε</b><span class="r eg-leg"><span class="eg-hw"><i class="ph-bold ph-check"></i></span>μόνο του<span class="eg-hw eg-y"><i class="ph-fill ph-hand-pointing"></i></span>με το «ναι» σου</span></div>
+        <div id="eg-groups"><p class="eg-empty">Φόρτωση…</p></div>
+      </section>
+
+      <div class="stack">
+        <article class="card eg-dark" aria-label="Ανά μέλος">
+          <div class="hd"><b><i class="ph ph-users-three"></i>Ανά μέλος</b><span class="r" id="eg-members-n"></span></div>
+          <div class="eg-mb" id="eg-members"></div>
+        </article>
+        <article class="card" aria-label="Αναιρούνται ακόμα">
+          <div class="hd"><b><i class="ph ph-arrow-counter-clockwise"></i>Αναιρούνται ακόμα</b><span class="r" id="eg-undo-n"></span></div>
+          <div id="eg-undo-body"></div>
+        </article>
+        <article class="card" aria-label="Χρειάστηκαν προσοχή">
+          <div class="hd"><b><i class="ph ph-warning-circle eg-al"></i>Χρειάστηκαν προσοχή</b><span class="r" id="eg-warn-n"></span></div>
+          <div id="eg-warn-body"></div>
+        </article>
+      </div>
+    </div>
   </div>
-</section>
 </div>
 
-<nav class="tabs" aria-label="Καρτέλες">
-  <a href="/"><i class="ph ph-sun-horizon"></i>Σήμερα</a>
-  <a href="/#synomilia"><i class="ph ph-chat-circle"></i>Συνομιλία</a>
-  <a class="on" href="/static/pages/ergasies.html" aria-current="page"><i class="ph-fill ph-list-checks"></i>Εργασίες</a>
-  <a href="/static/pages/timologia.html"><i class="ph ph-receipt"></i>Τιμολόγια</a>
-  <a href="/static/pages/rafi.html"><i class="ph ph-package"></i>Ράφι</a>
-</nav>
+<div class="mob">
+  <div class="mb"><div class="mi">
+    <div class="kick"><i class="ph ph-list-checks"></i><span id="egm-kick">Εργασίες</span></div>
+    <h1>Εργασίες</h1>
+    <p class="lead">Ό,τι έγινε σήμερα, γράφεται.</p>
+  </div></div>
+  <div class="mwrap"><div class="mi">
+    <div class="mpanel" id="eg-pmain">
+      <div id="egm-fail"></div>
+      <div class="eg-mst" id="egm-stage">
+        <p class="eg-n eg-n0" id="egm-n"><b>Φόρτωση…</b></p>
+        <p class="eg-nl" id="egm-nl"></p>
+        <div class="eg-bar" id="egm-bar" role="img" hidden></div>
+        <p class="eg-ms"><span id="egm-yes"><i class="ph-fill ph-hand-pointing"></i><b>0</b> με το «ναι» σου</span><span id="egm-err"><i class="ph-fill ph-check-circle"></i><b>0</b> λάθη</span></p>
+      </div>
+      <div id="egm-warn"></div>
+      <div class="eg-tiles" id="egm-tiles"></div>
+      <article class="card eg-mun" aria-label="Αναιρούνται ακόμα">
+        <div class="hd"><b><i class="ph ph-arrow-counter-clockwise"></i>Αναιρούνται ακόμα</b><span class="r" id="egm-undo-n"></span></div>
+        <div id="egm-undo-body"></div>
+      </article>
+    </div>
+    <div class="mpanel" id="eg-pmem" hidden>
+      <a class="eg-back" href="#"><i class="ph ph-caret-left"></i>Πίσω στις Εργασίες</a>
+      <section class="card" id="egm-mem" aria-label="Εργασίες του μέλους"></section>
+    </div>
+  </div></div>
+</div>
+
+</section>
+</main>
+<script src="/static/shell.js" defer></script>
 <script src="/static/undo.js"></script>
 <script src="/static/pages/ergasies.js"></script>
 </body>
