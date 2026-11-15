@@ -223,6 +223,23 @@ class DeliveryTest(unittest.TestCase):
     def scan(self, code, delivery_id="D-P-0900"):
         return self.client.post("/stock/delivery/scan", json={"delivery_id": delivery_id, "barcode": code})
 
+    def test_error_texts_show_the_order_not_inner_codes(self):
+        # List row #18: the owner reads "P-0318", never "D-P-0318" or "cam-1".
+        self.order("P-0905", 10)
+        self.client.post("/stock/delivery/complete", json={"delivery_id": "D-P-0905"})
+        late = self.scan(self.barcode("water-1500x6"), "D-P-0905")
+        self.assertEqual((late.status_code, late.json()["detail"]),
+                         (400, "Η παραλαβή της P-0905 έχει ήδη κλείσει."))
+        self.assertEqual(self.scan("5449000000996", "D-P-0999").json()["detail"],
+                         "Δεν έχει ξεκινήσει η παραλαβή της P-0999.")
+        self.assertEqual(self.scan("5449000000996", "<script>").json()["detail"],
+                         "Δεν έχει ξεκινήσει η παραλαβή.")
+        photo = self.client.post("/stock/camera/photo", json={"camera_id": "cam-404", "image_b64": b64(jpeg("a"))})
+        self.assertNotIn("cam-404", photo.json()["detail"])
+        shelf = self.client.get("/stock/camera/shelf?cam=cam-404")
+        self.assertEqual(shelf.status_code, 404)
+        self.assertNotIn("cam-404", shelf.json()["detail"])
+
     def test_page_and_decoder_are_served(self):
         r = self.client.get("/stock/scan?order=P-0318")
         self.assertEqual(r.status_code, 200)

@@ -48,7 +48,7 @@ def camera_shelf(cam: str = ""):
     finally:
         conn.close()
     if not positions:
-        raise HTTPException(404, f"Δεν ξέρω την κάμερα {cam!r}.")
+        raise HTTPException(404, "Δεν ξέρω αυτή την κάμερα. Άνοιξε τη σελίδα από τον σύνδεσμο της κάμερας.")
     return {"camera_id": cam, "name": positions[0]["name"].split(" · ")[0], "positions": len(positions)}
 
 
