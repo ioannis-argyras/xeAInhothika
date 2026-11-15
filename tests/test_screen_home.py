@@ -312,6 +312,10 @@ class PaperNamesTextTest(unittest.TestCase):
                                                  "due_on": "2026-12-15", "amount_cents": 15929})
         self.assertEqual(describe(e, self.NAMES), "Υπενθύμιση πληρωμής για το τιμολόγιο Α-2271")
 
+    def test_credit_request_names_the_paper(self):
+        e = self.event("credit.requested", {"invoice_id": "INV-aacc6ac9"}, actor="invoices")
+        self.assertEqual(describe(e, self.NAMES), "Ζητήθηκε πιστωτικό για το τιμολόγιο Α-2271")
+
     def test_delivery_with_one_shortage_is_singular_and_names_the_order(self):
         e = self.event("delivery.completed", {"delivery_id": "D-P-0318", "lines": [], "shortages": [{"x": 1}],
                                               "unknown_barcodes": []}, actor="stock")
