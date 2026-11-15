@@ -5,52 +5,113 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Παραλαβή · Xangxothaika</title>
 <link rel="stylesheet" href="/static/vendor/phosphor/style.css">
+<link rel="stylesheet" href="/static/vendor/phosphor/bold/style.css">
 <link rel="stylesheet" href="/static/vendor/phosphor/fill/style.css">
 <link rel="stylesheet" href="/static/app.css">
+<link rel="stylesheet" href="/static/arxiki.css">
 <link rel="stylesheet" href="/stock/style.css">
 </head>
 <body>
-<div class="page">
-  <div class="band"><div class="in w1040">
-    <div style="flex:1">
-      <div class="kick"><a class="back" href="/"><i class="ph ph-caret-left"></i>Πίσω</a><span><i class="ph ph-barcode"></i> <span id="title">Παραλαβή</span></span></div>
-      <h1><span class="huge" id="count">…</span></h1>
-      <p class="lead">τεμάχια ήρθαν από όσα παραγγείλαμε</p>
-      <div class="prog" id="prog" aria-hidden="true"><i id="bar"></i></div>
-      <p class="trial" id="trial" hidden>Δοκιμή · δεν αποθηκεύεται τίποτα</p>
+<div class="banner" id="paused-banner" role="status" hidden>Όλες οι ενέργειες είναι σε παύση. Πάτα «Συνέχισε» για να ξαναρχίσουν.</div>
+<div class="shell">
+<header class="top">
+  <a class="brand" href="/"><b>Xangxothaika</b><span>Mini Market 24/7 · Παγκράτι</span></a>
+  <nav class="links" aria-label="Κύρια">
+    <a href="/">Σήμερα</a><a href="/#synomilia">Συνομιλία</a><a href="/static/pages/ergasies.html">Εργασίες</a><a href="/static/pages/timologia.html">Τιμολόγια</a><a class="on" href="/stock/camera" aria-current="page">Ράφι</a><a href="/static/pages/mixani.html">Ιστορικό</a>
+  </nav>
+  <div class="right">
+    <span class="live"><i id="live-dot"></i><span id="live-text">Σύνδεση…</span></span>
+    <button class="btn qd" id="stop-btn" type="button"><i class="ph ph-pause"></i><span>Παύση όλων</span></button>
+    <button class="ibtn" id="stop-ibtn" type="button" aria-label="Παύση όλων"><i class="ph ph-pause"></i></button>
+  </div>
+</header>
+
+<section id="s-pl" class="screen on" aria-labelledby="sup">
+<!-- ===================== υπολογιστής ===================== -->
+<div class="desk">
+  <div class="band pl-band"><div class="in">
+    <div>
+      <div class="kick"><i class="ph ph-barcode"></i><span id="title">Μαγαζί · Παραλαβή</span></div>
+      <h1 id="sup">Παραλαβή</h1>
+      <p class="lead" id="lead" hidden></p>
+      <p class="pl-trial" id="trial" hidden>Δοκιμή · δεν γράφεται τίποτα</p>
+    </div>
+    <div class="pl-act">
+      <div class="pl-prog"><b><span id="count">…</span> <span class="pl-of" id="countOf"></span></b><div class="pl-bar" aria-hidden="true"><i id="bar"></i></div></div>
+      <div class="pl-lack" id="lack" hidden><i class="ph-fill ph-warning-circle"></i><div><span>Λείπουν</span><b id="lackV"></b></div></div>
+      <button class="btn yes" id="done" type="button"><i class="ph-bold ph-check"></i>Κλείσε την παραλαβή</button>
+      <div class="pl-closed" id="closedD" hidden><i class="ph-bold ph-check pl-tick"></i><span id="closedTD"></span></div>
     </div>
   </div></div>
-  <div class="wrap">
-    <div class="row2 g-par">
-      <div class="col">
-        <section class="card">
-          <div class="hd" aria-live="polite"><b id="last"><i class="ph ph-barcode"></i>Στόχευσε το barcode</b><span class="m" id="lastOf"></span></div>
-          <video class="scanvid" id="v" autoplay playsinline muted hidden></video>
-          <div class="fld">
-            <label for="man">Με το χέρι ή σκάνερ USB</label>
-            <div class="inp"><span class="box"><i class="ph ph-barcode"></i><input id="man" inputmode="numeric" autocomplete="off" enterkeyhint="done" placeholder="π.χ. 5449000000996"></span><button class="btn q" id="add" style="height:52px">Πρόσθεσε</button></div>
-            <p class="m" id="st" style="margin-top:8px">Ξεκινώ…</p>
-          </div>
-        </section>
-        <section class="card got miss" id="got" hidden>
-          <div class="hd"><b><i class="ph ph-check-square"></i>Ήρθαν όλα</b><span class="m" id="gotOf"></span></div>
-          <div id="gotList"></div>
-        </section>
-      </div>
-      <div class="col">
-        <section class="card miss" id="miss" hidden>
-          <div class="hd" style="background:#FBEFEB"><b><i class="ph ph-warning-circle" style="color:var(--alert)"></i>Λείπουν</b><span class="warn" id="missOf"></span></div>
-          <div id="missList"></div>
-        </section>
-        <section class="card miss" id="extra" hidden>
-          <div class="hd"><b><i class="ph ph-question"></i>Δεν ήταν στην παραγγελία</b></div>
-          <div id="extraList"></div>
-        </section>
-        <button class="btn yes wide" id="done" style="height:56px"><i class="ph ph-check"></i>Κλείσε την παραλαβή</button>
-      </div>
+  <div class="wrap pl-wrap"><div class="pl-g">
+    <div class="stack" id="colL">
+      <div class="pl-scan" id="scanD"></div>
     </div>
-  </div>
+    <div class="stack" id="colR"></div>
+  </div></div>
 </div>
+
+<!-- ===================== κινητό ===================== -->
+<div class="mob">
+  <div class="mb pl-mb"><div class="mi">
+    <div class="kick"><i class="ph ph-barcode"></i><span id="mTitle">Παραλαβή</span></div>
+    <h1><span id="mCount">…</span> <span class="pl-of" id="mCountOf"></span></h1>
+    <div class="pl-bar" aria-hidden="true"><i id="mBar"></i></div>
+    <p class="pl-mlack" id="mLack" hidden><i class="ph-fill ph-warning-circle"></i><span id="mLackT"></span></p>
+    <p class="pl-trial" id="mTrial" hidden>Δοκιμή · δεν γράφεται τίποτα</p>
+  </div></div>
+  <div class="mwrap"><div class="mi">
+    <div class="pl-scan m" id="scanM"></div>
+    <div id="manM"></div>
+    <div class="seg2 pl-seg" role="tablist" aria-label="Παραλαβή">
+      <button type="button" role="tab" id="tabMiss" aria-selected="true">Λείπουν <span class="c n" id="tcMiss">0</span></button>
+      <button type="button" role="tab" id="tabGot" aria-selected="false">Ήρθαν <span class="c n" id="tcGot">0</span></button>
+      <button type="button" role="tab" id="tabExtra" aria-selected="false">Εκτός <span class="c n" id="tcExtra">0</span></button>
+    </div>
+    <div id="listM"></div>
+    <div class="dockpad" id="dockpad"></div>
+  </div></div>
+  <div class="mdock pl-dock" id="dock"><div class="ask-only">
+    <button class="btn yes" id="doneM" type="button"><i class="ph-bold ph-check"></i>Κλείσε την παραλαβή</button>
+    <div class="pl-closed" id="closedM" hidden><i class="ph-bold ph-check pl-tick"></i><span id="closedTM"></span></div>
+  </div></div>
+</div>
+
+<!-- Κομμάτια που αλλάζουν θέση ανάμεσα σε υπολογιστή και κινητό (το script τα βάζει στη σωστή οθόνη) -->
+<div hidden id="pool">
+  <div class="pl-vf" id="plVf" aria-label="Κάμερα για barcode"><video id="v" autoplay playsinline muted hidden></video><span class="pl-aim" aria-hidden="true"><i></i></span><span class="pl-hint">Στόχευσε το barcode του κιβωτίου</span></div>
+  <div class="pl-last" id="plLast" aria-live="polite"><i class="ph ph-barcode" id="lastIc"></i><b id="last">Στόχευσε το barcode</b><span id="lastOf"></span></div>
+  <div class="pl-man" id="plMan"><label class="pl-lab" for="man">Με το χέρι ή σκάνερ USB</label><div class="pl-in"><span class="pl-box"><i class="ph ph-barcode"></i><input id="man" aria-label="Barcode με το χέρι ή σκάνερ USB" inputmode="numeric" autocomplete="off" enterkeyhint="done" placeholder="π.χ. 5449000000996"></span><button class="btn q pl-add" id="add" type="button">Πρόσθεσε</button></div><p class="pl-st" id="st" aria-live="polite">Ξεκινώ…</p></div>
+  <section class="card" id="got">
+    <div class="hd"><b><i class="ph ph-check-square"></i>Ήρθαν</b><span class="r" id="gotOf"></span></div>
+    <div class="pl-tbl">
+      <div class="pl-tr th"><span>Προϊόν</span><span>Ήρθαν / παραγγείλαμε</span><span></span></div>
+      <div class="pl-rows" id="gotList"></div>
+    </div>
+  </section>
+  <section class="card pl-miss" id="miss">
+    <div class="hd"><b><i class="ph-fill ph-warning-circle"></i>Λείπουν</b><span class="r"><b id="missOf"></b></span></div>
+    <div id="missList"></div>
+    <div class="pl-none" id="missNone" hidden><i class="ph ph-check-circle"></i><span>Τίποτα δεν λείπει</span></div>
+    <div class="cf"><span class="m">Με το «Κλείσε» γράφεται ως έλλειψη.</span></div>
+  </section>
+  <section class="card" id="extra">
+    <div class="hd"><b><i class="ph ph-question"></i>Εκτός παραγγελίας</b><span class="r" id="extraOf">0</span></div>
+    <div id="extraList"></div>
+    <div class="pl-none" id="extraNone"><i class="ph ph-check-circle"></i><span>Κανένα σήμερα</span></div>
+    <div class="pl-lastlist" id="recentBox" hidden><span class="m">Τελευταίες σαρώσεις</span></div>
+  </section>
+</div>
+</section>
+</div>
+
+<nav class="tabs" aria-label="Καρτέλες">
+  <a href="/"><i class="ph ph-sun-horizon"></i>Σήμερα</a>
+  <a href="/#synomilia"><i class="ph ph-chat-circle"></i>Συνομιλία</a>
+  <a href="/static/pages/ergasies.html"><i class="ph ph-list-checks"></i>Εργασίες</a>
+  <a href="/static/pages/timologia.html"><i class="ph ph-receipt"></i>Τιμολόγια</a>
+  <a class="on" href="/stock/camera" aria-current="page"><i class="ph-fill ph-package"></i>Ράφι</a>
+</nav>
 
 <dialog id="ask" aria-labelledby="askTitle">
   <h2 id="askTitle" tabindex="-1">Να κλείσει η παραλαβή;</h2>
@@ -60,15 +121,27 @@
 
 <script>
 const $ = id => document.getElementById(id);
+function el(tag, cls, text) {
+  const n = document.createElement(tag);
+  if (cls) n.className = cls;
+  if (text != null) n.textContent = text;
+  return n;
+}
 const params = new URLSearchParams(location.search);
 let order = params.get('order') || '';
 // Practice (?dokimi=1): the same counter, but the scans stay on the phone and nothing is saved.
 const practice = params.get('dokimi') === '1';
-let deliveryId = null, closed = false, queue = Promise.resolve(), codes = [];
+let deliveryId = null, closed = false, queue = Promise.resolve(), codes = [], recent = [], tabChosen = false;
 const say = t => $('st').textContent = t;
-const setTitle = sup => { $('title').textContent = (practice ? 'Δοκιμή παραλαβής · ' : 'Παραλαβή · ') + order + (sup ? ' · ' + sup : ''); };
+const setTitle = sup => {
+  const n = (practice ? 'Δοκιμή παραλαβής ' : 'Παραλαβή ') + order;
+  $('title').textContent = 'Μαγαζί · ' + n.trim();
+  $('mTitle').textContent = n.trim() + (sup ? ' · ' + sup : '');
+  if (sup) $('sup').textContent = sup;
+};
 setTitle();
 const euro = c => (c / 100).toLocaleString('el-GR', {style: 'currency', currency: 'EUR'});
+const hm = () => new Date().toLocaleTimeString('el-GR', {hour12: false, hour: '2-digit', minute: '2-digit'});
 // Camera errors in plain words (the browser gives only an English name).
 function cameraProblem(name) {
   return ({NotAllowedError: 'Δεν δόθηκε άδεια για την κάμερα. Στο Safari: «aA» → Ρυθμίσεις ιστότοπου → Κάμερα → Να επιτρέπεται, και ανανέωση.',
@@ -77,8 +150,75 @@ function cameraProblem(name) {
            OverconstrainedError: 'Δεν βρέθηκε κάμερα σε αυτή τη συσκευή.'}[name]
           || 'Αυτός ο browser δεν δίνει κάμερα.') + ' Μέχρι τότε γράψε ή σκάναρε με USB στο πεδίο.';
 }
-$('trial').hidden = !practice;
-if (practice) $('done').hidden = true;
+$('trial').hidden = $('mTrial').hidden = !practice;
+if (practice) { $('done').hidden = true; $('doneM').hidden = true; $('dock').hidden = true; $('dockpad').hidden = true; }
+
+// ---- shell: «Ζωντανά» and pause (same as the Εργασίες page) ----
+let paused = false, liveText = 'Σύνδεση…', liveOn = false;
+function drawLive() {
+  $('live-dot').className = liveOn ? 'on' : '';
+  $('live-text').textContent = liveOn ? liveText + ' · ' + hm() : liveText;
+}
+function setLive(on, text) { liveOn = on; liveText = text; drawLive(); }
+function setPaused(p) {
+  paused = !!p;
+  $('paused-banner').hidden = !paused;
+  const label = paused ? 'Συνέχισε' : 'Παύση όλων', icn = paused ? 'play' : 'pause';
+  $('stop-btn').replaceChildren(el('i', 'ph ph-' + icn), el('span', null, label));
+  $('stop-ibtn').replaceChildren(el('i', 'ph ph-' + icn));
+  $('stop-ibtn').setAttribute('aria-label', label);
+}
+function togglePause() {
+  $('stop-btn').disabled = $('stop-ibtn').disabled = true;
+  fetch(paused ? '/api/resume' : '/api/pause', {method: 'POST'}).then(r => r.json()).then(d => {
+    if (d && d.ok) setPaused(d.paused);
+  }).catch(() => {}).then(() => { $('stop-btn').disabled = $('stop-ibtn').disabled = false; });
+}
+$('stop-btn').addEventListener('click', togglePause);
+$('stop-ibtn').addEventListener('click', togglePause);
+function listen() {
+  fetch('/api/screen/tasks').then(r => r.ok ? r.json() : null).then(d => { if (d) setPaused(d.paused); }).catch(() => {});
+  if (!window.EventSource) { setLive(true, 'Ζωντανά'); return; }
+  const es = new EventSource('/api/events/stream');
+  es.onopen = () => setLive(true, 'Ζωντανά');
+  es.onmessage = m => {
+    try {
+      const ev = JSON.parse(m.data);
+      if (ev.type === 'system.paused') setPaused(true);
+      if (ev.type === 'system.resumed') setPaused(false);
+    } catch (e) { /* one bad message does not stop the page */ }
+  };
+  es.onerror = () => setLive(false, 'Σύνδεση…');
+}
+listen();
+
+// One set of pieces (frame, last scan, field, three lists): they sit in the computer layout or in the phone layout.
+const mq = window.matchMedia('(max-width:1023px)');
+function place() {
+  if (mq.matches) {
+    $('scanM').append($('plVf'), $('plLast'));
+    $('manM').append($('plMan'));
+    $('listM').append($('miss'), $('got'), $('extra'));
+  } else {
+    $('scanD').append($('plVf'), $('plLast'), $('plMan'));
+    $('colL').append($('got'));
+    $('colR').append($('miss'), $('extra'));
+  }
+  $('man').placeholder = mq.matches ? 'Με το χέρι ή USB' : 'π.χ. 5449000000996';
+  const v = $('v'); if (v.srcObject) v.play().catch(() => {});
+}
+mq.addEventListener('change', place); place();
+
+function pickTab(name) {
+  const m = {miss: 'tabMiss', got: 'tabGot', extra: 'tabExtra'};
+  for (const k in m) {
+    $(m[k]).setAttribute('aria-selected', String(k === name));
+    $(k).classList.toggle('pl-off', k !== name);
+  }
+}
+$('tabMiss').onclick = () => { tabChosen = true; pickTab('miss'); };
+$('tabGot').onclick = () => { tabChosen = true; pickTab('got'); };
+$('tabExtra').onclick = () => { tabChosen = true; pickTab('extra'); };
 
 function closedNote(s) {
   const st = $('st');
@@ -86,7 +226,6 @@ function closedNote(s) {
   const a = document.createElement('a');
   a.href = '?order=' + encodeURIComponent(order) + '&dokimi=1';
   a.textContent = 'Άνοιξε τη δοκιμή';
-  a.style.cssText = 'font-weight:700;text-decoration:underline';
   st.appendChild(a);
 }
 
@@ -101,54 +240,99 @@ async function post(path, body) {
   return j;
 }
 
-// One row: number, name (with an optional muted second line), optional icon.
-function row(num, name, sub, cls, icon, right) {
-  const d = document.createElement('div'); d.className = 'ms';
-  const b = document.createElement('b'); b.textContent = num; if (cls) b.className = cls;
-  const t = document.createElement('span');
-  if (sub) {
-    const n = document.createElement('b'); n.textContent = name;
-    const m = document.createElement('span'); m.className = 'm'; m.style.display = 'block'; m.textContent = sub;
-    t.append(n, m);
-  } else t.textContent = name;
-  d.append(b, t);
-  if (icon) { const i = document.createElement('i'); i.className = 'ph ' + icon; d.appendChild(i); }
-  else { const r = document.createElement('span'); r.className = 'm'; r.textContent = right || ''; d.appendChild(r); }
-  return d;
-}
-function fill(box, list, rows) { list.replaceChildren(...rows); box.hidden = !rows.length; }
+function fill(list, rows) { list.replaceChildren(...rows); }
 const plural = (n, one, many) => n + ' ' + (n === 1 ? one : many);
 
 function show(s) {
   closed = s.completed;
   setTitle(s.supplier_name);
-  $('count').textContent = s.scanned + ' από ' + s.expected;
-  $('bar').style.width = (s.expected ? Math.min(100, 100 * s.scanned / s.expected) : 0).toFixed(1) + '%';
-  const full = s.lines.filter(l => l.scanned >= l.expected);
-  fill($('got'), $('gotList'), full.map(l => row(String(l.expected), l.name, null, null, 'ph-check')));
-  $('gotOf').textContent = full.length + ' από ' + s.lines.length + ' γραμμές';
+  const pct = (s.expected ? Math.min(100, 100 * s.scanned / s.expected) : 0).toFixed(1) + '%';
+  $('count').textContent = $('mCount').textContent = String(s.scanned);
+  $('countOf').textContent = $('mCountOf').textContent = 'από ' + s.expected;
+  $('bar').style.width = $('mBar').style.width = pct;
+
   const gone = s.missing.reduce((n, m) => n + m.qty, 0);
-  const byId = Object.fromEntries(s.lines.map(l => [l.product_id, l]));
-  fill($('miss'), $('missList'), s.missing.map(m => {
-    const l = byId[m.product_id];
-    return row(String(m.qty), m.name, l ? 'ήρθαν ' + l.scanned + ' από ' + l.expected : null, 'q warn', null,
-               m.value_cents ? euro(m.value_cents) : '');
+  const cents = s.missing.reduce((n, m) => n + (m.value_cents || 0), 0);
+  const lackText = cents ? euro(cents) : plural(gone, 'τεμάχιο', 'τεμάχια');
+  const lead = $('lead'); lead.replaceChildren('Ήρθαν ', el('b', null, s.scanned + ' από ' + s.expected), ' τεμάχια. ');
+  let what = '';
+  if (!s.missing.length) lead.append('Ήρθαν όλα.');
+  else {
+    what = s.missing.length === 1 ? s.missing[0].qty + ' ' + s.missing[0].name : gone + ' τεμάχια';
+    lead.append((s.missing.length === 1 && s.missing[0].qty === 1) ? 'Λείπει ' : 'Λείπουν ', el('b', null, what), '.');
+  }
+  lead.hidden = false;
+  $('lack').hidden = !s.missing.length; $('lackV').textContent = lackText;
+  $('mLack').hidden = !s.missing.length;
+  $('mLackT').replaceChildren((gone === 1 ? 'Λείπει ' : 'Λείπουν ') + what + ' · ', el('b', null, lackText));
+
+  // «Ήρθαν»: every line, "scanned / ordered", a tick when all of it came, a red line with how many are missing otherwise.
+  const full = s.lines.filter(l => l.scanned >= l.expected);
+  fill($('gotList'), s.lines.map(l => {
+    const ok = l.scanned >= l.expected;
+    const r = el('div', 'pl-tr' + (ok ? '' : ' bad'));
+    const q = el('span', 'pl-q'), bar = el('i');
+    bar.style.width = (l.expected ? Math.min(100, 100 * l.scanned / l.expected) : 0).toFixed(1) + '%';
+    q.append(el('b', null, l.scanned + ' / ' + l.expected), bar);
+    r.append(el('b', null, l.name), q);
+    if (ok) r.appendChild(el('i', 'ph-bold ph-check pl-ok'));
+    else r.appendChild(el('span', 'pl-mi', 'λείπει ' + (l.expected - l.scanned)));
+    return r;
   }));
-  $('missOf').textContent = plural(gone, 'τεμάχιο', 'τεμάχια');
-  const extra = s.extra.map(e => row(String(e.scanned), e.name))
-    .concat(s.unknown_barcodes.map(b => row('?', 'άγνωστο barcode ' + b)));
-  fill($('extra'), $('extraList'), extra);
-  $('done').disabled = closed; $('man').disabled = closed; $('add').disabled = closed;
+  $('gotOf').textContent = full.length + ' από ' + s.lines.length + ' γραμμές';
+
+  // «Λείπουν»
+  const byId = Object.fromEntries(s.lines.map(l => [l.product_id, l]));
+  fill($('missList'), s.missing.map(m => {
+    const l = byId[m.product_id];
+    const r = el('div', 'pl-mr');
+    const t = el('div', 't');
+    t.append(el('b', null, m.name), el('span', null, l ? 'ήρθαν ' + l.scanned + ' από ' + l.expected : ''));
+    r.append(el('b', 'pl-mq', String(m.qty)), t, el('b', 'pl-mv', m.value_cents ? euro(m.value_cents) : ''));
+    return r;
+  }));
+  $('missOf').textContent = cents ? euro(cents) : '';
+  $('miss').classList.toggle('pl-zero', !s.missing.length);
+  $('missNone').hidden = !!s.missing.length;
+
+  // «Εκτός παραγγελίας»
+  const extra = s.extra.map(e => ['+' + e.scanned, e.name]).concat(s.unknown_barcodes.map(b => ['?', 'άγνωστο barcode ' + b]));
+  fill($('extraList'), extra.map(([n, name]) => {
+    const r = el('div', 'pl-xr'); r.append(el('b', null, name), el('span', null, n)); return r;
+  }));
+  $('extraOf').textContent = String(extra.length);
+  $('extraNone').hidden = extra.length > 0;
+
+  $('tcMiss').textContent = String(s.missing.length); $('tcMiss').className = 'c' + (s.missing.length ? '' : ' n');
+  $('tcGot').textContent = String(full.length);
+  $('tcExtra').textContent = String(extra.length);
+  if (!tabChosen) { pickTab(s.missing.length ? 'miss' : 'got'); }
+
+  $('done').disabled = $('doneM').disabled = closed; $('man').disabled = closed; $('add').disabled = closed;
+  if (!practice) {
+    $('done').hidden = $('doneM').hidden = closed;
+    $('closedD').hidden = $('closedM').hidden = !closed;
+    $('closedTD').textContent = $('closedTM').textContent = 'Έκλεισε · ήρθαν ' + s.scanned + ' από ' + s.expected;
+  }
   if (closed) closedNote(s);
 }
 
-function setLast(ok, text, of) {
+function setLast(ok, text, of, prefix) {
   const l = $('last'); l.replaceChildren();
-  const i = document.createElement('i');
-  i.className = ok ? 'ph-fill ph-check-circle' : 'ph ph-warning-circle';
-  i.style.color = ok ? 'var(--ok)' : 'var(--alert)';
-  l.append(i, document.createTextNode(text));
+  if (prefix) l.append(el('span', 'pl-pre', prefix));
+  l.append(document.createTextNode(text));
+  $('lastIc').className = ok ? 'ph-fill ph-check-circle' : 'ph-fill ph-warning-circle';
+  $('plLast').classList.toggle('bad', !ok);
   $('lastOf').textContent = of || '';
+}
+
+function remember(name, units) {
+  recent.unshift({name, text: (units > 1 ? 'κιβώτιο ' + units : 'χωριστά') + ' · ' + hm()});
+  recent = recent.slice(0, 3);
+  const box = $('recentBox');
+  box.querySelectorAll(':scope > div').forEach(d => d.remove());
+  box.append(...recent.map(r => { const d = el('div'); d.append(el('b', null, r.name), el('span', null, r.text)); return d; }));
+  box.hidden = false;
 }
 
 function scan(code) {
@@ -164,8 +348,8 @@ function scan(code) {
       show(s);
       if (s.last.product_id) {
         const l = s.lines.find(x => x.product_id === s.last.product_id);
-        setLast(true, 'Μετρήθηκε: ' + (s.last.units > 1 ? 'κιβώτιο ' + s.last.units + ' × ' : '') + s.last.name,
-                l ? l.scanned + ' από ' + l.expected : '');
+        setLast(true, s.last.name, (s.last.units > 1 ? 'κιβώτιο ' + s.last.units + ' · ' : 'χωριστά · ') + (l ? l.scanned + ' από ' + l.expected : ''), 'Μετρήθηκε: ');
+        remember(s.last.name, s.last.units);
       } else setLast(false, 'Άγνωστο barcode: ' + code);
       if (navigator.vibrate) navigator.vibrate(60);
     } catch (e) {
@@ -183,17 +367,19 @@ function manual() {
 $('add').onclick = manual;
 $('man').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); manual(); } });
 
-$('done').onclick = () => {
+function askClose() {
   const missing = [...$('missList').children].map(d => d.children[0].textContent + ' ' + d.children[1].firstChild.textContent);
   const one = missing.length === 1 && missing[0].startsWith('1 ');
   $('askText').textContent = missing.length ? (one ? 'Λείπει ακόμα ' : 'Λείπουν ακόμα ') + missing.join(', ') + (missing.length === 1 ? '. Θα γραφτεί ως έλλειψη.' : '. Θα γραφτούν ως ελλείψεις.') : 'Ήρθαν όλα.';
   $('ask').showModal(); $('askTitle').focus();
-};
+}
+$('done').onclick = askClose;
+$('doneM').onclick = askClose;
 $('no').onclick = () => $('ask').close();
 $('yes').onclick = async () => {
-  $('ask').close(); $('done').disabled = true;
+  $('ask').close(); $('done').disabled = $('doneM').disabled = true;
   try { show(await post('/stock/delivery/complete', {delivery_id: deliveryId})); }
-  catch (e) { say('Δεν έκλεισε: ' + e.message); $('done').disabled = false; }
+  catch (e) { say('Δεν έκλεισε: ' + e.message); $('done').disabled = $('doneM').disabled = false; }
 };
 
 // Camera: the same barcode counts once while it stays in the frame. It counts again only
@@ -260,14 +446,14 @@ async function startCamera() {
 async function start() {
   if (!order) {
     try { order = (await (await fetch('/stock/delivery/pending')).json()).order_id || ''; } catch (e) {}
-    if (!order) { say('Δεν περιμένουμε καμία παραλαβή τώρα.'); $('done').disabled = true; return; }
+    if (!order) { say('Δεν περιμένουμε καμία παραλαβή τώρα.'); $('done').disabled = $('doneM').disabled = true; return; }
     params.set('order', order); history.replaceState(null, '', '?' + params.toString()); setTitle();
   }
   try {
     const s = practice ? await post('/stock/delivery/practice', {order_id: order, barcodes: []})
                        : await post('/stock/delivery/start', {order_id: order});
     deliveryId = s.delivery_id; show(s);
-  } catch (e) { say(e.message); $('done').disabled = true; return; }
+  } catch (e) { say(e.message); $('done').disabled = $('doneM').disabled = true; return; }
   if (!closed) startCamera();
 }
 start();
