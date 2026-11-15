@@ -24,6 +24,8 @@
 
   let data = null;
   let lastSig = null;
+  let sent = null;       // the credit request the owner just sent: {approval_id, credit, message, at, ...}
+  let carHadSent = false;
 
   /* ---------- μικροεργαλεία ---------- */
   function byId(id) { return document.getElementById(id); }
@@ -53,6 +55,14 @@
     return "έληξε πριν από " + plural(-days, "μέρα", "μέρες");
   }
   function qty(n) { return String(Math.round(n * 10) / 10).replace(".", ","); }
+  /* η μέρα ως λέξη: σήμερα, χθες, προχθές, όνομα μέρας (ως 6 μέρες πριν), αλλιώς ΗΗ/ΜΜ */
+  function ago(iso, todayIso) {
+    const n = Math.round((new Date(todayIso + "T12:00:00") - new Date(iso + "T12:00:00")) / 86400000);
+    if (n <= 0) return "σήμερα";
+    if (n === 1) return "χθες";
+    if (n === 2) return "προχθές";
+    return n <= 6 ? dayName(iso) : ddmm(iso);
+  }
   function pctText(node, pct) {
     if (pct > 0) node.appendChild(ic("arrow-up"));
     if (pct < 0) node.appendChild(ic("arrow-down"));
@@ -241,10 +251,11 @@
   }
 
   /* ---------- η ομάδα ---------- */
-  function lastFooter(last, href, arrow) {
+  function lastFooter(last, href, arrow, before) {
     const f = h(href ? "a" : "div", "mft");
     if (href) f.href = href;
     if (last) f.append(h("b", null, last.at), h("span", null, last.text));
+    else if (before) f.append(h("b", null, before.date), h("span", null, before.text));
     else f.appendChild(h("span", null, "Τίποτα ακόμα σήμερα"));
     if (arrow) f.appendChild(ic("arrow-right"));
     return f;
@@ -306,6 +317,19 @@
       body.appendChild(stp);
     } else if (key === "invoices") {
       const inv = d.invoices;
+      if (!inv.today && inv.recent && inv.recent.length) {
+        const n = inv.recent.length;
+        body.append(h("p", "mv hb-quiet", "Κανένα σήμερα"),
+          h("p", null, n === 1 ? "Το τελευταίο που ήρθε" : "Τα " + n + " τελευταία που ήρθαν"));
+        const docs = h("div", "docs3");
+        inv.recent.forEach((r) => {
+          const s = h("span");
+          s.append(ic("file-text", "ph-fill"), document.createTextNode(r.label), h("em", null, ago(r.date, d.today)));
+          docs.appendChild(s);
+        });
+        body.appendChild(docs);
+        return body;
+      }
       if (!inv.today) { body.appendChild(h("p", "mv none", "Κανένα τιμολόγιο σήμερα")); return body; }
       body.append(
         h("p", "mv" + (inv.need_you ? " al" : ""),
@@ -320,7 +344,30 @@
       body.appendChild(docs);
     } else {
       const nx = d.payments.next;
-      if (!nx) { body.appendChild(h("p", "mv none", "Καμία πληρωμή μπροστά")); return body; }
+      if (!nx) {
+        body.appendChild(h("p", "mv hb-quiet", "Καμία πληρωμή μπροστά"));
+        const month = d.invoices.month;
+        if (month && month.count) {
+          const row = h("div", "hb-lst");
+          const text = h("span", null, month.name + " ως τώρα");
+          const b = h("b", null, plural(month.count, "τιμολόγιο", "τιμολόγια") + " · ");
+          b.appendChild(h("span", "nw", money(month.total_cents)));
+          text.appendChild(b);
+          row.append(ic("folder-simple"), text);
+          body.appendChild(row);
+        }
+        const paid = d.payments.last_paid;
+        if (paid) {
+          const row = h("div", "hb-lst");
+          const text = h("span", null, "Πληρώθηκε τελευταία");
+          const b = h("b", null, paid.label + " · ");
+          b.append(h("span", "nw", money(paid.amount_cents)), document.createTextNode(" · " + ago(paid.date, d.today)));
+          text.appendChild(b);
+          row.append(ic("check-circle"), text);
+          body.appendChild(row);
+        }
+        return body;
+      }
       body.classList.add("mrow2");
       const t = h("div");
       t.append(h("p", "mv", money(nx.amount_cents)), h("p", null, due(nx.days) + ", πληρωμή " + nx.label));
@@ -342,7 +389,8 @@
       mic.appendChild(ic(m.icon));
       head.append(mic, h("b", null, m.name));
       const href = key === "stock" ? RAFI : null;
-      card.append(head, memberBody(key, d), lastFooter(d.last[key], href, key === "stock" || key === "invoices"));
+      card.append(head, memberBody(key, d), lastFooter(d.last[key], href, key === "stock" || key === "invoices",
+        d.last_before && d.last_before[key]));
       if (key === "stock") {
         const f = card.lastChild;
         f.href = RAFI;
@@ -363,7 +411,7 @@
       const mic = h("span", "mic" + (hot ? " x" : ""));
       mic.appendChild(ic(m.icon));
       tile.append(mic, h("b", null, m.name));
-      let value, sub = null, none = false;
+      let value, sub = null, none = false, quiet = false;
       if (key === "master") {
         const s = d.sales.same_day;
         if (s.pct === null) { value = "Δεν υπάρχει ακόμα σύγκριση"; none = true; }
@@ -382,14 +430,28 @@
         }
       } else if (key === "invoices") {
         const inv = d.invoices;
-        if (!inv.today) { value = "Κανένα τιμολόγιο σήμερα"; none = true; }
+        if (!inv.today && inv.recent && inv.recent.length) {
+          value = "Κανένα σήμερα";
+          quiet = true;
+          sub = "τελευταίο: " + inv.recent[0].label + ", " + ago(inv.recent[0].date, d.today);
+        } else if (!inv.today) { value = "Κανένα τιμολόγιο σήμερα"; none = true; }
         else { value = inv.need_you ? inv.need_you + " για σένα" : "Όλα σωστά"; sub = "από " + inv.today + " με email"; }
       } else {
         const nx = d.payments.next;
-        if (!nx) { value = "Καμία πληρωμή μπροστά"; none = true; }
-        else { value = due(nx.days); sub = "πληρωμή " + nx.label + ", " + money(nx.amount_cents); }
+        if (!nx) {
+          value = "Καμία πληρωμή μπροστά";
+          quiet = true;
+          const parts = [];
+          const month = d.invoices.month;
+          if (month && month.count) {
+            parts.push(month.name + ": " + plural(month.count, "τιμολόγιο", "τιμολόγια") + ", " + money(month.total_cents) + ".");
+          }
+          const paid = d.payments.last_paid;
+          if (paid) parts.push("Τελευταία πληρωμή: " + paid.label + ", " + ago(paid.date, d.today) + ".");
+          sub = parts.length ? parts.join(" ") : null;
+        } else { value = due(nx.days); sub = "πληρωμή " + nx.label + ", " + money(nx.amount_cents); }
       }
-      const mtv = typeof value === "string" ? h("span", "mtv" + (none ? " none" : ""), value) : value;
+      const mtv = typeof value === "string" ? h("span", "mtv" + (none ? " none" : "") + (quiet ? " hb-quiet" : ""), value) : value;
       tile.appendChild(mtv);
       const mts = h("span", "mts");
       if (sub) mts.appendChild(document.createTextNode(sub));
@@ -598,20 +660,67 @@
     return card;
   }
 
+  /* η κάρτα «Ζητήθηκε» του κινητού, στη θέση του πιστωτικού που μόλις στάλθηκε */
+  function sentCard(s, nextTitle, go) {
+    const c = s.credit;
+    const card = h("article", "stage mc");
+    card.setAttribute("aria-label", "Ζητήθηκε πιστωτικό " + c.label);
+    const mcb = h("div", "mcb");
+    mcb.appendChild(h("p", "from", c.label + " · " + c.supplier + " · " + s.at));
+    const big = h("div", "hb-big");
+    big.append(ic("check-circle", "ph-fill"), h("h2", null, "Ζητήθηκε πιστωτικό " + money(c.amount_cents)));
+    mcb.appendChild(big);
+    const well = h("div", "well");
+    const box = h("div", "hb-sent");
+    [["Προς", c.supplier], ["Θέμα", c.subject], ["Ποσό", money(c.amount_cents)]].forEach((r) => {
+      const row = h("div", "hb-sr");
+      row.append(h("span", null, r[0]), h("b", null, r[1]));
+      box.appendChild(row);
+    });
+    well.appendChild(box);
+    mcb.appendChild(well);
+    const acts = h("div", "acts hb-col");
+    if (nextTitle) {
+      const next = h("button", "btn yes", "Επόμενο: " + nextTitle + " ");
+      next.type = "button";
+      next.appendChild(ic("arrow-right"));
+      next.addEventListener("click", () => go(1));
+      acts.appendChild(next);
+    }
+    const open = h("a", "btn no", "Άνοιξε το " + c.label);
+    open.href = TIMOLOGIA;
+    acts.appendChild(open);
+    mcb.appendChild(acts);
+    card.appendChild(mcb);
+    return card;
+  }
+
   function renderCarousel(state, d) {
     const box = byId("hb-car");
     const oldCar = box.querySelector(".car");
-    const keep = oldCar && oldCar.firstElementChild ? Math.round(oldCar.scrollLeft / (oldCar.firstElementChild.offsetWidth + 16)) : 0;
+    let keep = oldCar && oldCar.firstElementChild ? Math.round(oldCar.scrollLeft / (oldCar.firstElementChild.offsetWidth + 16)) : 0;
     box.replaceChildren();
     const cards = [];
     (state.pending_approvals || []).forEach((a, i) => {
       const st = h("article", "stage mc");
       const own = Object.assign({}, state, { pending_approvals: [a], shelf_focus: i === 0 ? state.shelf_focus : null });
-      window.xangxStageNode(st, a, own, { chat: false, titleId: "hb-car-t" + cards.length });
+      window.xangxStageNode(st, a, own, { chat: false, titleId: "hb-car-t" + cards.length,
+        credit: (d.credit || {})[a.approval_id] || null, mobile: true });
       cards.push(st);
     });
     (state.pending_payments || []).forEach((p) => cards.push(payCard(p, d)));
     (d.iban || []).forEach((r) => cards.push(ibanCard(r)));
+    // The owner already looked at another card: the "Requested" card goes away, and the owner stays where they are.
+    const justSent = home.sentNow(state);
+    if (justSent && justSent.seenOther) justSent.carGone = true;
+    const showSent = !!justSent && !justSent.carGone;
+    if (showSent) {
+      const nextTitle = cards.length ? (cards[0].querySelector("h2") || {}).textContent : null;
+      cards.unshift(sentCard(justSent, nextTitle, (to) => go(to)));
+    }
+    if (showSent && !carHadSent) keep = 0;
+    else if (!showSent && carHadSent) keep = Math.max(0, keep - 1);
+    carHadSent = showSent;
     const real = cards.length;
     if (!real) cards.push(idleCard(state));
 
@@ -641,6 +750,7 @@
     const index = () => Math.max(0, Math.min(cards.length - 1, Math.round(car.scrollLeft / step())));
     const show = () => {
       const i = index();
+      if (showSent && i !== 0) justSent.seenOther = true;
       if (real) label.textContent = (i + 1) + " από " + real;
       Array.prototype.forEach.call(dots.children, (dot, k) => dot.classList.toggle("on", k === i));
     };
@@ -667,7 +777,7 @@
     const d = data;
     if (!d) return;
     const sig = JSON.stringify([d, state.timeline, state.day, state.pending_payments,
-      state.pending_approvals, state.shelf_focus, state.tasks]);
+      state.pending_approvals, state.shelf_focus, state.tasks, sent]);
     if (sig === lastSig) return;
     lastSig = sig;
     const need = d.invoices.need_you > 0;
@@ -689,5 +799,45 @@
     try { data = await api("/api/screen/home" + untilQuery()); } catch (e) { /* the last answer stays */ }
   };
   Object.defineProperty(home, "data", { get: function () { return data; } });
+
+  /* ---------- το πιστωτικό που μόλις στάλθηκε ---------- */
+  home.sent = function (approvalId, credit, message) {
+    sent = { approval_id: approvalId, credit: credit, message: message || "",
+      at: clock(new Date().toISOString()), carGone: false, seenOther: false, newSeen: false };
+  };
+  // The request, once it is no longer waiting for an answer. `state` is passed in because the stage is drawn before home(state).
+  home.sentNow = function (state) {
+    if (!sent) return null;
+    const pending = (state && state.pending_approvals) || [];
+    if (pending.some((a) => a.approval_id === sent.approval_id)) return null;
+    if (pending.length) sent.newSeen = true;
+    return sent;
+  };
+  // The desktop stage after "Στείλε": the server's own message, and a way to the invoice.
+  home.doneStage = function (stage, s) {
+    const c = s.credit;
+    stage.replaceChildren();
+    stage.classList.remove("low");
+    const shd = h("div", "shd");
+    const lead = h("span");
+    lead.append(ic("calculator"), document.createTextNode("Ο Λογιστής σε ρωτά"));
+    shd.append(lead, h("span", null, "1 από 1"));
+    const body = h("div", "body one");
+    const box = h("div");
+    box.appendChild(h("p", "from", c.label + " · " + c.supplier));
+    const big = h("div", "hb-big");
+    const title = h("h2", null, "Ζητήθηκε πιστωτικό " + money(c.amount_cents));
+    title.id = "stage-title";
+    big.append(ic("check-circle", "ph-fill"), title);
+    box.append(big, h("p", "why", s.message || "Το αίτημα καταγράφηκε."));
+    const acts = h("div", "acts");
+    const open = h("a", "btn no", "Άνοιξε το " + c.label);
+    open.href = TIMOLOGIA;
+    acts.appendChild(open);
+    box.appendChild(acts);
+    body.appendChild(box);
+    stage.setAttribute("aria-labelledby", "stage-title");
+    stage.append(shd, body);
+  };
   window.xangxHome = home;
 })();
