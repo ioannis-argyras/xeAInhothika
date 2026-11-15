@@ -19,7 +19,7 @@ A 24-hour mini market in Pangrati, Athens. One owner is also the buyer, the stoc
 - **One partner** talks to the owner on the screen and on Telegram. It plans, calls tools, and writes every money decision as an approval card. Nothing in that card runs until the owner taps «Yes».
 - **It wakes up on its own** when something happens: low stock, an invoice that does not match, a new IBAN, a price change. It also runs a morning check at 07:00.
 - **Three groups of tools**, one per team member:
-  - **Stock and orders:** shelf camera (the model compares two photos and says how many were taken), stock and expiry dates, delivery check by barcode (phone or USB scanner, one case counts as all the units inside), order proposal from sales, supplier comparison, email to the supplier and reading the reply.
+  - **Stock and orders:** shelf camera (the model compares two photos and says how many were taken), stock and expiry dates, delivery check by barcode (phone camera, one case counts as all the units inside; a USB scanner types into the same field, not tested with a real one), order proposal from sales, supplier comparison, email to the supplier and reading the reply.
   - **Invoices:** reading a PDF or photo from a folder, an email or the phone. Checks without AI (totals, tax number, known supplier), matching against the delivery, price changes, duplicates, new IBAN, and **myDATA**: it asks the Greek tax platform whether the supplier declared the invoice, with the same total.
   - **Accountant:** payment reminders from the terms on the paper, «Did you pay? How?» for cash invoices, credit requests, a daily report, the month's folder for the accountant (ZIP with a summary), and purchase trends.
 - **Events that are never deleted.** Every action is written as an event, with who did it and why. Stock is computed from the events, and the day's history replays from them.
@@ -29,7 +29,7 @@ A 24-hour mini market in Pangrati, Athens. One owner is also the buyer, the stoc
 | Real | Simulated (and said so on screen) |
 |---|---|
 | The phone camera and the model that counts the shelf | Till sales: a program «sells» at each hour's rate. The screen says «Till: simulation» |
-| Barcode scanning (phone or USB scanner) | The 30-day history of sales and invoices |
+| Barcode scanning (phone camera) | The 30-day history of sales and invoices |
 | The model reading invoices (PDF, photos) and supplier emails | Products, prices, case barcodes, suppliers, tax numbers (with a valid check digit) and IBANs |
 | The partner, its tools and the approvals | The people: the owner and the «supplier» are team members |
 | Emails to and from the «supplier», and Telegram | The 3 demo invoices (Α-2271, Β-512, Γ-318) were made by us |
@@ -46,7 +46,7 @@ A 24-hour mini market in Pangrati, Athens. One owner is also the buyer, the stoc
 - Keys live only in a local `.env`, with a spend limit. Tax information is support, not accountant's advice.
 
 ## Numbers
-- Shelf camera: right 18 times out of 19; the 19th was off by one can.
+- Shelf camera: right 18 times out of 19 on test photos (the 19th was off by one can). On the real stage shelf today: 6 of 7 right, 3.6–4.4 seconds per photo; the miss was a can left in front of another product.
 - Trap invoices: 15 of 15.
 - Photo to «Shall I send it?»: 19–22 seconds, 4 runs.
 - Invoice to the credit question: 27–34 seconds, 3 runs.
