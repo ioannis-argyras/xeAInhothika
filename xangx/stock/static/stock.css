@@ -278,3 +278,8 @@ dialog .acts{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:18px
   .pl-dock .btn.yes{min-height:52px}
   .pl-dock .pl-closed{flex:1;justify-content:center;min-height:52px}
 }
+
+/* Inside the shared left menu frame (computer only, set by the page script): the frame has its own top bar and pause banner. */
+body[data-shell] header.top,body[data-shell] nav.tabs,body[data-shell] #paused-banner{display:none}
+/* No old top bar any more: the title starts at the same distance from the top edge as on the other framed pages (34px). */
+body[data-shell] :is(#s-km,#s-pl) :is(.km-band,.pl-band){padding-top:34px}
