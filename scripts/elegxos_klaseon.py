@@ -35,6 +35,9 @@ KNOWN = {
     "g-par",
     # photo.css repeats the app.css rule word for word: hidden on desktop, flex on mobile.
     "only-m",
+    # arxiki.css loads only on the home page, timologia.css only on the invoices page (audit
+    # 15/11/2026). Rename it when the invoices page is rebuilt in the home B direction.
+    "up",
 }
 
 LAYOUT_PROPS = {"position", "display", "width", "height", "grid", "grid-template-columns"}
