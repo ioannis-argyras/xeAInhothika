@@ -16,7 +16,7 @@ from xangx.accountant import core as accountant
 from xangx.demo.seed import seed_all
 from xangx.master.tools import greek_day_start_utc, greek_offset
 from xangx.screen import api_home
-from xangx.screen.describe import describe
+from xangx.screen.describe import describe, load_names
 from xangx.shared.db import connect, init_db
 from xangx.shared.events import Event, append_event, read_events
 
@@ -253,6 +253,23 @@ class ScreenHomeTest(unittest.TestCase):
                          {"date": (at + greek_offset(at)).strftime("%d/%m"),
                           "text": "Πρωινός έλεγχος"})
         self.assertIsNone(data["last_before"]["orders"])  # it worked today
+
+    def _unread_flag(self, invoice_id):
+        e, _ = append_event(self.conn, type="exception.flagged", actor="accountant",
+                            subject=f"invoice:{invoice_id}", idem_key=f"invoice_unread_offline:{invoice_id}",
+                            payload={"kind": "invoice_unread_offline", "ref": f"invoice:{invoice_id}",
+                                     "note": "Δεν μπόρεσα να διαβάσω το τιμολόγιο: δεν υπάρχει σύνδεση."})
+        return e
+
+    def test_an_unread_flag_shows_until_the_invoice_is_read(self):
+        flag = self._unread_flag("X-OFF-1")
+        self.assertEqual(self.home()["last"]["accountant"]["text"], describe(flag, load_names(self.conn)))
+        append_event(self.conn, type="invoice.read", actor="system",
+                     payload={"invoice_id": "X-OFF-1", "supplier_afm": "000000000", "series": "Τ",
+                              "number": "8001", "date": "2026-11-15", "lines": [], "net_cents": 100,
+                              "vat_by_rate": {}, "total_cents": 100, "checks": {}, "confidence": 1})
+        last = self.home()["last"]["accountant"]
+        self.assertTrue(last is None or "διαβάσω" not in last["text"], last)
 
 
 class MonthFolderTextTest(unittest.TestCase):

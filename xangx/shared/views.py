@@ -12,6 +12,25 @@ def stock_on_hand(conn, product_id, until_id=None):
     return total
 
 
+UNREAD_KINDS = ("invoice_unread_offline", "invoice_unread")
+
+
+def resolved_flag_ids(conn, until_id=None):
+    """ids of the "could not read the invoice" flags whose invoice was read later (a solved problem)."""
+    read_id = {}
+    for e in read_events(conn, until_id=until_id, types=["invoice.read"]):
+        read_id[e.payload.get("invoice_id")] = e.id
+    out = set()
+    for e in read_events(conn, until_id=until_id, types=["exception.flagged"]):
+        p = e.payload or {}
+        ref = str(p.get("ref") or "")
+        if p.get("kind") in UNREAD_KINDS and ref.startswith("invoice:"):
+            later = read_id.get(ref[len("invoice:"):])
+            if later is not None and later > e.id:
+                out.add(e.id)
+    return out
+
+
 def pending_approvals(conn, until_id=None):
     """approval.requested events that have no approval.decided yet."""
     events = read_events(

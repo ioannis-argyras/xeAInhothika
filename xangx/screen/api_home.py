@@ -163,10 +163,11 @@ def _last(conn, day_start, until_id):
     """The last job of today for each team member: {"at": "HH:MM", "text": ...} or None."""
     names = load_names(conn)
     events = _since(conn, day_start, until_id, TASK_TYPES + ("agent.planned",))
+    solved = views.resolved_flag_ids(conn, until_id)
     out = {key: None for key in MEMBERS}
     for e in events:
         key, _ = _team(e)
-        if not _is_task(e) or key not in out:
+        if not _is_task(e) or key not in out or e.id in solved:
             continue
         text = "Πρωινός έλεγχος" if e.type == "check.morning_done" else describe(e, names)
         out[key] = {"at": _hhmm(e.at), "text": text}
@@ -179,9 +180,10 @@ def _last_before(conn, day_start, until_id, last):
     if all(last[key] is not None for key in MEMBERS):
         return out
     names = load_names(conn)
+    solved = views.resolved_flag_ids(conn, until_id)
     for e in read_events(conn, until_id=until_id, types=TASK_TYPES + ("agent.planned",)):
         key, _ = _team(e)
-        if e.at >= day_start or not _is_task(e) or key not in out:
+        if e.at >= day_start or not _is_task(e) or key not in out or e.id in solved:
             continue
         text = "Πρωινός έλεγχος" if e.type == "check.morning_done" else describe(e, names)
         out[key] = {"date": _local(e.at).strftime("%d/%m"), "text": text}

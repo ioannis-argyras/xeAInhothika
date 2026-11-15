@@ -267,12 +267,13 @@ def _home_sections(conn, until_id, names, low):
 
     team = []
     team_of = {}
+    solved = views.resolved_flag_ids(conn, until_id)
     for t in TEAM:
         for actor in t["actors"]:
             team_of[actor] = t["key"]
         last = None
         for e in events:
-            if e.actor in t["actors"] and not is_quiet(e):
+            if e.actor in t["actors"] and not is_quiet(e) and e.id not in solved:
                 last = e
         active = bool(last) and (
             now_utc - _parse_utc(last.at) <= timedelta(minutes=ACTIVE_MINUTES))
