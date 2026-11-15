@@ -216,7 +216,7 @@ body[data-page] .dark .top .m{color:var(--n4)}
   :root{--gut:16px;--rise:64px;--xl:32px;--gap:16px}
   :is(body[data-page],body[data-shell]){display:block;padding-bottom:calc(76px + env(safe-area-inset-bottom))}
   .side{display:none}
-  body[data-shell] #s-arxiki .mb,body[data-shell] #s-synomilia .mb{padding-top:24px}
+  body[data-shell] #s-arxiki .mb,body[data-shell] #s-synomilia .mb,body[data-shell] #s-rafi .mb,body[data-shell] #s-mix .mb,body[data-shell] #s-tim .mb{padding-top:24px}
   .only-m{display:flex!important}
   .only-d{display:none!important}
   .mtop{display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:20;height:56px;padding:0 var(--gut);padding-top:env(safe-area-inset-top);background:var(--band);color:#fff;border-bottom:1px solid rgba(163,180,204,.16)}
