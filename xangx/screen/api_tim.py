@@ -10,6 +10,7 @@ from datetime import date
 
 import fastapi
 
+from xangx.accountant.trends import purchase_trends
 from xangx.master.tools import greek_day_start_utc, greek_offset
 from xangx.screen.api_b1 import (
     _bundles, _clock, _db, _hhmm, _label, _last_id, _local, _reference, _since, _status, _team,
@@ -196,6 +197,7 @@ def invoices_page(until_id: int | None = None):
                          for i in todays if i["level"] == "ok"],
             "payments": pay_items,
             "months": groups,
+            "trend_ref": _trend_ref(conn, until_id, bundles),
             "month_folder": _recent_and_month(conn, until_id, day_start, today, bundles)[1],
             "last_id": _last_id(conn, until_id),
             "paused": views.is_paused(conn, until_id=until_id),
@@ -207,7 +209,7 @@ def invoices_page(until_id: int | None = None):
 
 # ---------- the extra fields of one invoice ----------
 
-def _payment(conn, iid, until_id, now, today, paid):
+def _payment(conn, iid, until_id, now, today, paid, day_start, invoice_date):
     undone = undo.undone_ids(conn, until_id)
     reminder = None
     for e in read_events(conn, until_id=until_id, types=["payment.reminder_set"]):
@@ -216,10 +218,18 @@ def _payment(conn, iid, until_id, now, today, paid):
     done = paid.get(iid)
     if reminder is None:
         return {"due_on": None, "days": None, "event_id": None, "undo": None,
-                "paid": done} if done else None
+                "terms_days": None, "reminder_at": None, "paid": done} if done else None
     due = str(reminder.payload.get("due_on") or "")[:10]
+    terms = None
+    try:
+        terms = (date.fromisoformat(due) - date.fromisoformat(invoice_date)).days
+    except ValueError:
+        pass
     return {"due_on": due or None,
             "days": (date.fromisoformat(due) - today).days if due else None,
+            "terms_days": terms if terms is not None and terms > 0 else None,
+            "reminder_at": _hhmm(reminder.at) if reminder.at >= day_start
+            else _local(reminder.at).strftime("%d/%m %H:%M"),
             "event_id": reminder.id,
             "undo": undo.Index(conn, until_id).state(reminder, now),
             "paid": done}
@@ -245,11 +255,11 @@ def _history(conn, iid, until_id, day_start, bundles, scene_amount, pending_here
         local = _local(e.at)
         at = _hhmm(e.at) if e.at >= day_start else local.strftime("%d/%m %H:%M")
         team = "owner" if e.actor == "owner" else _team(e)[0]
-        out.append({"at": at, "team": team, "text": text})
+        out.append({"at": at, "team": team, "kind": e.type, "text": text})
     if pending_here:
         text = "Περιμένει εσένα: πιστωτικό" + (
             " " + format_eur(scene_amount) if scene_amount is not None else "")
-        out.append({"at": "τώρα", "team": "you", "text": text})
+        out.append({"at": "τώρα", "team": "you", "kind": "you", "text": text})
     return out
 
 
@@ -263,6 +273,37 @@ def _vat(read):
         except (TypeError, ValueError):
             continue
     return [{"rate": r, "cents": c} for r, c in sorted(vat.items(), reverse=True)]
+
+
+def attach_cheaper(conn, iid, until_id, lines):
+    """Give a line `cheaper` ({supplier, cents}) when supplier.cheaper_found, caused by this
+    invoice, names another supplier with the same product cheaper. Nothing otherwise."""
+    names = load_names(conn)["supplier"]
+    found = {}
+    for e in read_events(conn, until_id=until_id, types=["supplier.cheaper_found"]):
+        p = e.payload
+        if p.get("caused_by_invoice_id") == iid:
+            found[p.get("product_id")] = {"supplier": names.get(p.get("to_supplier_id")),
+                                          "cents": p.get("to_cents")}
+    for line in lines:
+        cheaper = found.get(line.get("product_id"))
+        if cheaper and cheaper["supplier"] and cheaper["cents"] is not None:
+            line["cheaper"] = cheaper
+
+
+def _trend_ref(conn, until_id, bundles):
+    """The invoice that carried the newest price change of the biggest change in the trends
+    ({invoice_id, label}), or None."""
+    changes = purchase_trends(conn, until_id=until_id)["changes"]
+    if not changes:
+        return None
+    newest = None
+    for iid, b in bundles.items():
+        for e in b.get("prices", []):
+            if e.payload.get("product_id") == changes[0]["product_id"] and (
+                    newest is None or e.id > newest[0]):
+                newest = (e.id, iid)
+    return {"invoice_id": newest[1], "label": _label(bundles[newest[1]], newest[1])} if newest else None
 
 
 def invoice_extras(conn, iid, until_id, bundles, pending):
@@ -281,7 +322,8 @@ def invoice_extras(conn, iid, until_id, bundles, pending):
     return {
         "via": _via(b.get("received")),
         "credit_box": box,
-        "payment": _payment(conn, iid, until_id, now, today, paid_map(conn, until_id)),
+        "payment": _payment(conn, iid, until_id, now, today, paid_map(conn, until_id), day_start,
+                            str((b["read"].payload.get("date") if b.get("read") else "") or "")[:10]),
         "history": _history(conn, iid, until_id, day_start, bundles, amount, pending is not None),
         "vat": _vat(b.get("read")),
     }

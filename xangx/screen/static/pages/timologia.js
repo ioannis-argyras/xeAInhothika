@@ -404,7 +404,7 @@
   }
 
   /* ---------- λίστα: τάσεις και αγορές ---------- */
-  function changeNodes(c) {
+  function changeNodes(c, ref) {
     var up = c.pct > 0;
     var tr = el("div", "tb-tr");
     tr.appendChild(el("b", null, c.name));
@@ -412,7 +412,7 @@
     var pct = el("b", null, num(Math.abs(c.pct).toFixed(1)).replace(/,0$/, "") + "%");
     var arrow = icon("ph", up ? "arrow-up" : "arrow-down");
     if (!up) { pct.style.color = arrow.style.color = "var(--ok)"; }
-    p.append(arrow, pct, txt(" " + eur(c.was_cents) + " → " + eur(c.now_cents)));
+    p.append(arrow, pct, txt(" " + (ref ? "στο " + ref.label + ": " : "") + eur(c.was_cents) + " → " + eur(c.now_cents)));
     tr.appendChild(p);
     return tr;
   }
@@ -462,7 +462,7 @@
     return well;
   }
   var NO_TRENDS = "Δεν υπάρχουν ακόμα τάσεις";
-  function fillTrends(card, data, withChart) {
+  function fillTrends(card, data, withChart, ref) {
     var ch = data && data.changes || [];
     var days = data && data.days || 30;
     if (!data) { empty(card, NO_TRENDS); return ""; }
@@ -477,7 +477,8 @@
       }
       return "";
     }
-    card.appendChild(changeNodes(ch[0]));
+    var inv = withChart && ref && ref.invoice_id && ref.label ? ref : null;
+    card.appendChild(changeNodes(ch[0], inv));
     var cheapSentence = null;
     if (withChart) {
       var w = chart(data, ch[0]);
@@ -487,17 +488,23 @@
     if (row && row.cheapest && row.cheapest.supplier_id !== row.last_supplier_id) {
       cheapSentence = "Η " + row.cheapest.name + " την έχει " + eur(row.cheapest.unit_cents);
     }
-    if (cheapSentence) {
+    if (cheapSentence || inv) {
       var cf = el("div", "cf");
-      cf.appendChild(el("span", "m", cheapSentence));
+      cf.appendChild(el("span", "m", cheapSentence || ""));
+      if (inv) {
+        var go = el("a", "lk", inv.label + " ");
+        go.href = href(inv.invoice_id);
+        go.appendChild(icon("ph", "arrow-right"));
+        cf.appendChild(go);
+      }
       card.appendChild(cf);
     }
     return plural(ch.length, "αλλαγή", "αλλαγές") + (withChart ? " τον μήνα" : "");
   }
-  function renderTrends(data) {
+  function renderTrends(data, ref) {
     var card = $("l-tr");
     clearCard(card);
-    $("l-tr-n").textContent = fillTrends(card, data, true);
+    $("l-tr-n").textContent = fillTrends(card, data, true, ref);
     var m = $("m-tr");
     m.replaceChildren();
     var mc = el("article", "card");
@@ -564,7 +571,7 @@
     $("l-all-n").textContent = String(page.counts.all);
     renderStage(page);
     renderPayments(page);
-    renderTrends(trends);
+    renderTrends(trends, page.trend_ref);
     renderSuppliers(trends);
     renderFolder(page);
     var need = $("m-need");
@@ -602,10 +609,16 @@
     accountant: ["calculator", "m-log"], master: ["handshake", "m-syn"], agent: ["handshake", "m-syn"],
     owner: ["hand-palm", "you"], you: ["hand-palm", "you"]
   };
-  function teamBadge(team) {
+  var KIND_ICON = {
+    "invoice.received": "envelope-simple", "invoice.read": "scan", "invoice.matched": "barcode",
+    "price.changed": "trend-up", "payment.reminder_set": "calendar-blank", you: "hand-palm"
+  };
+  function teamBadge(team, kind, via) {
     var t = TEAM[team] || TEAM.master;
     var c = el("span", "c " + t[1]);
-    c.appendChild(icon(t[1] === "you" ? "ph-fill" : "ph", t[0]));
+    var name = KIND_ICON[kind] || t[0];
+    if (kind === "invoice.received" && via === "photo") name = "camera";
+    c.appendChild(icon(t[1] === "you" ? "ph-fill" : "ph", name));
     return c;
   }
   var METHOD = {cash: "μετρητά", card: "κάρτα", bank: "τράπεζα"};
@@ -740,7 +753,9 @@
     var b = el("b");
     b.append(icon("ph", down ? "arrow-down" : "arrow-up"), txt(String(l.price_pct_text || "").replace(/^[+−-]/, "")));
     if (down) { b.style.color = "var(--ok)"; }
-    c.append(b, txt("ήταν " + l.old_unit_text + (withLink ? ". " : "")));
+    var cheap = withLink && l.cheaper && l.cheaper.supplier && l.cheaper.cents != null ? l.cheaper : null;
+    c.append(b, txt("ήταν " + l.old_unit_text + (withLink ? ". " : "") +
+      (cheap ? "Η " + cheap.supplier + " την έχει " + eur(cheap.cents) + ". " : "")));
     if (withLink) {
       var a = el("a", "lk u", "Τάσεις τιμών");
       a.href = PAGE;
@@ -830,7 +845,7 @@
     items.forEach(function (e) {
       var p = split(e.text);
       var cell = el("div", e.team === "you" ? "you" : "");
-      cell.append(teamBadge(e.team), el("time", null, e.at), el("b", null, p[0]));
+      cell.append(teamBadge(e.team, e.kind, d.via), el("time", null, e.at), el("b", null, p[0]));
       if (p[1]) cell.appendChild(el("span", null, p[1]));
       grid.appendChild(cell);
     });
@@ -848,26 +863,26 @@
       var t = el("span");
       t.appendChild(el("b", null, p[0]));
       if (p[1]) t.appendChild(txt(", " + p[1]));
-      row.append(teamBadge(e.team), el("time", null, e.at), t);
+      row.append(teamBadge(e.team, e.kind, d.via), el("time", null, e.at), t);
       card.appendChild(row);
     });
     return card;
   }
 
-  function checkRow(c) {
+  function checkRow(c, withValue) {
     var row = el("div", "tb-ck" + (c.ok ? "" : " bad"));
     row.appendChild(icon("ph-bold", c.ok ? "check" : "x"));
     var s = el("span");
     if (c.lead) { s.appendChild(el("b", null, c.lead)); s.appendChild(txt(" ")); }
     s.appendChild(txt(c.text));
-    row.append(s, el("span"));
+    row.append(s, el("span", null, withValue && c.value ? String(c.value) : ""));
     return row;
   }
   function checksDesk(d) {
     var card = $("d-checks"), list = d.checks || [];
     card.hidden = !list.length;
     clearCard(card);
-    list.forEach(function (c) { card.appendChild(checkRow(c)); });
+    list.forEach(function (c) { card.appendChild(checkRow(c, true)); });
   }
   function checksMob(d) {
     var list = d.checks || [];
@@ -876,7 +891,7 @@
     var card = el("section", "card mt16");
     card.setAttribute("aria-label", "Έλεγχοι");
     card.appendChild(hd("seal-check", "Έλεγχοι", bad.length ? ok.length + " σωστοί, " + bad.length + " όχι" : "όλοι σωστοί"));
-    bad.concat(ok).forEach(function (c) { card.appendChild(checkRow(c)); });
+    bad.concat(ok).forEach(function (c) { card.appendChild(checkRow(c, !c.ok)); });
     return card;
   }
 
@@ -902,7 +917,8 @@
     out.push(row);
     if (p.event_id != null && !p.paid) {
       var cf = el("div", "cf");
-      cf.appendChild(el("span", "m", mobile ? "Υπενθύμιση" : "Υπενθύμιση από τον Λογιστή"));
+      cf.appendChild(el("span", "m", (mobile ? "Υπενθύμιση" : "Υπενθύμιση από τον Λογιστή") +
+        (p.reminder_at ? ", " + p.reminder_at : "")));
       var u = window.xangxUndoNode ? window.xangxUndoNode(p.undo, p.event_id, "υπενθύμιση πληρωμής", soon) : null;
       if (u) cf.appendChild(u);
       out.push(cf);
@@ -914,6 +930,9 @@
     card.hidden = !d.payment || (d.payment.due_on == null && !d.payment.paid);
     if (card.hidden) return;
     clearCard(card);
+    var right = card.querySelector(".hd .r");
+    if (!right) { right = el("span", "r"); card.querySelector(".hd").appendChild(right); }
+    right.textContent = d.payment.terms_days ? "πίστωση " + d.payment.terms_days + (d.payment.terms_days === 1 ? " ημέρας" : " ημερών") : "";
     payBody(d, today, false).forEach(function (n) { card.appendChild(n); });
   }
   function payMob(d, today) {

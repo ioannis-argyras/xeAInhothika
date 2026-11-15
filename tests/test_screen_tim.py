@@ -13,12 +13,13 @@ from tests.test_screen_b1 import build_scene
 from xangx.accountant import core as accountant
 from xangx.demo.seed import seed_all
 from xangx.master.tools import greek_offset
+from xangx.orders import worker as orders_worker
 from xangx.screen import api_b1, api_tim
 from xangx.shared.db import connect, init_db
 from xangx.shared.events import append_event, read_events
 
-PAGE_KEYS = {"today", "counts", "need", "ok_today", "payments", "months", "month_folder",
-             "last_id", "paused", "now"}
+PAGE_KEYS = {"today", "counts", "need", "ok_today", "payments", "months", "trend_ref",
+             "month_folder", "last_id", "paused", "now"}
 ROW_KEYS = {"invoice_id", "label", "supplier", "arrived", "lines", "level", "status",
             "total_cents", "pay"}
 DETAIL_KEYS = {"via", "credit_box", "payment", "history", "vat"}
@@ -268,7 +269,7 @@ class ScreenTimTest(unittest.TestCase):
         self.assertEqual(box["approval_id"], self.ids["credit_approval"])
         self.assertEqual((box["missing"], box["amount_cents"]), (1, need["amount_cents"]))
         self.assertNotIn("email", box)
-        self.assertEqual(d["history"][-1], {"at": "τώρα", "team": "you",
+        self.assertEqual(d["history"][-1], {"at": "τώρα", "team": "you", "kind": "you",
                                             "text": "Περιμένει εσένα: πιστωτικό 2,43 €"})
         first = d["history"][0]
         self.assertEqual((first["team"], first["text"]), ("invoices", "Ήρθε τιμολόγιο Α-2271"))
@@ -295,7 +296,8 @@ class ScreenTimTest(unittest.TestCase):
     def test_detail_payment_days_undo_and_paid(self):
         d = self.detail("Β-512")
         pay = d["payment"]
-        self.assertEqual(set(pay), {"due_on", "days", "event_id", "undo", "paid"})
+        self.assertEqual(set(pay), {"due_on", "days", "terms_days", "reminder_at", "event_id",
+                                    "undo", "paid"})
         self.assertEqual((pay["days"], pay["undo"], pay["paid"]), (0, "can", None))
         reminder = read_events(self.conn, types=["payment.reminder_set"])[-1]
         self.assertEqual((pay["event_id"], pay["due_on"]),
@@ -310,9 +312,77 @@ class ScreenTimTest(unittest.TestCase):
         pay = self.detail("Β-512")["payment"]
         self.assertEqual((pay["due_on"], pay["days"], pay["event_id"], pay["undo"]),
                          (None, None, None, None))
+        self.assertEqual((pay["terms_days"], pay["reminder_at"]), (None, None))
         self.assertEqual(pay["paid"]["method"], "cash")
         self._undo(paid)
         self.assertIsNone(self.detail("Β-512")["payment"])
+
+    def _line(self, d, start):
+        return next(l for l in d["lines"] if l["name"].startswith(start))
+
+    def test_detail_line_has_product_id_and_cheaper_only_when_found(self):
+        d = self.detail("Α-2271")
+        self.assertEqual(self._line(d, "Coca-Cola")["product_id"], "cola-330")
+        self.assertTrue(all("cheaper" not in l for l in d["lines"]))  # nothing found yet
+        orders_worker.run_once(self.conn)
+        d = self.detail("Α-2271")
+        self.assertEqual(self._line(d, "Coca-Cola")["cheaper"],
+                         {"supplier": "Κάβα Βύρωνα", "cents": 58})
+        self.assertEqual([l["name"] for l in d["lines"] if "cheaper" in l],
+                         ["Coca-Cola 330ml κουτί"])
+        self.assertTrue(all("cheaper" not in l for l in self.detail("Γ-318")["lines"]))
+
+    def test_detail_check_values(self):
+        d = self.detail("Α-2271")
+        by_text = {c["text"]: c["value"] for c in d["checks"]}
+        self.assertTrue(all("value" in c for c in d["checks"]))
+        self.assertEqual(by_text["Ποσά και ΦΠΑ σωστά"], "131,96 + 27,33")
+        self.assertEqual(by_text["ΑΦΜ προμηθευτή γνωστό"], "Διανομές Υμηττού Α.Ε.")
+        self.assertEqual(by_text["Σελίδες"], "όλες")
+        self.assertEqual(by_text["IBAN γνωστό"], "…0101")
+        receipt = next(c for c in d["checks"] if c.get("lead", "").startswith("Παραλαβή"))
+        self.assertEqual((receipt["ok"], receipt["text"], receipt["value"]),
+                         (False, "ήρθαν 9 από 10", "λείπει 1"))
+        order = [c["text"] for c in d["checks"]][:3]
+        self.assertEqual(order, ["Ποσά και ΦΠΑ σωστά", "ΑΦΜ προμηθευτή γνωστό", "Σελίδες"])
+
+    def test_detail_check_value_mydata_env_and_no_value_on_error(self):
+        d = self.detail("Α-2271")
+        self.assertEqual(next(c["value"] for c in d["checks"] if c["text"].startswith("myDATA")), "")
+        append_event(self.conn, type="invoice.mydata_checked", actor="invoices",
+                     payload={"invoice_id": self.ids["Α-2271"], "env": "dev", "found": True,
+                              "totals_match": True})
+        d = self.detail("Α-2271")
+        mydata = next(c for c in d["checks"] if c["text"].startswith("myDATA"))
+        self.assertEqual((mydata["ok"], mydata["value"]), (True, "dev"))
+
+    def test_detail_payment_terms_and_reminder_time(self):
+        d = self.detail("Α-2271")
+        self.assertIsNone(d["payment"])
+        accountant.set_payment_reminder(self.conn, self.ids["Α-2271"])
+        pay = self.detail("Α-2271")["payment"]
+        self.assertEqual(pay["terms_days"], 30)
+        reminder = read_events(self.conn, types=["payment.reminder_set"])[-1]
+        local = datetime.strptime(reminder.at[:19], "%Y-%m-%dT%H:%M:%S").replace(tzinfo=timezone.utc)
+        local = local + greek_offset(local)
+        self.assertEqual(pay["reminder_at"], local.strftime("%H:%M"))
+        # a paper that is due the day it is dated has no credit terms to show
+        self.assertIsNone(self.detail("Β-512")["payment"]["terms_days"])
+
+    def test_detail_history_kind(self):
+        kinds = [h["kind"] for h in self.detail("Α-2271")["history"]]
+        self.assertEqual(kinds[:3], ["invoice.received", "invoice.read", "invoice.matched"])
+        self.assertIn("price.changed", kinds)
+        self.assertEqual(kinds[-1], "you")
+        self.assertTrue(all(isinstance(k, str) and k for k in kinds))
+
+    def test_page_trend_ref_points_at_the_invoice_of_the_biggest_change(self):
+        ref = self.page()["trend_ref"]
+        self.assertEqual(ref, {"invoice_id": self.ids["Α-2271"], "label": "Α-2271"})
+
+    def test_page_trend_ref_none_without_changes(self):
+        first = read_events(self.conn, types=["price.changed"])[0]
+        self.assertIsNone(self.page(until_id=first.id - 1)["trend_ref"])
 
     def test_detail_iban_only_last4(self):
         import re

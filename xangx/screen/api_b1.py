@@ -293,7 +293,8 @@ def _lines(conn, read, matched, prices, until_id):
     lines = []
     for l in read.payload.get("lines", []):
         pid = l.get("product_id")
-        line = {"name": l.get("name"), "charged": l.get("qty"), "unit_cents": l.get("unit_cents"),
+        line = {"name": l.get("name"), "product_id": pid, "charged": l.get("qty"),
+                "unit_cents": l.get("unit_cents"),
                 "unit_text": format_eur(l["unit_cents"]) if l.get("unit_cents") is not None else None,
                 "ordered": None, "delivered": None, "diff": pid in bad if pid else False}
         if ordered is not None:
@@ -309,52 +310,73 @@ def _lines(conn, read, matched, prices, until_id):
     return lines
 
 
-def _checks(b, names):
-    """The rows under the table: rule-based checks, each with ok true/false."""
+def _plain(cents):
+    """Greek amount without the euro sign, for the value column of the checks."""
+    return format_eur(cents).replace(" €", "")
+
+
+def _checks(b, names, supplier=None):
+    """The rows under the table: rule-based checks, each with ok true/false and a `value` for
+    the right-hand column ("" when there is nothing to show)."""
     out = []
     read = b["read"]
     chk = read.payload.get("checks") or {}
     if "arithmetic" in chk:
+        vat = sum(int(c) for c in (read.payload.get("vat_by_rate") or {}).values())
         out.append({"ok": bool(chk["arithmetic"]),
                     "text": "Ποσά και ΦΠΑ σωστά" if chk["arithmetic"]
-                    else "Τα ποσά ή το ΦΠΑ δεν βγαίνουν"})
+                    else "Τα ποσά ή το ΦΠΑ δεν βγαίνουν",
+                    "value": f"{_plain(read.payload.get('net_cents') or 0)} + {_plain(vat)}"})
     if "afm_valid" in chk or "supplier_known" in chk:
         if not chk.get("afm_valid", True):
-            out.append({"ok": False, "text": "Το ΑΦΜ του προμηθευτή δεν είναι έγκυρο"})
+            out.append({"ok": False, "text": "Το ΑΦΜ του προμηθευτή δεν είναι έγκυρο", "value": ""})
         elif chk.get("supplier_known", True):
-            out.append({"ok": True, "text": "ΑΦΜ προμηθευτή γνωστό"})
+            out.append({"ok": True, "text": "ΑΦΜ προμηθευτή γνωστό", "value": supplier or ""})
         else:
-            out.append({"ok": False, "text": "ΑΦΜ προμηθευτή άγνωστο"})
-    if chk.get("pages_complete") is False:
-        out.append({"ok": False, "text": "Λείπουν σελίδες του τιμολογίου"})
+            out.append({"ok": False, "text": "ΑΦΜ προμηθευτή άγνωστο", "value": ""})
+    if "pages_complete" in chk:
+        out.append({"ok": bool(chk["pages_complete"]), "text": "Σελίδες",
+                    "value": "όλες" if chk["pages_complete"] else "λείπουν"})
+    if b.get("iban"):
+        out.append({"ok": False, "lead": "Νέο IBAN.",
+                    "text": f"Λήγει σε …{b['iban'].payload.get('iban_last4')}. Δεν το αλλάζω χωρίς εσένα.",
+                    "value": f"…{b['iban'].payload.get('iban_last4')}"})
+    elif read.payload.get("iban"):
+        out.append({"ok": True, "text": "IBAN γνωστό", "value": "…" + str(read.payload["iban"])[-4:]})
     mydata = b.get("mydata")
     if mydata:
         m = mydata.payload
+        env = str(m.get("env") or "")
         if m.get("error"):
-            out.append({"ok": False, "text": "myDATA: δεν απάντησε, θα ξαναδοκιμάσω"})
+            out.append({"ok": False, "text": "myDATA: δεν απάντησε, θα ξαναδοκιμάσω", "value": ""})
         elif m.get("found") and m.get("totals_match"):
-            out.append({"ok": True, "text": "myDATA: βρέθηκε, ίδιο σύνολο"})
+            out.append({"ok": True, "text": "myDATA: βρέθηκε, ίδιο σύνολο", "value": env})
         elif m.get("found"):
-            out.append({"ok": False, "text": "myDATA: βρέθηκε, αλλά με άλλο σύνολο"})
+            out.append({"ok": False, "text": "myDATA: βρέθηκε, αλλά με άλλο σύνολο", "value": env})
         else:
-            out.append({"ok": False, "text": "myDATA: δεν βρέθηκε"})
-    if b.get("iban"):
-        out.append({"ok": False, "lead": "Νέο IBAN.",
-                    "text": f"Λήγει σε …{b['iban'].payload.get('iban_last4')}. Δεν το αλλάζω χωρίς εσένα."})
-    elif read.payload.get("iban"):
-        out.append({"ok": True, "text": "IBAN γνωστό"})
+            out.append({"ok": False, "text": "myDATA: δεν βρέθηκε", "value": env})
+    matched = b.get("matched")
+    shortages = [i for i in (matched.payload.get("issues") if matched else None) or []
+                 if i.get("kind") == "shortage"]
+    if shortages and matched.payload.get("order_id"):
+        expected = sum(int(i.get("expected") or 0) for i in shortages)
+        actual = sum(int(i.get("actual") or 0) for i in shortages)
+        out.append({"ok": False, "lead": "Παραλαβή " + str(matched.payload["order_id"]) + ":",
+                    "text": f"ήρθαν {actual} από {expected}", "value": f"λείπει {expected - actual}"})
     for e in b["prices"]:
         p = e.payload
         name = names["product"].get(p.get("product_id")) or "Είδος"
         out.append({"ok": False, "lead": f"{name} {_pct(p['pct'])}.",
-                    "text": f"Ήταν {format_eur(p['old_cents'])}, τώρα {format_eur(p['new_cents'])}."})
+                    "text": f"Ήταν {format_eur(p['old_cents'])}, τώρα {format_eur(p['new_cents'])}.",
+                    "value": ""})
     for e in b["flags"]:
-        out.append({"ok": False, "text": _mask(str(e.payload.get("note") or ""))})
+        out.append({"ok": False, "text": _mask(str(e.payload.get("note") or "")), "value": ""})
     if b.get("reminder"):
-        out.append({"ok": True, "text": "Υπενθύμιση πληρωμής " + _ddmmyyyy(b["reminder"].payload.get("due_on"))})
+        out.append({"ok": True, "text": "Υπενθύμιση πληρωμής " + _ddmmyyyy(b["reminder"].payload.get("due_on")),
+                    "value": ""})
     if b.get("credit"):
         out.append({"ok": True, "text": "Ζητήθηκε πιστωτικό "
-                    + format_eur(b["credit"].payload.get("amount_cents") or 0)})
+                    + format_eur(b["credit"].payload.get("amount_cents") or 0), "value": ""})
     return out
 
 
@@ -410,14 +432,20 @@ def invoice_detail(invoice_id: str, until_id: int | None = None):
         out["net_text"], out["vat_text"], out["total_text"] = (
             format_eur(net), format_eur(total - net), format_eur(total))
         out["lines"] = _lines(conn, read, b.get("matched"), b["prices"], until_id)
+        _tim().attach_cheaper(conn, invoice_id, until_id, out["lines"])
         out["has_order"] = any(l["ordered"] is not None for l in out["lines"])
         out["has_delivery"] = any(l["delivered"] is not None for l in out["lines"])
-        out["checks"] = _checks(b, names)
+        out["checks"] = _checks(b, names, item["supplier"])
         if pending is not None:
             out["credit"] = _credit_scene(conn, invoice_id, pending)
         return out
     finally:
         conn.close()
+
+
+def _tim():
+    from xangx.screen import api_tim  # lazy: api_tim imports this module
+    return api_tim
 
 
 # ---------- tasks ----------
