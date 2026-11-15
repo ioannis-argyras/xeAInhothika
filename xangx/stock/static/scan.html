@@ -185,7 +185,8 @@ $('man').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDe
 
 $('done').onclick = () => {
   const missing = [...$('missList').children].map(d => d.children[0].textContent + ' ' + d.children[1].firstChild.textContent);
-  $('askText').textContent = missing.length ? 'Λείπουν ακόμα ' + missing.join(', ') + '. Θα γραφτούν ως λείψη.' : 'Ήρθαν όλα.';
+  const one = missing.length === 1 && missing[0].startsWith('1 ');
+  $('askText').textContent = missing.length ? (one ? 'Λείπει ακόμα ' : 'Λείπουν ακόμα ') + missing.join(', ') + (missing.length === 1 ? '. Θα γραφτεί ως έλλειψη.' : '. Θα γραφτούν ως ελλείψεις.') : 'Ήρθαν όλα.';
   $('ask').showModal(); $('askTitle').focus();
 };
 $('no').onclick = () => $('ask').close();
