@@ -109,7 +109,8 @@ PAGE = """<!doctype html>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Xangxothaika</title>
+<title>xeAInhothika</title>
+<link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
 <style>
   /* Η σελίδα είναι αυτόνομη: τα χρώματα και τα μεγέθη είναι από το design/kateuthynseis-v2 (#syndesi). */
   @font-face { font-family:"Ubuntu Sans"; font-style:normal; font-weight:400 700; font-display:swap;
@@ -138,6 +139,10 @@ PAGE = """<!doctype html>
   .lb { padding:30px 32px 0; }
   .lb b { display:block; font-size:var(--xl); line-height:1.05; letter-spacing:-.02em; }
   .lb p { margin-top:8px; color:var(--muted); }
+  .lb .wm em { font-style:normal; color:#C98A00; font-weight:700; }
+  .ii { display:inline-block; position:relative; padding:0 .07em; }
+  .ii::before, .ii::after { content:""; position:absolute; left:50%; width:.34em; height:.085em; background:currentColor; transform:translateX(-50%); border-radius:.02em; }
+  .ii::before { top:.13em; } .ii::after { bottom:.135em; }
   .shelfrow { display:flex; gap:7px; align-items:flex-end; margin:22px 32px 0; border-bottom:3px solid var(--line); }
   .can { width:18px; height:30px; border-radius:7px 7px 4px 4px;
          background:linear-gradient(180deg,#EEF2F7 0%,#B9C6D8 100%); box-shadow:inset 0 3px 0 rgba(255,255,255,.6); }
@@ -167,7 +172,7 @@ PAGE = """<!doctype html>
 <main class="login">
   <div class="card">
     <div class="lb">
-      <b>Xangxothaika</b>
+      <b><span class="wm">xe<em>A<span class="ii">I</span></em>nhothika</span></b>
       <p>Mini Market 24/7 · Παγκράτι</p>
     </div>
     <div class="shelfrow" aria-hidden="true"><i class="can"></i><i class="can"></i><i class="can"></i><i class="can"></i><i class="can"></i><i class="can"></i><i class="can"></i><i class="can"></i></div>
@@ -197,8 +202,13 @@ def _locked_page(next_path):
     return _login_page(next_path, "Πάρα πολλές προσπάθειες. Δοκίμασε ξανά σε λίγα λεπτά.", 429)
 
 
+OPEN_FILES = ("/static/favicon.svg",)  # tab icon, shown on the login page
+
+
 def _is_font_file(path):
-    """Only the .woff2 font files under /static/vendor/ are open without a login."""
+    """Only the .woff2 font files under /static/vendor/ and the tab icon are open without a login."""
+    if path in OPEN_FILES:
+        return True
     return path.startswith(FONT_DIR) and path.endswith(".woff2") and ".." not in path
 
 

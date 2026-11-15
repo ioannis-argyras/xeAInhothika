@@ -24,7 +24,7 @@
   ];
   var TAB_CAMERA = { label: "Φωτογραφία", aria: "Ανέβασε τιμολόγιο", url: "/invoices/photo", icon: "camera" };
   var TAB_RIGHT = { key: "rafi", label: "Ράφι", url: "/static/pages/rafi.html", icon: "storefront" };
-  var BRAND = { name: "Xangxothaika", sub: "Mini Market 24/7, Παγκράτι" };
+  var BRAND = { name: "xeAInhothika", sub: "Mini Market 24/7, Παγκράτι" };
 
   var paused = false;
   var lastFocus = null;
@@ -85,7 +85,14 @@
     side.setAttribute("aria-label", "Μενού");
     var inner = h("div", "in");
     var brand = h("div", "brand");
-    brand.appendChild(h("b", null, BRAND.name));
+    var wm = h("b", "wm");
+    wm.appendChild(document.createTextNode("xe"));
+    var em = h("em");
+    em.appendChild(document.createTextNode("A"));
+    em.appendChild(h("span", "ii", "I"));
+    wm.appendChild(em);
+    wm.appendChild(document.createTextNode("nhothika"));
+    brand.appendChild(wm);
     brand.appendChild(span(null, BRAND.sub));
     inner.appendChild(brand);
     var nav = h("nav");

@@ -563,7 +563,7 @@
   function renderList(page, trends) {
     lastPage = page;
     views("v-lista");
-    document.title = "Τιμολόγια · Xangxothaika";
+    document.title = "Τιμολόγια · xeAInhothika";
     var kick = "Χαρτιά · " + dayName(page.today) + " " + dmy(page.today);
     $("l-kick").textContent = kick;
     $("m-kick").textContent = "Χαρτιά · " + dmy(page.today);
@@ -956,7 +956,7 @@
       g.rows.forEach(function (r) { if (r.invoice_id === d.invoice_id) arrived = r.arrived; });
     });
     var title = d.label + (d.supplier ? " · " + d.supplier : "");
-    document.title = d.label + " · Τιμολόγια · Xangxothaika";
+    document.title = d.label + " · Τιμολόγια · xeAInhothika";
     $("h-tim2").textContent = title;
     $("m2-title").textContent = d.label;
     var viaTxt = d.via === "email" ? " με email" : d.via === "photo" ? " με φωτογραφία" : "";

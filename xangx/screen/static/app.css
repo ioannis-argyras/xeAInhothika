@@ -1,4 +1,4 @@
-/* Xangxothaika: κοινό στυλ από το εγκεκριμένο Α v2 (design/stadio1-v2/A, 15/11/2026): ορατά όρια, γραμμές με φόντο ανά κατάσταση,
+/* xeAInhothika: κοινό στυλ από το εγκεκριμένο Α v2 (design/stadio1-v2/A, 15/11/2026): ορατά όρια, γραμμές με φόντο ανά κατάσταση,
    τρία επίπεδα, μενού αριστερά και κάτω μπάρα στο κινητό. Οδηγίες και πίνακας κλάσεων: STIL.md. Σελίδα-οδηγός: /static/pages/stil.html.
    Οι σελίδες που φορτώνουν το shell.js έχουν <body data-page="...">· οι κανόνες που συγκρούονται με τις παλιές σελίδες (body, .band, .wrap, .brand, .ibtn, .qty) ισχύουν μόνο εκεί.
    Το γράφημα πληρωμών του σχεδίου λέγεται εδώ .paychart (το .pay είναι ήδη τα κουμπιά της κάρτας «Πλήρωσες;»). */
@@ -531,3 +531,12 @@ i.ph-bold{line-height:1}
   :where(body:not([data-page])) .sft span{flex:1;min-width:0}
 }
 @media (prefers-contrast:more){.tabs{background:#fff;backdrop-filter:none}}
+
+/* ---------- Λογότυπο (Α, μόνο λέξη, εγκρίθηκε 15/11/2026): όλη η μορφή της λέξης είναι σε αυτό το μπλοκ, ώστε να αλλάζει γραμματοσειρά από ένα σημείο ---------- */
+.brand .wm em{font-style:normal;color:var(--accent);font-weight:700}
+.ii{display:inline-block;position:relative;padding:0 .07em}
+.ii::before,.ii::after{content:"";position:absolute;left:50%;width:.34em;height:.085em;background:currentColor;transform:translateX(-50%);border-radius:.02em}
+.ii::before{top:.13em}.ii::after{bottom:.135em}
+:where(body:not([data-page])) .brand{align-items:center}
+.brand .wm{line-height:1}
+.brand .wm .ii{display:inline-block;color:inherit}
