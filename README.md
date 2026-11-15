@@ -52,6 +52,12 @@ A 24-hour mini market in Pangrati, Athens. One owner is also the buyer, the stoc
 - Invoice to the credit question: 27–34 seconds, 3 runs.
 - Automated tests: 456 passing (1 skipped).
 
+## The live demo
+There is no public link to our running demo, on purpose. It runs with our own keys: the model is billed, and the Telegram messages and supplier emails are really sent. A link in a public repository would let anyone send those emails and spend those keys.
+- **To see it:** the 1-minute video, and the live presentation by the team.
+- **To try it yourself:** run it on your own computer, as below. Without a key it uses a fixed fake model: no access code, no cost, nothing is sent.
+- **Judges** who want to use our running demo can ask the team in person for the link and the access code.
+
 ## Run it
 - Python 3.11. `pip install -r requirements.txt` (anthropic, fastapi, uvicorn).
 - Copy `.env.example` to `.env` and fill in your own keys. Without a key the app runs with a fixed fake model, so the tests and the screens still work.
