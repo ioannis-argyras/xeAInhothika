@@ -285,7 +285,7 @@
     }
     low.forEach(function (p) {
       var thr = threshold(p);
-      var mv = p.last ? "πήραν " + p.last.qty + " στις " + p.last.at : "καμία κίνηση σήμερα";
+      var mv = p.last ? "πήραν " + p.last.qty + " στις " + p.last.at : (gap(p) || "καμία κίνηση σήμερα");
       if (p.last && p.last.kind === "added") mv = "πρόσθεσαν " + p.last.qty + " στις " + p.last.at;
 
       var row = el("div", "rf-lr");
@@ -302,8 +302,8 @@
       var m = el("div", "rf-mr");
       var a = el("div", "a");
       add(a, el("b", null, p.product_name), el("b", "v x", p.on_hand == null ? "—" : String(p.on_hand)));
-      var s = el("span", "s", p.name + " · ");
-      s.appendChild(el("em", null, mv));
+      var s = el("span", "s", p.name);
+      if (p.last) { s.appendChild(document.createTextNode(" · ")); s.appendChild(el("em", null, mv)); }
       if (thr != null) s.appendChild(document.createTextNode(" · όριο " + thr));
       add(m, a, level(p), s);
       mbody.appendChild(m);
