@@ -146,6 +146,36 @@ a.mft:hover,a.mem:hover .mft{background:var(--strip)}
 .rem3 .rb .ud{margin:0;flex-shrink:0}
 .rem3 .rb .ud-note{margin:0}
 .rem3 .btn.undo{border-radius:10px;background:var(--surf)}
+/* σκηνή πιστωτικού: κουτί Α σε ανοιχτό πάνελ και «Τι ακριβώς» σε ανοιχτό πάνελ (εγκρίθηκε 15/11/2026, adeia.html 141-145 και 854-862) */
+.stage .body.hb-cr{grid-template-columns:minmax(0,1fr) 300px}
+.stage .body.hb-cr>.hb-qb{align-self:start}
+.stage .from .lk.u{min-height:0;color:var(--n5)}
+.stage .exact.hb-lt{background:#EEF2F7;color:#0B1626;border:0;box-shadow:0 2px 10px rgba(0,0,0,.35)}
+.stage .exact.hb-lt i{color:#2456A6}
+.hb-qb{margin-top:4px;background:#EEF2F7;border-radius:14px;padding:12px;box-shadow:0 2px 10px rgba(0,0,0,.35);overflow:hidden}
+.hb-qb .hb-qhd{display:flex;align-items:center;gap:8px;margin:-12px -12px 12px;padding:9px 12px;background:#D6DEE9;color:#0B1626;font-weight:700;font-size:15px}
+.hb-qb .hb-qhd i{font-size:18px;color:#0F7180}
+.hb-qb .hb-qtiles{display:grid;grid-template-columns:1fr 1fr 1.3fr;gap:8px}
+.hb-qb .hb-qt{border-radius:12px;padding:10px;color:#fff;display:flex;flex-direction:column;gap:2px;box-shadow:inset 0 1px 0 rgba(255,255,255,.12),0 2px 6px rgba(0,0,0,.25)}
+.hb-qb .hb-qt i{font-size:18px;opacity:.9}.hb-qb .hb-qt b{font-size:24px;line-height:1.05}.hb-qb .hb-qt.red b{font-size:36px}.hb-qb .hb-qt span{font-size:15px;line-height:1.2;opacity:.92;white-space:nowrap}
+.hb-qb .hb-qt.tim{background:linear-gradient(160deg,#7A3170,#5E2456)}.hb-qb .hb-qt.apo{background:linear-gradient(160deg,#0F7180,#0A5763)}.hb-qb .hb-qt.red{background:linear-gradient(160deg,#B23A1E,#8E2A12)}
+.hb-qb .hb-qcr{margin-top:10px;border-radius:12px;background:linear-gradient(160deg,#B23A1E,#8E2A12);color:#fff;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 14px}
+.hb-qb .hb-qcr span{font-size:16px;font-weight:700}.hb-qb .hb-qcr small{display:block;font-weight:400;font-size:14px;opacity:.88;margin-top:2px}.hb-qb .hb-qcr b{font-size:34px;white-space:nowrap}
+/* «Ζητήθηκε» */
+.hb-big{display:flex;align-items:center;gap:12px}
+.hb-big i{font-size:40px;color:#7FD1A9}
+.hb-sent .hb-sr{display:grid;grid-template-columns:auto 1fr;gap:12px;padding:8px 0;border-bottom:1px solid rgba(211,219,230,.10);color:var(--n5);font-size:16px}
+.hb-sent .hb-sr b{color:#fff;text-align:right}
+.hb-sent .hb-sr:last-child{border-bottom:0}
+/* άδεια μέλη «γεμάτα» (adeia.html 846-852) */
+.docs3 em{font-style:normal;font-weight:400;color:var(--muted);font-size:14px}
+.hb-lst{display:flex;gap:10px;align-items:flex-start;color:var(--muted);margin-top:4px}
+.hb-lst i{font-size:22px;color:var(--m-log);margin-top:2px}
+.hb-lst b{display:block;color:var(--ink);font-weight:700}
+.hb-lst .nw{white-space:nowrap}
+.mv.hb-quiet{font-weight:500;color:var(--muted)}
+/* η σκηνή «Καμία απόφαση» τεντώνεται δίπλα στο «Πλήρωσες;» */
+.hb-top .stage.low{align-self:stretch}
 /* κινητό */
 .hb-qty{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:6px 0 4px}
 .hb-qty div{display:flex;flex-direction:column;padding:6px 0;color:var(--n5);line-height:1.3}
@@ -185,4 +215,21 @@ a.mft:hover,a.mem:hover .mft{background:var(--strip)}
   .mwrap .tiles{grid-template-columns:1fr}
   .rem3{grid-template-columns:56px minmax(0,1fr) auto;padding:12px 16px}
   .rem3 .ring{width:56px!important;height:56px!important}
+}
+/* κινητό: «Ζητήθηκε / Επόμενο», κουμπιά του πιστωτικού, ο χάρακας κάτω από το καρουζέλ (kinito-apofasi.html 838-845). Το κινητό εδώ είναι ως 1023px (.mob). */
+.car .stage .body.hb-cr{grid-template-columns:minmax(0,1fr)}
+@media (max-width:767px){.stage .body.hb-cr{grid-template-columns:1fr}}
+@media (max-width:1023px){
+  .hb-mday{background:var(--band);color:#fff;border-radius:18px;padding:12px 16px 2px;margin-top:20px}
+  .hb-mday .druler{margin-bottom:20px}
+  .hb-mday .ask{margin:0 0 14px;height:48px}
+  .mc .acts.hb-col{display:flex;flex-direction:column;align-items:stretch;gap:10px}
+  .mc .acts.hb-col .btn{width:100%;justify-content:center}
+  .mc .acts.hb-col .btn.yes{order:0}
+  .mc .acts.hb-col .btn.no{order:1}
+  .mc .acts.hb-cra{display:flex;gap:10px}
+  .mc .acts.hb-cra .btn.yes{flex:1;order:0}
+  .mc .acts.hb-cra .btn.no{order:1;flex:0 0 120px}
+  .car .stage .body.hb-cr>.lc{display:flex;flex-direction:column}
+  .mt5 .mtv.hb-quiet{font-weight:500;opacity:.85}
 }

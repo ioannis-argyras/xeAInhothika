@@ -86,18 +86,40 @@ function stageNode(stage, a, state, opts) {
   lead.append(icon(opts.chat ? "hand-pointing" : TEAM_ICON[info.team]), document.createTextNode(opts.chat ? "Θέλει εσένα" : info.ask));
   shd.append(lead, el("span", null, "1 από " + list.length));
 
-  const body = el("div", "body");
-  const left = el("div");
-  const title = el("h2", null, a.summary || a.approval_id);
+  // opts.credit: the details of a credit request (from /api/screen/home), shown with the approved box.
+  const credit = opts.credit || null;
+  const body = el("div", credit ? "body hb-cr" : "body");
+  const left = el("div", credit ? "lc" : null);
+  if (credit) {
+    const from = el("p", "from", credit.label + " · " + credit.supplier);
+    if (!opts.mobile) {
+      const see = el("a", "lk u", "Δες το τιμολόγιο");
+      see.href = "/static/pages/timologia.html";
+      from.append(document.createTextNode(" · "), see);
+    }
+    left.appendChild(from);
+  }
+  const title = el("h2", null, credit ? "Ζητάω πιστωτικό " + eur(credit.amount_cents) + ";" : (a.summary || a.approval_id));
   title.id = opts.titleId;
   stage.setAttribute("aria-labelledby", opts.titleId);
   left.appendChild(title);
-  if (a.why) left.appendChild(el("p", "why", a.why));
+  if (credit && !opts.mobile) {
+    const num = (x) => String(x).replace(".", ",");
+    const why = el("p", "why");
+    why.append(document.createTextNode("Χρεώθηκαν "), el("b", null, num(credit.expected)),
+      document.createTextNode(", ήρθαν "), el("b", null, num(credit.actual)), document.createTextNode("."));
+    const exact = el("p", "exact hb-lt");
+    exact.append(icon("envelope-simple"), el("span", null, "Τι ακριβώς: email προς " + credit.supplier +
+      " με αίτημα πιστωτικού " + eur(credit.amount_cents) + " για το " + credit.label + "."));
+    left.append(why, exact);
+  } else if (!credit && a.why) {
+    left.appendChild(el("p", "why", a.why));
+  }
 
-  const acts = el("div", "acts");
+  const acts = el("div", credit && opts.mobile ? "acts hb-cra" : "acts");
   const msg = el("span", "msg");
-  const yes = el("button", "btn yes", info.yes);
-  yes.prepend(icon("check", "ph-bold"));
+  const yes = el("button", "btn yes", credit ? "Στείλε το αίτημα" : info.yes);
+  yes.prepend(credit ? icon("paper-plane-tilt") : icon("check", "ph-bold"));
   const no = el("button", "btn no", "Όχι");
   yes.type = no.type = "button";
   const decide = (decision) => async () => {
@@ -111,6 +133,9 @@ function stageNode(stage, a, state, opts) {
         yes.disabled = no.disabled = false;
         return;
       }
+      if (credit && decision === "yes" && window.xangxHome && window.xangxHome.sent) {
+        window.xangxHome.sent(a.approval_id, credit, r && r.message);
+      }
       refreshSoon();
     } catch (e) {
       msg.textContent = e.message;
@@ -123,7 +148,7 @@ function stageNode(stage, a, state, opts) {
   left.appendChild(acts);
 
   const right = el("div");
-  const focus = opts.chat ? null : state.shelf_focus;
+  const focus = opts.chat || credit ? null : state.shelf_focus;
   if (focus) {
     const well = el("div", "well");
     well.appendChild(el("span", "m", focus.position_name + " · " + focus.at));
@@ -135,7 +160,31 @@ function stageNode(stage, a, state, opts) {
     well.appendChild(row);
     right.appendChild(well);
   }
-  if (a.lines && a.lines.length) {
+  if (credit) {
+    // the approved box: what was charged, what arrived, what is missing, and the credit
+    const num = (x) => String(x).replace(".", ",");
+    const box = el("div", "hb-qb");
+    box.setAttribute("aria-label", credit.product + ": χρεώθηκαν " + num(credit.expected) + ", ήρθαν " +
+      num(credit.actual) + ", λείπει " + num(credit.missing));
+    const hd = el("p", "hb-qhd");
+    hd.append(icon("package"), document.createTextNode(credit.product + (credit.more > 0 ? " και άλλα " + credit.more : "") +
+      (credit.order_id ? " · παραλαβή " + credit.order_id : "")));
+    const tiles = el("div", "hb-qtiles");
+    [["tim", "receipt", credit.expected, "τιμολόγιο"], ["apo", "package", credit.actual, "στο ράφι"],
+      ["red", "warning-circle", credit.missing, "λείπει"]].forEach(([cls, ic, n, text]) => {
+      const t = el("div", "hb-qt " + cls);
+      t.append(icon(ic, "ph-fill"), el("b", null, num(n)), el("span", null, text));
+      tiles.appendChild(t);
+    });
+    const cr = el("div", "hb-qcr");
+    const label = el("span", null, "Πιστωτικό");
+    label.appendChild(el("small", null, credit.more === 0
+      ? num(credit.missing) + " × " + eur(credit.unit_cents) + " + ΦΠΑ " + credit.vat_rate + "%"
+      : (credit.more + 1) + " είδη + ΦΠΑ"));
+    cr.append(label, el("b", null, eur(credit.amount_cents)));
+    box.append(hd, tiles, cr);
+    right.appendChild(box);
+  } else if (a.lines && a.lines.length) {
     const qty = el("div", "qty");
     a.lines.forEach((l) => {
       const row = el("div");
@@ -143,12 +192,16 @@ function stageNode(stage, a, state, opts) {
       qty.appendChild(row);
     });
     right.appendChild(qty);
-  } else if (a.exact) {
+  } else if (a.exact && !credit) {
     const qty = el("div", "qty");
     qty.appendChild(el("div", "txt", a.exact));
     right.appendChild(qty);
   }
-  if (opts.chat) {
+  if (credit && opts.mobile) {
+    // On the phone: from, title, box, buttons, in one column.
+    left.insertBefore(right, acts);
+    body.appendChild(left);
+  } else if (opts.chat) {
     // In the chat the stage is a single column: the lines go under the question.
     left.insertBefore(right, acts);
     body.classList.add("one");
@@ -187,13 +240,17 @@ function idleStage(stage, state) {
 window.xangxStageNode = stageNode;
 
 function renderStages(state) {
+  const first = state.pending_approvals[0];
+  const hb = window.xangxHome;
+  const credit = first && hb.data && hb.data.credit ? hb.data.credit[first.approval_id] || null : null;
+  const sent = first ? null : hb.sentNow(state);
   const sig = JSON.stringify([state.pending_approvals, state.shelf_focus,
-    state.pending_approvals.length ? null : state.tasks]);
+    state.pending_approvals.length ? null : state.tasks, credit, sent]);
   if (signatures.stages === sig) return;
   signatures.stages = sig;
-  const first = state.pending_approvals[0];
   const home = $("home-stage");
-  if (first) stageNode(home, first, state, { chat: false, titleId: "stage-title" });
+  if (first) stageNode(home, first, state, { chat: false, titleId: "stage-title", credit });
+  else if (sent && !sent.newSeen) hb.doneStage(home, sent);
   else idleStage(home, state);
   const chat = $("chat-stage");
   chat.hidden = !first;
