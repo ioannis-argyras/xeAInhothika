@@ -24,6 +24,12 @@ def delivery_id_for(order_id):
     return f"D-{order_id}"
 
 
+def _shown(delivery_id):
+    """How the owner reads a delivery: "παραλαβή της P-0318", never the inner code "D-P-0318"."""
+    m = re.fullmatch(r"D-(P-\d{1,6})", str(delivery_id))
+    return f"παραλαβή της {m.group(1)}" if m else "παραλαβή"
+
+
 def _order(conn, order_id):
     return next((e for e in read_events(conn, types=["order.proposed"])
                  if e.payload.get("order_id") == order_id), None)
@@ -79,9 +85,9 @@ def scan(conn, delivery_id, barcode):
     """One scan: 1 unit, or pack_size units for a case barcode. Unknown barcodes are kept (product_id null). Returns the status."""
     started = _started(conn, delivery_id)
     if started is None:
-        raise DeliveryError(f"Δεν έχει ξεκινήσει η παραλαβή {delivery_id}.")
+        raise DeliveryError(f"Δεν έχει ξεκινήσει η {_shown(delivery_id)}.")
     if _completed(conn, delivery_id) is not None:
-        raise DeliveryError(f"Η παραλαβή {delivery_id} έχει ήδη κλείσει.")
+        raise DeliveryError(f"Η {_shown(delivery_id)} έχει ήδη κλείσει.")
     code = clean_barcode(barcode)
     pid, units = _lookup(conn, code, started.payload.get("supplier_id"))
     payload = {"delivery_id": delivery_id, "barcode": code, "product_id": pid}
@@ -129,7 +135,7 @@ def status(conn, delivery_id):
     """The counter for the phone page and the partner: how many came, what is missing."""
     started = _started(conn, delivery_id)
     if started is None:
-        raise DeliveryError(f"Δεν έχει ξεκινήσει η παραλαβή {delivery_id}.")
+        raise DeliveryError(f"Δεν έχει ξεκινήσει η {_shown(delivery_id)}.")
     order_id = started.payload["order_id"]
     done = _completed(conn, delivery_id)
     if done is not None:
@@ -167,7 +173,7 @@ def complete(conn, delivery_id):
     """delivery.completed and one stock.moved per product that came, once. Returns the status."""
     started = _started(conn, delivery_id)
     if started is None:
-        raise DeliveryError(f"Δεν έχει ξεκινήσει η παραλαβή {delivery_id}.")
+        raise DeliveryError(f"Δεν έχει ξεκινήσει η {_shown(delivery_id)}.")
     if _completed(conn, delivery_id) is not None:
         return status(conn, delivery_id)
     order = _order(conn, started.payload["order_id"])

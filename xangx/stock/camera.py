@@ -218,7 +218,7 @@ def handle_photo(conn, camera_id, data, count=None, practice=False):
 
     positions = camera_positions(conn, camera_id)
     if not positions:
-        raise PhotoError(f"Δεν ξέρω την κάμερα {camera_id!r}.")
+        raise PhotoError("Δεν ξέρω αυτή την κάμερα. Άνοιξε τη σελίδα από τον σύνδεσμο της κάμερας.")
     ref = save_photo(data)
     key = f"{camera_id}.dokimi" if practice else camera_id  # camera_id is known: it has positions
     prev = last_photo(key)
