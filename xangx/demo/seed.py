@@ -51,6 +51,22 @@ HOUR_WEIGHTS = [
 # changes, not the stock. Key: (product, days before today of the delivery) -> days to shift.
 EXPIRY_SHIFT = {("milk-fresh-1l", 7): 1, ("yogurt-greek-200", 7): -12}
 KAVA_COLA_CENTS, KAVA_COLA_QTY = 58, 24  # the older invoice of the second supplier
+# Seven products change price once, at their last invoice, so the purchase trends have something
+# to show (they compare only the last price with the one before it).
+# (supplier, product) -> (old price in cents, days ago of the change): invoices older than that
+# many days carry the old price, the later ones the current SUPPLIER_PRICE (the latest price of
+# every product stays as it was). 5 rises of 4,4-8,0 % and 2 falls of 4,1-5,0 %.
+# No price.changed events in the history: the trends read the prices of the invoice lines.
+# None of the order lines, the cola or the four products of Fridge 1.
+PRICE_HISTORY = {
+    ("sup-ymittou", "chips-oregano-90"): (99, 4),   # 99 -> 105, +6,1 %
+    ("sup-ymittou", "energy-250"): (91, 4),         # 91 -> 95, +4,4 %
+    ("sup-ymittou", "nuts-mixed-100"): (125, 4),    # 125 -> 135, +8,0 %
+    ("sup-galakto", "milk-fresh-1l"): (110, 4),     # 110 -> 115, +4,5 %
+    ("sup-artopoieio", "pretzel-sesame"): (36, 4),  # 36 -> 38, +5,6 %
+    ("sup-kava", "water-1500"): (40, 4),           # 40 -> 38, -5,0 %
+    ("sup-ymittou", "choco-dark-100"): (146, 4),    # 146 -> 140, -4,1 %
+}
 UNITS_PER_DAY = 300  # expected units sold per day, for the order-up-to levels
 
 
@@ -207,6 +223,9 @@ def seed_history(conn, now):
                         pack = p["pack_size"]
                         qty = math.ceil((target - on_hand[p["id"]]) / pack) * pack
                         unit = SUPPLIER_PRICE[(supplier["id"], p["id"])]
+                        history = PRICE_HISTORY.get((supplier["id"], p["id"]))
+                        if history and (today - day).days > history[1]:
+                            unit = history[0]
                         lines.append(
                             {"name": p["name"], "product_id": p["id"], "qty": qty,
                              "unit_cents": unit, "net_cents": qty * unit,

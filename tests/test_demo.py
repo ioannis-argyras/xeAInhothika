@@ -1,6 +1,6 @@
 import json
 import unittest
-from datetime import datetime
+from datetime import datetime, timezone
 
 from xangx.demo.catalog_data import (
     POSITIONS,
@@ -10,7 +10,9 @@ from xangx.demo.catalog_data import (
     ean13,
     iban_valid,
 )
-from xangx.demo.seed import seed_all
+from xangx.accountant.trends import purchase_trends
+from xangx.demo.catalog_data import SUPPLIER_PRICE
+from xangx.demo.seed import ORDER_LINES, PRICE_HISTORY, seed_all
 from xangx.shared import connect, init_db, read_events
 from xangx.shared.views import (
     last_unit_price_cents,
@@ -52,6 +54,58 @@ class DemoSeedTests(unittest.TestCase):
         self.assertEqual(by_id["coffee-frappe-can"]["name"], "Cold brew κουτάκι 250ml")
         self.assertEqual(by_id["coffee-ground-194"]["name"], "Espresso κόκκοι, ποικιλία Α")
         self.assertEqual(by_id["coffee-espresso-b"]["name"], "Espresso κόκκοι, ποικιλία Β")
+
+    def _invoice_prices(self):
+        """(supplier id, product id) -> unit prices of the invoices, oldest first."""
+        sup = {r["afm"]: r["id"] for r in self.conn.execute("SELECT id, afm FROM suppliers")}
+        prices = {}
+        for e in read_events(self.conn, types=["invoice.read"]):
+            for line in e.payload["lines"]:
+                key = (sup[e.payload["supplier_afm"]], line["product_id"])
+                prices.setdefault(key, []).append(line["unit_cents"])
+        return prices
+
+    def test_price_history_old_then_current_price(self):
+        self.assertEqual(len(PRICE_HISTORY), 7)
+        prices = self._invoice_prices()
+        for key, (old, _days) in PRICE_HISTORY.items():
+            self.assertIn(old, prices[key], key)
+            self.assertIn(SUPPLIER_PRICE[key], prices[key], key)
+            self.assertEqual(prices[key][0], old, key)
+            self.assertEqual(prices[key][-1], SUPPLIER_PRICE[key], key)
+            self.assertEqual(sorted(set(prices[key]), key=prices[key].index), [old, SUPPLIER_PRICE[key]], key)
+
+    def test_latest_price_unchanged_everywhere_else(self):
+        for key, series in self._invoice_prices().items():
+            if key in PRICE_HISTORY:
+                continue
+            expected = 58 if key == ("sup-kava", "cola-330") else SUPPLIER_PRICE[key]
+            self.assertEqual(series[-1], expected, key)
+        self.assertEqual(last_unit_price_cents(self.conn, "cola-330"), 57)
+        self.assertEqual(self._invoice_prices()[("sup-kava", "cola-330")], [58])
+
+    def test_no_price_changed_events_in_the_history(self):
+        self.assertEqual(read_events(self.conn, types=["price.changed"]), [])
+
+    def test_five_rises_and_two_falls_of_3_to_9_percent(self):
+        ups = downs = 0
+        for key, (old, _days) in PRICE_HISTORY.items():
+            pct = round((SUPPLIER_PRICE[key] - old) * 100.0 / old, 1)
+            self.assertTrue(3 <= abs(pct) <= 9, (key, pct))
+            ups += pct > 0
+            downs += pct < 0
+        self.assertEqual((ups, downs), (5, 2))
+
+    def test_purchase_trends_show_the_seven_changes(self):
+        trends = purchase_trends(self.conn, now=datetime(2026, 11, 14, 7, 0, tzinfo=timezone.utc))
+        self.assertEqual(len(trends["changes"]), 7)
+        self.assertEqual({c["product_id"] for c in trends["changes"]},
+                         {pid for _sup, pid in PRICE_HISTORY})
+
+    def test_no_order_line_product_changes_price(self):
+        history_products = {pid for _sup, pid in PRICE_HISTORY}
+        self.assertFalse(history_products & {pid for pid, _qty in ORDER_LINES})
+        self.assertNotIn("cola-330", history_products)
 
     def test_cola_on_hand_is_8(self):
         self.assertEqual(stock_levels(self.conn)["cola-330"], 8)
