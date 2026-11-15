@@ -8,6 +8,7 @@
 <link rel="stylesheet" href="/static/vendor/phosphor/bold/style.css">
 <link rel="stylesheet" href="/static/vendor/phosphor/fill/style.css">
 <link rel="stylesheet" href="/static/app.css">
+<link rel="stylesheet" href="/static/arxiki.css">
 <link rel="stylesheet" href="/static/undo.css">
 </head>
 <body>
@@ -26,28 +27,58 @@
 </header>
 
 <!-- ΣΗΜΕΡΑ -->
-<section id="s-arxiki" class="screen">
-  <div class="band"><div class="in">
-    <div>
-      <div class="kick"><i class="ph ph-sun-horizon"></i><span id="home-kick">Σήμερα</span></div>
-      <p class="lead" id="home-lead"></p>
+<section id="s-arxiki" class="screen" aria-labelledby="h-arxiki">
+<div class="desk">
+  <div class="band bandB">
+    <div class="in">
+      <div>
+        <div class="kick"><i class="ph ph-calendar-blank"></i><span id="home-kick">Σήμερα</span></div>
+        <h1 id="h-arxiki">Σήμερα</h1>
+        <p class="lead" id="home-lead"></p>
+      </div>
+      <form class="ask" id="ask-home" autocomplete="off" role="search">
+        <input id="ask-home-input" type="text" placeholder="Ζήτα κάτι, π.χ. «Τακτοποίησε τις εκκρεμότητες»" aria-label="Ζήτα κάτι από τον συνεργάτη">
+        <button class="send" type="submit" aria-label="Στείλε στον συνεργάτη"><i class="ph-bold ph-arrow-up"></i></button>
+      </form>
     </div>
-    <form class="ask" id="ask-home" autocomplete="off">
-      <input id="ask-home-input" type="text" placeholder="Ζήτα κάτι, π.χ. «Τακτοποίησε τις εκκρεμότητες»" aria-label="Ζήτα κάτι από τον συνεργάτη">
+    <div class="dhd"><span><span class="dot"></span>Ζωντανά · η μέρα του μαγαζιού</span><a class="lk" href="/static/pages/mixani.html">Ξαναπαίξε τη μέρα <i class="ph ph-arrow-right"></i></a></div>
+    <div class="druler" id="hb-ruler"></div>
+  </div>
+  <div class="wrap">
+    <div class="grid hb-top" id="hb-top">
+      <article class="stage" id="home-stage"></article>
+      <article class="card" id="hb-pay" aria-label="Πλήρωσες;" hidden></article>
+    </div>
+    <article class="card mt team" aria-label="Η ομάδα, τώρα">
+      <div class="hd"><b><i class="ph ph-users-three"></i>Η ομάδα, τώρα</b><span class="r">5 μέλη, δουλεύουν μόνα τους</span></div>
+      <div class="board" id="hb-team"></div>
+    </article>
+    <div class="grid mt">
+      <article class="card" id="hb-sales" aria-label="Πωλήσεις 30 ημερών"></article>
+      <article class="card" id="hb-undo" aria-label="Μπορείς να τα αναιρέσεις"></article>
+    </div>
+  </div>
+</div>
+<div class="mob">
+  <div class="mb mbB"><div class="mi">
+    <div class="kick"><i class="ph ph-calendar-blank"></i><span id="home-kick-m">Σήμερα</span></div>
+    <h1>Σήμερα</h1>
+    <p class="lead" id="home-lead-m"></p>
+    <form class="ask" id="ask-home-m" autocomplete="off" role="search">
+      <input id="ask-home-input-m" type="text" placeholder="Ζήτα κάτι από τον Συνεργάτη" aria-label="Ζήτα κάτι από τον συνεργάτη">
       <button class="send" type="submit" aria-label="Στείλε στον συνεργάτη"><i class="ph-bold ph-arrow-up"></i></button>
     </form>
+    <div class="dhd"><span><span class="dot"></span>Ζωντανά</span><a class="lk" href="/static/pages/mixani.html">Ξαναπαίξε <i class="ph ph-arrow-right"></i></a></div>
+    <div class="druler m" id="hb-ruler-m"></div>
   </div></div>
-  <div class="wrap">
-    <div class="row2 g-home">
-      <article class="stage" id="home-stage"></article>
-      <aside class="card" id="home-team" aria-label="Η ομάδα"></aside>
-    </div>
-    <section class="card mt" aria-label="Η μέρα του μαγαζιού">
-      <div class="hd"><b><i class="ph ph-clock"></i>Η μέρα του μαγαζιού</b><a href="/static/pages/mixani.html">Ξαναπαίξε τη μέρα<i class="ph ph-arrow-right"></i></a></div>
-      <div class="ruler" id="ruler"></div>
-      <div class="story" id="story"></div>
-    </section>
-  </div>
+  <div class="mwrap"><div class="mi">
+    <div id="hb-car"></div>
+    <div class="mtt"><b><i class="ph ph-users-three"></i>Η ομάδα, τώρα</b><span>5 μέλη</span></div>
+    <div class="mteam5" id="hb-team-m"></div>
+    <div class="tiles"><div class="tile" id="hb-sales-m" aria-label="Πωλήσεις"></div></div>
+    <article class="card mt16" id="hb-undo-m" aria-label="Μπορείς να τα αναιρέσεις"></article>
+  </div></div>
+</div>
 </section>
 
 <!-- ΣΥΝΟΜΙΛΙΑ -->
@@ -86,6 +117,7 @@
   <a href="/static/pages/rafi.html"><i class="ph ph-package"></i>Ράφι</a>
 </nav>
 <script src="/static/undo.js"></script>
+<script src="/static/arxiki.js"></script>
 <script src="/static/app.js"></script>
 </body>
 </html>

@@ -27,10 +27,6 @@ function clock(iso) {
   return d.toLocaleTimeString("el-GR", { hour: "2-digit", minute: "2-digit", hourCycle: "h23", timeZone: "Europe/Athens" });
 }
 
-function hhmm(minute) {
-  return String(Math.floor(minute / 60)).padStart(2, "0") + ":" + String(minute % 60).padStart(2, "0");
-}
-
 async function api(path, options) {
   const res = await fetch(path, options);
   let data = null;
@@ -50,7 +46,6 @@ const post = (path, body) => api(path, {
 
 /* ---------- ομάδες και εγκρίσεις ---------- */
 const TEAM_ICON = { stock: "package", orders: "truck", invoices: "receipt", accountant: "calculator", master: "circles-three", agent: "plugs-connected" };
-const TEAM_NAME = { stock: "Αποθήκη", orders: "Παραγγελίες", invoices: "Τιμολόγια", accountant: "Λογιστής", master: "Συνεργάτης", agent: "Άλλος agent" };
 
 function approvalInfo(action) {
   if (action === "send_order") return { team: "orders", ask: "Οι Παραγγελίες σε ρωτούν", yes: "Ναι, στείλ' τη" };
@@ -174,59 +169,6 @@ function stageNode(stage, a, state, opts) {
   }
 }
 
-const PAY_BUTTONS = [["cash", "Μετρητά"], ["card", "Κάρτα"], ["bank", "Τράπεζα"]];
-
-// "Did you pay? How?": same card as an approval, asked by the accountant.
-function payStage(stage, state) {
-  const list = state.pending_payments;
-  const p = list[0];
-  stage.replaceChildren();
-  stage.classList.remove("low");
-
-  const shd = el("div", "shd");
-  const lead = el("span");
-  lead.append(icon(TEAM_ICON.accountant), document.createTextNode("Ο Λογιστής σε ρωτά"));
-  shd.append(lead, el("span", null, "1 από " + list.length));
-
-  const body = el("div", "body one");
-  const left = el("div");
-  const title = el("h2", null, p.title);
-  title.id = "stage-title";
-  stage.setAttribute("aria-labelledby", "stage-title");
-  left.append(title, el("p", "why", p.text));
-
-  const acts = el("div", "acts pay");
-  const msg = el("span", "msg");
-  const buttons = PAY_BUTTONS.map((b) => el("button", "btn yes", b[1]));
-  const later = el("button", "btn no", "Όχι ακόμα");
-  const all = buttons.concat([later]);
-  all.forEach((b) => { b.type = "button"; });
-  const answer = (method) => async () => {
-    all.forEach((b) => { b.disabled = true; });
-    msg.textContent = "";
-    try {
-      await post("/api/payments/" + encodeURIComponent(p.invoice_id), { method });
-      refreshSoon();
-    } catch (e) {
-      msg.textContent = e.message;
-      all.forEach((b) => { b.disabled = false; });
-    }
-  };
-  buttons.forEach((b, i) => b.addEventListener("click", answer(PAY_BUTTONS[i][0])));
-  later.addEventListener("click", answer("not_yet"));
-  acts.append(...all, msg);
-  left.appendChild(acts);
-  body.appendChild(left);
-  stage.append(shd, body);
-
-  if (list.length > 1) {
-    const sft = el("div", "sft");
-    sft.appendChild(icon(TEAM_ICON.accountant));
-    sft.appendChild(el("span", null, "Μετά: " + list[1].title));
-    stage.appendChild(sft);
-  }
-}
-
 function idleStage(stage, state) {
   stage.replaceChildren();
   stage.classList.add("low");
@@ -242,122 +184,21 @@ function idleStage(stage, state) {
   stage.appendChild(body);
 }
 
+window.xangxStageNode = stageNode;
+
 function renderStages(state) {
-  const payments = state.pending_payments || [];
-  const sig = JSON.stringify([state.pending_approvals, payments, state.shelf_focus,
-    state.pending_approvals.length || payments.length ? null : state.tasks]);
+  const sig = JSON.stringify([state.pending_approvals, state.shelf_focus,
+    state.pending_approvals.length ? null : state.tasks]);
   if (signatures.stages === sig) return;
   signatures.stages = sig;
   const first = state.pending_approvals[0];
   const home = $("home-stage");
   if (first) stageNode(home, first, state, { chat: false, titleId: "stage-title" });
-  else if (payments.length) payStage(home, Object.assign({}, state, { pending_payments: payments }));
   else idleStage(home, state);
   const chat = $("chat-stage");
   chat.hidden = !first;
   $("chat-grid").classList.toggle("solo", !first);
   if (first) stageNode(chat, first, state, { chat: true, titleId: "chat-stage-title" });
-}
-
-/* ---------- η ομάδα, τώρα ---------- */
-function renderTeam(state) {
-  const box = $("home-team");
-  box.replaceChildren();
-  const active = state.team.filter((t) => t.active).length;
-  const hd = el("div", "hd");
-  const b = el("b");
-  b.append(icon("users-three"), document.createTextNode("Η ομάδα, τώρα"));
-  hd.append(b, el("span", "m", active + " δουλεύουν"));
-  box.appendChild(hd);
-  const first = state.pending_approvals[0];
-  const asking = first ? approvalInfo(first.action).team : null;
-  state.team.forEach((t) => {
-    const row = el("div", "who" + (t.key === asking ? " now-ask" : ""));
-    const av = el("span", "av");
-    av.append(icon(TEAM_ICON[t.key]), el("span", "st" + (t.active ? " go" : "")));
-    const text = el("span", "t");
-    text.append(el("b", null, t.name), el("span", "m", t.last ? t.last.text : "Τίποτα ακόμα σήμερα"));
-    const d = el("span", "d");
-    const focus = state.shelf_focus;
-    if (t.key === "stock" && focus) {
-      const mini = el("span", "mini");
-      mini.setAttribute("aria-label", "Μένουν " + focus.left + " από " + focus.before);
-      const total = Math.min(focus.before, 10);
-      for (let i = 0; i < total; i++) mini.appendChild(el("i", i < Math.min(focus.left, total) ? "" : "g"));
-      d.appendChild(mini);
-    }
-    if (t.last) d.appendChild(el("b", null, clock(t.last.at)));
-    row.append(av, text, d);
-    box.appendChild(row);
-  });
-}
-
-/* ---------- η μέρα του μαγαζιού ---------- */
-function markerGroups(timeline) {
-  // Same team within 20 minutes: one icon. Icons closer than ~45 minutes sit together.
-  const lastOf = {};
-  const items = [];
-  timeline.forEach((e) => {
-    const prev = lastOf[e.team];
-    if (prev && e.minute - prev.last < 20) { prev.last = e.minute; return; }
-    const item = { team: e.team, minute: e.minute, last: e.minute };
-    lastOf[e.team] = item;
-    items.push(item);
-  });
-  const groups = [];
-  items.sort((a, b) => a.minute - b.minute).forEach((it) => {
-    const g = groups[groups.length - 1];
-    if (g && it.minute - g.minute < 45) {
-      if (!g.teams.includes(it.team)) g.teams.push(it.team);
-    } else groups.push({ minute: it.minute, teams: [it.team] });
-  });
-  return groups;
-}
-
-function renderRuler(state) {
-  const ruler = $("ruler");
-  ruler.replaceChildren();
-  const [nh, nm] = state.day.now.split(":").map(Number);
-  const nowPct = (nh * 60 + nm) / 1440 * 100;
-  const div = (cls, style) => { const d = el("div", cls); if (style) d.style.cssText = style; return d; };
-  ruler.append(div("tr"), div("ps", "width:" + nowPct.toFixed(2) + "%"));
-  [["00:00", "left:0;transform:none"], ["06:00", "left:25%"], ["12:00", "left:50%"], ["24:00", "left:100%;transform:translateX(-100%)"]]
-    .forEach(([label, style]) => {
-      const h = el("span", "h", label);
-      h.style.cssText = style;
-      ruler.appendChild(h);
-    });
-  markerGroups(state.timeline).forEach((g) => {
-    const pct = g.minute / 1440 * 100;
-    const mk = el("span", "mk" + (pct >= nowPct - 1.5 && pct <= nowPct ? " end" : ""));
-    mk.style.left = pct.toFixed(2) + "%";
-    g.teams.forEach((t) => mk.appendChild(icon(TEAM_ICON[t])));
-    ruler.appendChild(mk);
-  });
-  const now = div("now" + (nowPct > 88 ? " rev" : ""), "left:" + nowPct.toFixed(2) + "%");
-  now.appendChild(el("span", null, "τώρα " + state.day.now));
-  ruler.appendChild(now);
-}
-
-function renderStory(state) {
-  const box = $("story");
-  box.replaceChildren();
-  const last = state.timeline.slice(-5);
-  if (!last.length) {
-    box.appendChild(el("p", "empty", "Δεν έγινε ακόμα τίποτα σήμερα."));
-    return;
-  }
-  last.forEach((e) => {
-    const cell = el("div");
-    const tm = el("div", "tm");
-    tm.append(el("b", null, hhmm(e.minute)), el("span", "m", TEAM_NAME[e.team] || "Συνεργάτης"));
-    const text = el("span");
-    richText(text, e.text);
-    cell.append(tm, text);
-    const undoNode = window.xangxUndoNode(e.undo, e.id, e.text, refreshSoon);
-    if (undoNode) cell.appendChild(undoNode);
-    box.appendChild(cell);
-  });
 }
 
 /* ---------- κεφαλίδα ---------- */
@@ -383,26 +224,25 @@ function plural(n, one, many) { return n + " " + (n === 1 ? one : many); }
 
 function renderHome(state) {
   const d = state.day;
-  $("home-kick").textContent = d.weekday + " " + d.date + " · " + d.now;
-  const lead = $("home-lead");
-  lead.replaceChildren();
-  const done = state.tasks.done;
-  let first;
-  if (!done) first = "Σήμερα δεν έχει γίνει ακόμα καμία εργασία μόνη της.";
-  else if (d.morning_done_at) {
-    first = done === 1 ? "Από τις " + d.morning_done_at + " έγινε μόνη της 1 εργασία."
-      : "Από τις " + d.morning_done_at + " έγιναν μόνες τους " + done + " εργασίες.";
-  } else {
-    first = done === 1 ? "Σήμερα έγινε μόνη της 1 εργασία." : "Σήμερα έγιναν μόνες τους " + done + " εργασίες.";
-  }
-  lead.appendChild(document.createTextNode(first + " "));
-  if (state.today.sales_count) {
-    lead.append(document.createTextNode("Ως τώρα "), el("b", null, eur(state.today.sales_cents)),
-      document.createTextNode(" από " + plural(state.today.sales_count, "απόδειξη", "αποδείξεις") + "."),
-      el("span", "sim", "Ταμείο: προσομοίωση"));
-  } else {
+  const kickText = d.weekday + " " + d.date;
+  $("home-kick").textContent = kickText;
+  $("home-kick-m").textContent = kickText;
+  const yesterday = window.xangxHome.data && window.xangxHome.data.sales.yesterday;
+  [["home-lead", true], ["home-lead-m", false]].forEach(([id, withCount]) => {
+    const lead = $(id);
+    lead.replaceChildren();
+    if (state.today.sales_count) {
+      lead.append(document.createTextNode("Ως τώρα "), el("b", null, eur(state.today.sales_cents)),
+        document.createTextNode(" από " + plural(state.today.sales_count, "απόδειξη", "αποδείξεις") + "."),
+        el("span", "sim", "Ταμείο: προσομοίωση"));
+      return;
+    }
     lead.appendChild(document.createTextNode("Δεν υπάρχουν ακόμα πωλήσεις σήμερα."));
-  }
+    if (yesterday && yesterday.total_cents) {
+      lead.append(document.createTextNode(" Χθες "), el("b", null, eur(yesterday.total_cents)),
+        document.createTextNode(withCount ? " από " + plural(yesterday.receipts, "απόδειξη", "αποδείξεις") + "." : "."));
+    }
+  });
 }
 
 function render(state) {
@@ -410,9 +250,7 @@ function render(state) {
   paused = !!state.paused;
   renderHome(state);
   renderStages(state);
-  renderTeam(state);
-  renderRuler(state);
-  renderStory(state);
+  window.xangxHome(state);
   renderRounds(state.rounds || []);
   renderPaused();
   renderLive();
@@ -420,7 +258,8 @@ function render(state) {
 
 async function refresh() {
   try {
-    render(await api("/api/state"));
+    const [state] = await Promise.all([api("/api/state"), window.xangxHome.load()]);
+    render(state);
   } catch (e) {
     if (!lastState) $("home-lead").textContent = "Δεν μπόρεσα να φορτώσω. Ξαναδοκιμάζω σε λίγο.";
   }
@@ -610,6 +449,7 @@ function bindAsk(formId, inputId, goToChat) {
   });
 }
 bindAsk("ask-home", "ask-home-input", true);
+bindAsk("ask-home-m", "ask-home-input-m", true);
 bindAsk("ask-chat", "ask-chat-input", false);
 
 route();
