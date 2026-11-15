@@ -3,7 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Κάμερα ραφιού · Xangxothaika</title>
+<title>Κάμερα ραφιού · xeAInhothika</title>
+<link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
 <link rel="stylesheet" href="/static/vendor/phosphor/style.css">
 <link rel="stylesheet" href="/static/vendor/phosphor/bold/style.css">
 <link rel="stylesheet" href="/static/vendor/phosphor/fill/style.css">
@@ -15,7 +16,7 @@
 <div class="banner" id="paused-banner" role="status" hidden>Όλες οι ενέργειες είναι σε παύση. Πάτα «Συνέχισε» για να ξαναρχίσουν.</div>
 <div class="shell">
 <header class="top">
-  <a class="brand" href="/"><b>Xangxothaika</b><span>Mini Market 24/7 · Παγκράτι</span></a>
+  <a class="brand" href="/"><b class="wm">xe<em>A<span class="ii">I</span></em>nhothika</b><span>Mini Market 24/7 · Παγκράτι</span></a>
   <nav class="links" aria-label="Κύρια">
     <a href="/">Σήμερα</a><a href="/#synomilia">Συνομιλία</a><a href="/static/pages/ergasies.html">Εργασίες</a><a href="/static/pages/timologia.html">Τιμολόγια</a><a class="on" href="/stock/camera" aria-current="page">Ράφι</a><a href="/static/pages/mixani.html">Ιστορικό</a>
   </nav>
@@ -146,7 +147,7 @@ function lead() {
            autoOn() ? '. Τραβά μόνη της κάθε 30″, ή πάτα εσύ.' : '. Πάτα εσύ για φωτογραφία.');
 }
 fetch('/stock/camera/shelf?cam=' + encodeURIComponent(cam)).then(r => r.ok ? r.json() : null)
-  .then(j => { if (j) { $('title').textContent = j.name; document.title = j.name + ' · Κάμερα ραφιού'; shelfRows = j.positions || 0; lead(); } }).catch(() => {});
+  .then(j => { if (j) { $('title').textContent = j.name; document.title = j.name + ' · Κάμερα ραφιού · xeAInhothika'; shelfRows = j.positions || 0; lead(); } }).catch(() => {});
 
 // ---- status strip ----
 function render() {
