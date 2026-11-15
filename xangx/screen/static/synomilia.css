@@ -10,9 +10,11 @@
 .sy-nw{white-space:nowrap}
 
 /* βιτρίνα: πεδίο και έτοιμες ερωτήσεις */
-.sy-ask{width:560px;flex-shrink:0;display:flex;flex-direction:column;gap:12px}
+/* τίτλος και πεδίο στην ίδια πάνω γραμμή· το πεδίο γεμίζει ως τη δεξιά άκρη της σκηνής (Γιάννης 1446) */
+#s-synomilia .bandB .in{align-items:flex-start;justify-content:flex-start;gap:48px}
+.sy-ask{flex:1;min-width:0;display:flex;flex-direction:column;gap:12px}
 .sy-ask .ask{margin:0}
-.sy-sug{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap}
+.sy-sug{display:flex;gap:10px;justify-content:flex-start;flex-wrap:wrap}
 .sy-q{min-height:40px;padding:0 16px;border-radius:20px;border:1px solid rgba(211,219,230,.35);background:rgba(211,219,230,.08);color:var(--n5);font:inherit;font-weight:500;cursor:pointer}
 .sy-q:hover{background:rgba(211,219,230,.16)}
 
@@ -26,6 +28,7 @@
 .sy-well b{color:#fff}
 /* τα βήματα σε δύο στήλες */
 .sy-st{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:1fr 1fr;gap:4px 24px}
+.sy-st.sy-one{grid-template-columns:1fr}
 .sy-st li{display:grid;grid-template-columns:32px minmax(0,1fr);gap:12px;align-items:center;min-height:44px;color:var(--n5)}
 .sy-d{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;background:linear-gradient(160deg,var(--m-syn),var(--m-syn2));box-shadow:inset 0 1px 0 rgba(255,255,255,.18)}
 .sy-d i{font-size:16px}
@@ -39,10 +42,12 @@
 .sy-tl{display:flex;flex-direction:column;gap:2px;padding:12px 14px;border-radius:12px;color:#fff;box-shadow:inset 0 1px 0 rgba(255,255,255,.14),0 2px 6px rgba(0,0,0,.3)}
 .sy-tl i{font-size:18px;opacity:.9}
 .sy-tl b{font-size:36px;line-height:1.05;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.sy-u{font-size:18px;font-weight:600;letter-spacing:0}
 .sy-tl.syn{background:linear-gradient(160deg,var(--m-syn),var(--m-syn2))}
 .sy-tl.apo{background:linear-gradient(160deg,var(--m-apo),var(--m-apo2))}
 .sy-tl.sy-al{background:linear-gradient(160deg,#B23A1E,#8E2A12)}
 .sy-need{display:flex;flex-direction:column;gap:10px;padding:18px 20px 20px;border-radius:14px;background:linear-gradient(160deg,var(--m-syn),var(--m-syn2));box-shadow:inset 0 1px 0 rgba(255,255,255,.16),0 6px 16px -6px rgba(0,0,0,.5)}
+.sy-need:has(.sy-acts:not([hidden])){background:linear-gradient(160deg,#2F5DA6,#21467F);box-shadow:inset 6px 0 0 var(--accent),inset 0 1px 0 rgba(255,255,255,.2),0 8px 20px -6px rgba(0,0,0,.6);padding-left:26px}
 .sy-from{display:flex;align-items:center;gap:8px;color:#DCE6F5;font-weight:700}
 .sy-from i{color:var(--accent);font-size:18px}
 .sy-need h3{font-size:30px;line-height:1.2;letter-spacing:-.01em;color:#fff}
@@ -52,6 +57,17 @@
 .sy-acts{display:flex;gap:10px;margin-top:6px}
 .sy-acts .btn.yes{flex:1}
 .sy-cur .sft .tx{flex:1}
+
+/* λίγα βήματα: η σκηνή στοιβάζεται, ώστε να μη μένει άδεια λωρίδα δίπλα στην απόφαση (syFit, Γιάννης 1446) */
+.sy-cb.sy-low{grid-template-areas:"q tiles" "well well" "st st" "need need";row-gap:18px;align-items:center}
+.sy-low>.sy-cl,.sy-low>.sy-cr{display:contents}
+.sy-low #sy-q{grid-area:q;margin:0}
+.sy-low .sy-tiles{grid-area:tiles}
+.sy-low .sy-well{grid-area:well;margin:0}
+.sy-low .sy-st{grid-area:st}
+.sy-low .sy-need{grid-area:need;display:grid;grid-template-columns:minmax(0,1fr) 400px;column-gap:32px;row-gap:6px;align-items:center}
+.sy-low .sy-need>*{grid-column:1}
+.sy-low .sy-acts{grid-column:2;grid-row:1/span 4;margin:0}
 
 /* νωρίτερα σήμερα: μία σειρά κελιών, όπως το «Τι έγινε» των Τιμολογίων Β */
 .sy-h4{display:grid;grid-template-columns:repeat(var(--sy-n,4),minmax(0,1fr))}
@@ -66,10 +82,17 @@
 .sy-w.yes{background:var(--accent);color:var(--on-accent)}
 .sy-t{font-size:var(--l);font-variant-numeric:tabular-nums}
 .sy-ht{line-height:1.3}
+/* κάθε γύρος: ποιος (χρώμα) αριστερά, πόσα βήματα σε συμπαγές κουτί δεξιά */
+.sy-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;min-height:44px;margin-bottom:6px}
+.sy-top .sy-w{margin:0}
+.sy-hc .sy-n{display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:56px;min-height:44px;padding:0 8px;border-radius:10px;color:#fff;background:linear-gradient(160deg,var(--m-syn),var(--m-syn2));line-height:1}
+.sy-hc .sy-n.log{background:linear-gradient(160deg,var(--m-log),var(--m-log2))}
+.sy-hc .sy-n b{font-size:20px}
+.sy-hc .sy-n small{font-size:12px;font-weight:700;margin-top:2px;opacity:.9}
 .sy-hx{color:#33415A;line-height:1.45;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:5;overflow:hidden;overflow-wrap:anywhere}
 .sy-none{padding:22px 24px;color:var(--muted);font-weight:600}
 
-@media (max-width:1180px){.sy-cb{grid-template-columns:1fr}.sy-ask{width:440px}.sy-h4{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:1180px){.sy-cb{grid-template-columns:1fr}.sy-h4{grid-template-columns:repeat(2,minmax(0,1fr))}}
 
 /* κινητό */
 @media (max-width:1023px){
@@ -119,6 +142,7 @@
   .sy-mday>div.sy-al{background:linear-gradient(160deg,#B23A1E,#8E2A12)}
   .sy-mday b{font-size:var(--xl);letter-spacing:-.03em;line-height:1;font-variant-numeric:tabular-nums}
   .sy-mday span{margin-top:6px;opacity:.9}
+  .sy-mday .sy-u{font-size:14px}
   .sy-mask[hidden]{display:none}
   .ask.full.sy-mask{position:fixed;left:12px;right:12px;bottom:76px;z-index:20;margin:0;width:auto;box-sizing:border-box;box-shadow:0 6px 20px rgba(2,10,22,.25)}
 }

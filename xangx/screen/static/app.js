@@ -392,7 +392,25 @@ function syWants(k) { return k + (k === 1 ? " θέλει εσένα" : " θέλ�
 
 function syElapsed() {
   if (!sy.q || !sy.doneAt || sy.failed) return "—";
-  return Math.max(1, Math.round((sy.doneAt - sy.at) / 1000)) + "″";
+  return String(Math.max(1, Math.round((sy.doneAt - sy.at) / 1000)));
+}
+
+// The time tile: the number big, the unit small next to it.
+function syTime(id, t) {
+  const b = $(id);
+  b.replaceChildren(document.createTextNode(t));
+  if (t !== "—") b.appendChild(el("small", "sy-u", " δευτ."));
+}
+
+// Few steps leave the left column short next to the decision (many steps, the right one). Then the stage
+// stacks: the question next to the tiles, the answer and the steps across, the decision across at the bottom.
+function syFit() {
+  const cb = document.querySelector("#s-synomilia .sy-cb");
+  if (!cb || !cb.offsetParent) return;
+  cb.classList.remove("sy-low");
+  const l = cb.querySelector(".sy-cl").getBoundingClientRect().bottom;
+  const r = cb.querySelector(".sy-cr").getBoundingClientRect().bottom;
+  cb.classList.toggle("sy-low", Math.abs(l - r) > 56);
 }
 
 // One step of the vertical path: done (check), waiting for the owner (hand, yellow), or a warning (red).
@@ -435,10 +453,11 @@ function syDrawAsk() {
   }
   const list = [$("sy-steps"), $("sy-steps-m")];
   list.forEach((ol) => ol.replaceChildren(...sy.steps.map((s) => syStepNode(s.text, s.waiting))));
+  $("sy-steps").classList.toggle("sy-one", n <= 3);
 
   const time = syElapsed();
-  syText("sy-t-time", time);
-  syText("sy-s-time", time);
+  syTime("sy-t-time", time);
+  syTime("sy-s-time", time);
   syText("sy-t-steps", asked ? String(n) : "—");
   syText("sy-s-steps", asked ? String(n) : "—");
   syText("sy-t-wait", String(wait));
@@ -453,8 +472,9 @@ function syDrawAsk() {
   link.hidden = !n;
   if (n) {
     $("sy-msteps-t").replaceChildren(el("b", null, plural(n, "βήμα", "βήματα")),
-      document.createTextNode((time !== "—" ? " σε " + time : "") + (wait ? " · " + syWants(wait) : "")));
+      document.createTextNode((time !== "—" ? " σε " + time + " δευτ." : "") + (wait ? " · " + syWants(wait) : "")));
   }
+  syFit();
 }
 
 // The decision that waits for the owner (or the calm line when nothing waits). Same call as the home page.
@@ -542,8 +562,11 @@ function roundNode(r) {
   who.appendChild(icon(mcp ? "calculator" : "circles-three", "ph-fill"));
   const text = el("span", "sy-hx");
   if (r.text) richText(text, r.text); else text.textContent = "δουλεύω…";
-  text.appendChild(document.createTextNode(" · " + plural(r.steps.length, "βήμα", "βήματα")));
-  cell.append(who, el("b", "sy-t", r.hhmm), el("b", "sy-ht", r.label.replace(/^Μόνος του · /, "") || "Μόνος του"), text);
+  const num = el("b", "sy-n" + (mcp ? " log" : ""));
+  num.append(el("b", null, String(r.steps.length)), el("small", null, r.steps.length === 1 ? "βήμα" : "βήματα"));
+  const top = el("span", "sy-top");
+  top.append(who, num);
+  cell.append(top, el("b", "sy-t", r.hhmm), el("b", "sy-ht", r.label.replace(/^Μόνος του · /, "") || "Μόνος του"), text);
   return cell;
 }
 
@@ -553,7 +576,9 @@ function syNowCell(a) {
   who.appendChild(icon("hand-pointing", "ph-fill"));
   const text = el("span", "sy-hx");
   syCodes(text, a.summary || a.approval_id);
-  cell.append(who, el("b", "sy-t", "τώρα"), el("b", "sy-ht", "Περιμένει εσένα"), text);
+  const top = el("span", "sy-top");
+  top.append(who);
+  cell.append(top, el("b", "sy-t", "τώρα"), el("b", "sy-ht", "Περιμένει εσένα"), text);
   return cell;
 }
 
@@ -617,6 +642,7 @@ function syApplyView() {
   });
   $("sy-mneed").hidden = sy.view !== "cur" || !sy.need;
   $("ask-chat-m").hidden = sy.view !== "cur";
+  setTimeout(syFit, 0);
 }
 
 function syView(view) {
@@ -646,6 +672,8 @@ function syInit() {
   });
   window.addEventListener("popstate", (ev) => syView(ev.state && ev.state.sy));
   window.addEventListener("hashchange", () => syView("cur"));
+  window.addEventListener("resize", syFit);
+  if (document.fonts) document.fonts.ready.then(syFit);
   bindAsk("ask-chat-m", "ask-chat-input-m", false);
   syDecision(null);
   syDrawDay();
