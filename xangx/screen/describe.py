@@ -171,7 +171,7 @@ def _describe(t, p, name):
         return (f"Νέο IBAN (…{p['iban_last4']}) στον προμηθευτή "
                 f"{name('supplier', p['supplier_id'])}")
     if t == "credit.requested":
-        return f"Ζητήθηκε πιστωτικό για το τιμολόγιο {p['invoice_id']}"
+        return f"Ζητήθηκε πιστωτικό για το τιμολόγιο {name('invoice', p['invoice_id'])}"
     if t == "report.daily_created":
         return f"Ημερήσια αναφορά {p['date']}: πωλήσεις {format_eur(p['sales_cents'])}"
     if t == "report.month_created":
