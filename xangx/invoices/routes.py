@@ -5,9 +5,11 @@ bytes, writes it to data/inbox/ and registers it. The invoices worker reads it l
 GET /invoices/photo/status tells the result screen how far the reading got.
 """
 
+import collections
 import hashlib
 import os
 import secrets
+import threading
 import time
 from pathlib import Path
 
@@ -24,6 +26,23 @@ STATIC = Path(__file__).resolve().parent / "static"
 MAX_BYTES = 10 * 1024 * 1024
 ASSETS = {"photo.css": "text/css; charset=utf-8", "photo.js": "text/javascript; charset=utf-8"}
 NO_CACHE = {"Cache-Control": "no-cache"}
+# Each accepted photo starts a paid reading with Claude: at most this many per minute
+# (security check 15/11/2026, WARN). A shop sends one or two; a loop or a leaked link sends more.
+PHOTOS_PER_MINUTE = 10
+_accepted = collections.deque()
+_accepted_lock = threading.Lock()
+
+
+def _take_photo_slot(now=None):
+    """True if one more photo fits in the last 60 s (and counts it), else False."""
+    now = time.monotonic() if now is None else now
+    with _accepted_lock:
+        while _accepted and now - _accepted[0] >= 60:
+            _accepted.popleft()
+        if len(_accepted) >= PHOTOS_PER_MINUTE:
+            return False
+        _accepted.append(now)
+        return True
 
 
 def _kind(head):
@@ -70,6 +89,8 @@ async def photo_upload(request: Request):
     ext = _kind(data[:8])
     if ext is None:
         raise HTTPException(415, "Δέχομαι μόνο φωτογραφία JPG, PNG ή PDF.")
+    if not _take_photo_slot():
+        raise HTTPException(429, "Πολλές φωτογραφίες μέσα σε ένα λεπτό. Δοκίμασε ξανά σε λίγο.")
 
     inbox = core.data_dir() / "inbox"
     inbox.mkdir(parents=True, exist_ok=True)

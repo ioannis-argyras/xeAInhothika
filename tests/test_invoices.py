@@ -600,6 +600,119 @@ class Offline(unittest.TestCase):
         self.assertEqual(core.mydata_unanswered(self.conn), [])
 
 
+class CodeReview(unittest.TestCase):
+    """The three findings of the code check of 15/11/2026 (minimata 0502) and the photo limit."""
+
+    def setUp(self):
+        self.tmp = tempfile.mkdtemp()
+        env = {"XANGX_DATA_DIR": self.tmp, "XANGX_FAKE_LLM": "1", "MYDATA_USER_ID": "",
+               "MYDATA_SUBSCRIPTION_KEY": "", "MYDATA_SUPPLIER_USER_ID": "",
+               "MYDATA_SUPPLIER_SUBSCRIPTION_KEY": ""}
+        self.env = mock.patch.dict(os.environ, env)
+        self.env.start()
+        self.conn = connect(":memory:")
+        init_db(self.conn)
+        seed_reference(self.conn)  # no deliveries: the fake invoice (Υμηττού, 24 Coca-Cola) has none
+
+    def tearDown(self):
+        self.conn.close()
+        self.env.stop()
+        shutil.rmtree(self.tmp, ignore_errors=True)
+
+    _receive, _types = InvoiceFlow._receive, InvoiceFlow._types
+
+    def _invoice_stock(self):
+        return [e for e in self._types("stock.moved") if e.payload.get("reason") == "invoice"]
+
+    def _order(self, oid, sent=True, cancelled=False):
+        s = dict(actor="system")
+        append_event(self.conn, type="order.proposed", payload={
+            "order_id": oid, "supplier_id": "sup-ymittou", "net_cents": 1368, "why": {},
+            "lines": [{"product_id": "cola-330", "qty": 24, "unit_cents": 57}]}, **s)
+        if sent:
+            append_event(self.conn, type="order.sent", payload={
+                "order_id": oid, "to": "orders@example.invalid", "message_id": "<m@x>"}, **s)
+        if cancelled:
+            append_event(self.conn, type="order.cancelled", payload={
+                "order_id": oid, "reason": "test"}, **s)
+
+    # 1. Stock counted twice: invoice first, delivery scan later.
+    def test_no_stock_from_invoice_while_an_order_waits_for_its_delivery(self):
+        self._order("P-0500")
+        [iid] = self._receive()
+        core.process_invoice(self.conn, iid)
+        self.assertEqual(self._invoice_stock(), [])  # the delivery scan will count it
+
+    def test_stock_from_invoice_without_a_waiting_order(self):
+        self._order("P-0501", sent=False)  # proposed, never sent: nothing is coming
+        [iid] = self._receive()
+        core.process_invoice(self.conn, iid)
+        [moved] = self._invoice_stock()
+        self.assertEqual((moved.payload["product_id"], moved.payload["qty"]), ("cola-330", 24))
+
+    def test_cancelled_order_does_not_wait(self):
+        self._order("P-0502", cancelled=True)
+        [iid] = self._receive()
+        core.process_invoice(self.conn, iid)
+        self.assertEqual(len(self._invoice_stock()), 1)
+
+    # 2. Stock never written: a failure after the match.
+    def test_failure_after_the_match_is_picked_up_again(self):
+        import sqlite3
+        real, calls = core.stock_from_invoice, []
+
+        def flaky(*args, **kwargs):
+            calls.append(1)
+            if len(calls) == 1:
+                raise sqlite3.OperationalError("database is locked")
+            return real(*args, **kwargs)
+
+        [iid] = self._receive()
+        with mock.patch.object(core, "stock_from_invoice", side_effect=flaky):
+            with self.assertRaises(sqlite3.OperationalError):
+                core.process_invoice(self.conn, iid)
+            self.assertEqual(len(self._types("invoice.matched")), 1)
+            self.assertFalse(core.is_done(self.conn, iid))  # not lost: still open for the worker
+            self.assertEqual(core.open_invoices(self.conn),
+                             [{"invoice_id": iid, "state": "not_processed"}])
+            core.process_invoice(self.conn, iid)
+        self.assertEqual(len(self._invoice_stock()), 1)
+        self.assertEqual(len(self._types("invoice.matched")), 1)
+        self.assertEqual(len(self._types("invoice.mydata_checked")), 1)
+        self.assertTrue(core.is_done(self.conn, iid))
+        # A third run changes nothing.
+        self.assertTrue(core.process_invoice(self.conn, iid)["already_done"])
+        self.assertEqual(len(self._invoice_stock()), 1)
+
+    # 3. Two takers of the same inbox file.
+    def test_scan_skips_a_file_taken_at_the_same_moment(self):
+        inbox = Path(self.tmp) / "inbox"
+        inbox.mkdir(parents=True, exist_ok=True)
+        (inbox / "a.pdf").write_bytes(b"%PDF-1.4 fake")
+        with mock.patch.object(core, "ingest_file", side_effect=FileNotFoundError("gone")):
+            self.assertEqual(core.scan_inbox(self.conn), [])  # no crash
+
+    def test_ingest_leaves_no_half_files(self):
+        [iid] = self._receive()
+        files = list((Path(self.tmp) / "files").iterdir())
+        self.assertEqual([f.suffix for f in files], [".pdf"])  # no .tmp left behind
+        self.assertEqual(files[0].read_bytes(), b"%PDF-1.4 fake")
+        # The same file again, after the first taker already removed its copy: no error.
+        self.assertEqual(self._receive(), [])
+
+    # Security WARN: each photo starts a paid reading.
+    def test_photo_limit_per_minute(self):
+        from xangx.invoices import routes
+        routes._accepted.clear()
+        try:
+            for t in range(routes.PHOTOS_PER_MINUTE):
+                self.assertTrue(routes._take_photo_slot(now=1000 + t))
+            self.assertFalse(routes._take_photo_slot(now=1000 + 30))
+            self.assertTrue(routes._take_photo_slot(now=1000 + 60))  # the first one is a minute old
+        finally:
+            routes._accepted.clear()
+
+
 class SendDemo(unittest.TestCase):
     """The script that puts the 3 demo invoices in myDATA dev. No network."""
 

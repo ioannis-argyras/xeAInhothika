@@ -8,6 +8,7 @@ import hashlib
 import json
 import os
 import re
+import secrets
 import shutil
 from datetime import date as _date, timedelta
 from pathlib import Path
@@ -99,7 +100,11 @@ def ingest_file(conn, path, source=None, sender=None):
     files.mkdir(parents=True, exist_ok=True)
     target = files / f"{sha}{ext}"
     if not target.exists():
-        shutil.copyfile(str(path), str(target))
+        # Copy under a temporary name, then rename: a reader never sees half a file, even when
+        # the photo route and the inbox scan take the same file at the same moment.
+        tmp = files / f".{sha}.{secrets.token_hex(4)}.tmp"
+        shutil.copyfile(str(path), str(tmp))
+        os.replace(tmp, target)
     invoice_id = f"INV-{sha[:8]}"
     payload = {"invoice_id": invoice_id, "source": source or INBOX_EXT[ext],
                "file_ref": f"files/{sha}{ext}", "sha256": sha}
@@ -111,7 +116,7 @@ def ingest_file(conn, path, source=None, sender=None):
     )
     # Only now: if the event could not be written (e.g. "database is locked"), the file stays
     # in the inbox and the next pass tries again, instead of the invoice being lost.
-    path.unlink()
+    path.unlink(missing_ok=True)  # the other taker may have removed it already
     return result
 
 
@@ -122,7 +127,10 @@ def scan_inbox(conn):
     new = []
     for path in sorted(inbox.iterdir()):
         if path.is_file() and path.suffix.lower() in INBOX_EXT:
-            event, created = ingest_file(conn, path)
+            try:
+                event, created = ingest_file(conn, path)
+            except FileNotFoundError:
+                continue  # taken at the same moment by the photo route: it records it
             if created:
                 new.append(event.payload["invoice_id"])
     return new
@@ -356,9 +364,25 @@ def match(conn, invoice_id, caused_by=None):
         subject=f"invoice:{invoice_id}", idem_key=f"matched:{invoice_id}",
         caused_by=caused_by or read.id,
     )
-    if "delivery_id" not in payload:
+    if "delivery_id" not in payload and not awaiting_delivery(conn, supplier):
         stock_from_invoice(conn, read, caused_by=event.id)
     return event
+
+
+def awaiting_delivery(conn, supplier):
+    """True when an order of this supplier was sent and its delivery is not scanned yet: then the
+    goods go into stock with the delivery scan, not from the invoice, so they count once."""
+    if not supplier:
+        return False
+    done = {e.payload.get("delivery_id") for e in read_events(conn, types=["delivery.completed"])}
+    gone = {e.payload.get("order_id") for e in read_events(conn, types=["order.cancelled"])}
+    sent = {e.payload.get("order_id") for e in read_events(conn, types=["order.sent"])}
+    for e in read_events(conn, types=["order.proposed"]):
+        oid = e.payload.get("order_id")
+        if (e.payload.get("supplier_id") == supplier["id"] and oid in sent and oid not in gone
+                and f"D-{oid}" not in done):
+            return True
+    return False
 
 
 def stock_from_invoice(conn, read_event, caused_by=None):
@@ -554,8 +578,12 @@ def summary(conn, invoice_id):
 
 
 def is_done(conn, invoice_id):
+    """Done when the last step (the myDATA check) is written, or it is a duplicate. An invoice
+    that stopped half way (e.g. "database is locked" after the match) is picked up again."""
+    if _latest(conn, "invoice.duplicate_suspected", invoice_id) is not None:
+        return True
     return (_latest(conn, "invoice.matched", invoice_id) is not None
-            or _latest(conn, "invoice.duplicate_suspected", invoice_id) is not None)
+            and _latest(conn, "invoice.mydata_checked", invoice_id) is not None)
 
 
 def open_invoices(conn):
@@ -595,11 +623,19 @@ def process_invoice(conn, invoice_id, reader=read_invoice):
         if duplicate:
             return {"summary": summary(conn, invoice_id), "event_ids": ids,
                     "already_done": False}
-    m = match(conn, invoice_id, caused_by=read.id)
-    ids.append(m.id)
+    m = _latest(conn, "invoice.matched", invoice_id)
+    if m is None:
+        m = match(conn, invoice_id, caused_by=read.id)
+        ids.append(m.id)
+    elif "delivery_id" not in m.payload and not awaiting_delivery(
+            conn, _supplier_by_afm(conn, read.payload["supplier_afm"])):
+        # Picked up again after a failure: the stock step has idem keys, so it counts once.
+        ids += [e.id for e in stock_from_invoice(conn, read, caused_by=m.id)]
+    # Each step below writes once (idem keys), so running them again after a failure is safe.
     ids += [e.id for e in price_changes(conn, read)]
     iban_event = new_iban(conn, read)
     if iban_event:
         ids.append(iban_event.id)
-    ids.append(mydata_check(conn, read).id)
+    if _latest(conn, "invoice.mydata_checked", invoice_id) is None:
+        ids.append(mydata_check(conn, read).id)
     return {"summary": summary(conn, invoice_id), "event_ids": ids, "already_done": False}

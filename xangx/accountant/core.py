@@ -62,7 +62,7 @@ def set_payment_reminder(conn, invoice_id):
         subject=f"invoice:{invoice_id}", idem_key=f"reminder:{invoice_id}", caused_by=read.id,
     )
     return {
-        "summary": (f"Υπενθύμιση πληρωμής {format_eur(p['total_cents'])} στον "
+        "summary": (f"Υπενθύμιση πληρωμής {format_eur(p['total_cents'])} προς "
                     f"{supplier['name']} για τις {due:%d/%m/%Y}."
                     + ("" if created else " (υπήρχε ήδη)")),
         "event_ids": [event.id] if created else [],
@@ -87,7 +87,8 @@ def ask_payment(conn, invoice_id):
     )
     return {
         "summary": (f"Τοις μετρητοίς: ρωτάω αν πληρώθηκαν {format_eur(p['total_cents'])} "
-                    f"στον {supplier['name']}." + ("" if created else " (το είχα ήδη ρωτήσει)")),
+                    f"προς {_sentence_end(supplier['name'])}"
+                    + ("" if created else " (το είχα ήδη ρωτήσει)")),
         "event_ids": [event.id] if created else [],
     }
 
@@ -113,6 +114,11 @@ def payment_for(conn, event):
 def _vat_rate(conn, product_id):
     row = conn.execute("SELECT vat_rate FROM products WHERE id = ?", (product_id,)).fetchone()
     return row["vat_rate"] if row else 0
+
+
+def _sentence_end(name):
+    """'Διανομές Υμηττού Α.Ε.' ends the sentence once, not with '..'."""
+    return name.rstrip(".") + "."
 
 
 def _greek_date(iso):
@@ -160,7 +166,7 @@ def describe_credit(conn, invoice_id):
         return {"summary": f"Αίτημα πιστωτικού για το τιμολόγιο {invoice_id}",
                 "why": "Δεν βρέθηκε λείψη στο ταίριασμα.", "ref": f"invoice:{invoice_id}"}
     return {
-        "summary": f"Αίτημα πιστωτικού {format_eur(d['amount_cents'])} στον {d['supplier']['name']}",
+        "summary": f"Αίτημα πιστωτικού {format_eur(d['amount_cents'])} προς {d['supplier']['name']}",
         "exact": f"Email προς {d['to']}, θέμα «{d['subject']}»:\n{d['body']}",
         "why": d["reasons"],
         "ref": f"invoice:{invoice_id}",
@@ -212,7 +218,7 @@ def request_credit(conn, invoice_id):
         caused_by=d["read"].id,
     )
     where = "με email" if how in ("email", "smtp") else "στα εξερχόμενα (δεν έχει ρυθμιστεί email)"
-    return {"summary": f"Στάλθηκε αίτημα πιστωτικού {format_eur(d['amount_cents'])} στον "
+    return {"summary": f"Στάλθηκε αίτημα πιστωτικού {format_eur(d['amount_cents'])} προς "
                        f"{d['supplier']['name']} {where}.",
             "event_ids": [event.id]}
 

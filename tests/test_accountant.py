@@ -74,8 +74,9 @@ class Accountant(unittest.TestCase):
 
     def test_payment_reminder_due_date_and_once(self):
         iid = self._invoice()
-        acc.set_payment_reminder(self.conn, iid)
+        first = acc.set_payment_reminder(self.conn, iid)
         again = acc.set_payment_reminder(self.conn, iid)
+        self.assertIn(f"προς {Y['name']} για τις 14/12/2026", first["summary"])
         [r] = self._types("payment.reminder_set")
         self.assertEqual(r.payload["due_on"], "2026-12-14")  # 30 credit days
         self.assertEqual(r.payload["amount_cents"], 5823)
@@ -91,6 +92,9 @@ class Accountant(unittest.TestCase):
         d = acc.describe_credit(self.conn, iid)
         self.assertIn("2,43 €", d["summary"])  # 2,15 + 13% VAT
         self.assertIn("Διανομές Υμηττού", d["summary"])
+        # The stage Telegram (0:55-1:40): "προς" fits every supplier name, "στον Διανομές" is wrong Greek.
+        self.assertIn(f"προς {Y['name']}", d["summary"])
+        self.assertNotIn("στον", d["summary"])
         self.assertIn("Νερό", d["why"])
 
     def test_request_credit_writes_outbox_and_event_once(self):
@@ -104,6 +108,8 @@ class Accountant(unittest.TestCase):
         self.assertIn(Y["email"], files[0].read_bytes().decode("utf-8", "ignore"))
         self.assertIn("εξερχόμενα", out["summary"])
         self.assertNotIn("data/", out["summary"])
+        self.assertIn(f"προς {Y['name']}", out["summary"])
+        self.assertNotIn("στον", out["summary"])
         self.assertIn("της 14/11/2026", acc.credit_details(self.conn, iid)["body"])
 
     def test_daily_report(self):
@@ -163,6 +169,10 @@ class Accountant(unittest.TestCase):
         again = acc.ask_payment(self.conn, q.payload["invoice_id"])
         self.assertEqual(again["event_ids"], [])
         self.assertEqual(len(self._types("payment.asked")), 1)
+        # "προς Διανομές Υμηττού Α.Ε." and one full stop, not "στον" or "Α.Ε..".
+        self.assertIn(f"προς {Y['name']}", again["summary"])
+        self.assertNotIn("στον", again["summary"])
+        self.assertNotIn("..", again["summary"])
 
     def test_unknown_terms_and_no_credit_at_supplier_asks(self):
         with self.conn:
