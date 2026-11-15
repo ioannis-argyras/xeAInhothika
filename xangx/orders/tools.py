@@ -285,8 +285,10 @@ def retry_pending(conn):
             message_id, _ = mail.send(order_id, msg)
         except mail.MailError:
             break  # still no connection: try again on the next round
-        written.append(_mark_sent(conn, order_id, str(msg["To"]).strip(), str(message_id).strip(), yes))
+        # The email left: take it out of the queue BEFORE writing order.sent, so a failed write
+        # (e.g. "database is locked") can never send the same order to the supplier twice.
         path.unlink(missing_ok=True)
+        written.append(_mark_sent(conn, order_id, str(msg["To"]).strip(), str(message_id).strip(), yes))
     return written
 
 

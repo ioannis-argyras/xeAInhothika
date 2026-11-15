@@ -1,5 +1,6 @@
 import math
 import os
+import sqlite3
 import tempfile
 import unittest
 from unittest import mock
@@ -183,6 +184,21 @@ class OrdersTest(unittest.TestCase):
         self.assertEqual(sent[0].payload["message_id"], first_id)  # replies still find the order
         self.assertFalse((mail.pending_dir() / "P-0319.eml").exists())
         self.assertEqual(tools.retry_pending(self.conn), [])
+
+    def test_waiting_order_is_never_emailed_twice(self):
+        # Code check 15/11: send worked, writing order.sent failed, and the next round sent it again.
+        tools.propose_order(self.conn, "sup-ymittou")
+        with mock.patch.object(mail, "send", side_effect=mail.MailError("Το email δεν έφυγε: ConnectionRefusedError")):
+            self.ask_and_approve("P-0319")
+        calls = []
+        send = lambda oid, msg: (calls.append(oid), (msg["Message-ID"], "smtp"))[1]
+        with mock.patch.object(mail, "send", side_effect=send), \
+                mock.patch.object(tools, "_mark_sent", side_effect=sqlite3.OperationalError("database is locked")):
+            with self.assertRaises(sqlite3.OperationalError):
+                tools.retry_pending(self.conn)
+        with mock.patch.object(mail, "send", side_effect=send):
+            self.assertEqual(tools.retry_pending(self.conn), [])
+        self.assertEqual(calls, ["P-0319"])
 
     def test_sent_by_smtp_message_has_one_full_stop(self):
         from xangx.orders import mail
