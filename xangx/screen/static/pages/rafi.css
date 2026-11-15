@@ -1,52 +1,159 @@
-/* Σελίδα Ράφι. Οι κανόνες είναι αντιγραμμένοι από το design/kateuthynseis-v2/index.html (#rafi και κοινά):
-   ίδια ονόματα κλάσεων και τιμές. Ό,τι είναι κοινό (κάρτα, βιτρίνα, κουμπιά, πλοήγηση) έρχεται από το /static/app.css. */
-.tabs{grid-template-columns:repeat(5,1fr)}
-.back{display:none}
+/* Shelf page, approved design B (15/11/2026). Loaded after app.css and arxiki.css.
+   New classes use the rf- prefix. Member colour: Warehouse (--m-apo). */
+#s-rafi{--xl:44px;--l:20px;--gut:40px;--rise:112px;--gap:24px}
+@media (max-width:1023px){#s-rafi{--xl:32px;--gut:16px;--rise:64px;--gap:16px}}
+#s-rafi .bandB{padding-bottom:var(--rise)}
+#s-rafi .bandB .in{padding-bottom:26px}
+#s-rafi .bandB>*{max-width:1344px;margin-left:auto;margin-right:auto}
 
-/* ---------- φωτογραφίες πριν / μετά ---------- */
-.photo{background:var(--well);border-radius:12px;aspect-ratio:1/1;position:relative;overflow:hidden;box-shadow:inset 0 2px 8px rgba(0,0,0,.4);display:flex;flex-direction:column;justify-content:flex-end;padding:0 18px 22px}
-.photo img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
-.photo .ts{position:absolute;left:12px;top:10px;color:var(--n5);background:rgba(7,22,48,.8);padding:2px 8px;border-radius:6px}
-.photo .shelfrow{border-bottom-color:#3A5A86}
-.photo .shelfrow.up{opacity:.4;margin-bottom:22px}
-.photos{display:grid;grid-template-columns:1fr 1fr;gap:16px;padding:18px 22px 22px}
-.photos .cap{margin-top:8px}
-.tog{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:56px;padding:0 20px;border-top:1px solid var(--hair)}
-.tog .btn{flex-shrink:0}
-.tog .btn.q{background:var(--surf);color:var(--ink);border-color:var(--line);font-weight:500;height:40px}
-.tog .btn.q:hover{background:var(--strip)}
-.empty-note{padding:22px;color:var(--muted)}
+/* βιτρίνα */
+.rf-act{display:flex;flex-direction:column;align-items:flex-end;gap:10px;flex-shrink:0}
+.rf-act>span{color:var(--n4)}
+.rf-g{display:grid;grid-template-columns:minmax(0,1fr) 392px;gap:var(--gap);align-items:stretch}
+.rf-top{align-self:start}
 
-/* ---------- λίστα θέσεων ---------- */
-.fr .rw{display:grid;grid-template-columns:44px 1fr auto;gap:14px;align-items:center;padding:0 22px;min-height:64px;border-top:1px solid var(--hair)}
-.fr .rw:first-child{border-top:0}
-.fr .rw .no{width:36px;height:36px;border-radius:10px;background:var(--strip);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-weight:700}
-.fr .rw.hot{background:#FBEFEB}
-.fr .rw.hot .no{background:var(--band);color:#fff;border-color:var(--band)}
-.fr .cansm{display:flex;gap:4px;margin-top:6px}
-.fr .cansm i{width:12px;height:20px;border-radius:3px;background:linear-gradient(180deg,#5E7FAB,#16305A)}
-.fr .cansm i.g{background:transparent;border:1px dashed #8597B0}
-.fr .rw>span:nth-child(2){min-width:0}
-.fr .rw .n{text-align:right}
-.fr .more{display:flex;justify-content:center;padding:12px 22px;border-top:1px solid var(--hair);background:var(--strip)}
-.fr .more .btn{height:44px;background:var(--surf);color:var(--ink);border-color:var(--line);font-weight:500}
-.fr .more .btn:hover{background:var(--tint)}
+/* σκηνή: τι είδε η κάμερα */
+.rf-cb{flex:1;display:grid;grid-template-columns:minmax(0,1fr) 248px;gap:24px;padding:22px 28px 26px;align-items:end}
+.rf-cl h2{margin-bottom:18px}
+.rf-ph{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.rf-shot{margin:0}
+.rf-shot figcaption{margin-top:8px;color:var(--n4)}
+.rf-shot figcaption b{color:#fff}
+.rf-img{position:relative;aspect-ratio:4/3;border-radius:12px;background:linear-gradient(180deg,#0B1D38 0%,#071630 100%);box-shadow:inset 0 2px 10px rgba(0,0,0,.5);border:1px solid rgba(211,219,230,.14);display:flex;align-items:flex-end;justify-content:center;padding-bottom:18%;overflow:hidden}
+.rf-img .ts{position:absolute;left:10px;top:10px;color:var(--n5);background:rgba(7,22,48,.85);padding:2px 8px;border-radius:6px;font-variant-numeric:tabular-nums}
+.rf-row{display:flex;gap:10%;width:70%;justify-content:center;border-bottom:3px solid #3A5A86;padding-bottom:4px}
+.rf-row i{width:16%;aspect-ratio:1/1.75;border-radius:6px;background:linear-gradient(180deg,#6E8FBB,#16305A);box-shadow:inset 0 1px 0 rgba(255,255,255,.25)}
+.rf-row i.g{background:transparent;border:2px dashed #5E7396;box-shadow:none}
+/* ανοιχτό πάνελ μέσα στη σκηνή: όχι μπλε σε μπλε (κάρτα 1, μάθημα 15/11) */
+.rf-np{background:#EEF2F7;color:var(--ink);border-radius:14px;box-shadow:0 2px 10px rgba(0,0,0,.35);padding:20px;display:flex;flex-direction:column;align-items:flex-start}
+.rf-nn{display:flex;align-items:center;gap:10px;margin-top:10px;margin-bottom:6px;line-height:1}
+.rf-nn b{font-size:56px;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+.rf-nn b.x{color:var(--alert)}
+.rf-nn i{font-size:26px;color:var(--muted)}
+.rf-nl{color:var(--muted);margin-top:6px}
+.rf-low{margin-top:auto;width:100%;display:flex;align-items:center;gap:10px;border-radius:12px;background:linear-gradient(160deg,#B23A1E,#8E2A12);color:#fff;padding:12px 14px}
+.rf-nl0{font-weight:700;color:var(--ink)}
+.rf-np{padding-bottom:0;overflow:hidden}
+.rf-low.rf-base{margin:18px -20px 0;width:calc(100% + 40px);border-radius:0;padding:14px 20px}
+.rf-low i{font-size:24px}
+.rf-low span{font-weight:700;font-size:16px}
+.rf-cam .sft .tx{flex:1}
 
-.g-raf{grid-template-columns:1fr 1fr;align-items:start}
+/* στάθμη: γεμίζει ως το 4πλάσιο του ορίου, το όριο στο 1/4 */
+.rf-lv{position:relative;display:block;height:10px;border-radius:6px;background:#DCE3EC;box-shadow:inset 0 1px 2px rgba(10,27,51,.15)}
+.rf-lv i{position:absolute;left:0;top:0;bottom:0;border-radius:6px;background:linear-gradient(90deg,var(--m-apo2),var(--m-apo))}
+.rf-lv u{position:absolute;left:25%;top:-4px;bottom:-4px;width:2px;margin-left:-1px;background:var(--ink);border-radius:1px}
+.rf-lv.lo i{background:linear-gradient(90deg,#8E2A12,#C2452A)}
+.rf-lv.mini{display:inline-block;width:44px;height:8px;vertical-align:middle;margin-right:8px}
+.rf-k{display:flex;align-items:center;color:var(--muted)}
+.rf-al{color:var(--alert)!important}
+.rf-apo{color:var(--m-apo)!important}
 
-/* ---------- tablet ---------- */
-@media (max-width:1100px){
-  .g-raf{grid-template-columns:1fr}
-  .back{display:inline-flex}
+/* σε χαμηλό */
+.rf-lr{flex:1 0 auto;display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-rows:auto auto;gap:8px 16px;align-items:center;padding:14px 20px;border-top:1px solid #EBC9BE;background:var(--row-bad);box-shadow:inset 4px 0 0 var(--alert)}
+.hd+.rf-lr{border-top:0}
+.rf-lr .t{min-width:0}
+.rf-lr .t b{display:block}
+.rf-lr .t span{display:block;color:var(--muted)}
+.rf-lr .t em,.rf-mr .s em{font-style:normal;color:var(--alert);font-weight:700}
+.rf-lr .v,.rf-ex .v{grid-row:1/3;grid-column:2;text-align:right;line-height:1}
+.rf-lr .v b{display:block;font-size:34px;letter-spacing:-.02em;color:var(--alert);font-variant-numeric:tabular-nums}
+.rf-lr .v small,.rf-ex .v small{display:block;color:var(--muted);font-size:14px;margin-top:4px}
+.rf-lr .rf-lv{grid-column:1}
+
+/* όλες οι θέσεις: λωρίδα ανά κάμερα, ζέβρα, κόκκινο φόντο για χαμηλό */
+.rf-th,.rf-tr{display:grid;grid-template-columns:minmax(0,1fr) 180px 72px 170px;gap:20px;align-items:center;padding:0 20px}
+.rf-th{min-height:44px;color:var(--muted);background:var(--strip);border-bottom:1px solid var(--line)}
+.rf-th .n,.rf-tr .n{text-align:right}
+.rf-tr{min-height:60px;border-top:1px solid var(--hair)}
+:where(.rf-tr:nth-child(even of .rf-tr)){background:var(--zebra)}
+.rf-tr.bad{background:var(--row-bad);box-shadow:inset 4px 0 0 var(--alert)}
+.rf-tr .p b{display:block}
+.rf-tr .p span{display:block;color:var(--muted)}
+.rf-tr b.n{font-size:var(--l);font-variant-numeric:tabular-nums}
+.rf-tr b.n.x{color:var(--alert)}
+.rf-tr .mv{display:flex;align-items:center;gap:6px;color:var(--muted);font-size:16px;font-weight:400;letter-spacing:0}
+.rf-tr .mv.out{color:var(--alert);font-weight:700}
+.rf-tr .mv.ok{color:var(--muted)}
+.rf-tr .mv i{font-size:16px}
+.rf-sub{display:flex;align-items:center;justify-content:space-between;min-height:44px;padding:0 20px;background:var(--grp);border-top:1px solid var(--line);border-bottom:1px solid var(--line);font-weight:700}
+.rf-sub>span:first-child{display:flex;align-items:center;gap:8px}
+.rf-sub>span:first-child i{color:var(--m-apo);font-size:18px}
+.rf-sub>span:last-child{font-weight:400;color:var(--muted)}
+.rf-th+.rf-sub{border-top:0}
+.rf-sub.rf-cl{background:var(--hdr)}
+.rf-sub.rf-cl a{display:flex;align-items:center;gap:6px;color:var(--n2);min-height:44px}
+.rf-sub.rf-cl+.rf-sub.rf-cl{border-top:0}
+
+/* λήγουν σύντομα: αντίστροφη μέτρηση */
+.rf-ex{display:grid;grid-template-columns:64px minmax(0,1fr) auto;gap:14px;align-items:center;padding:12px 20px;border-top:1px solid var(--hair)}
+.hd+.rf-ex{border-top:0}
+.rf-ex.rf-ex1{background:var(--row-bad);box-shadow:inset 4px 0 0 var(--alert)}
+.rf-ex .t b{display:block}.rf-ex .t span{display:block;color:var(--muted)}
+.rf-ex .v{grid-row:auto;grid-column:auto}
+.rf-ex .v b{font-size:28px;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.ring.rf-r1 .rt{stroke:#E5694D}
+.ring.rf-r1 .rf{stroke:var(--alert)}
+.ring.rf-r1 .rv b{color:var(--alert)}
+
+/* σήμερα από την κάμερα */
+.rf-day{display:grid;grid-template-columns:repeat(3,1fr);gap:0;padding:6px 0}
+.rf-day>div{display:flex;flex-direction:column;align-items:center;text-align:center;padding:10px 8px;line-height:1.2}
+.rf-day>div+div{border-left:1px solid var(--hair)}
+.rf-day b{font-size:var(--xl);letter-spacing:-.03em;line-height:1;font-variant-numeric:tabular-nums}
+.rf-day>div:first-child b{color:var(--alert)}
+.rf-day span{color:var(--muted);margin-top:6px}
+
+@media (max-width:1180px){.rf-g{grid-template-columns:minmax(0,1fr) 340px}.rf-th,.rf-tr{grid-template-columns:minmax(0,1fr) 140px 60px 150px}}
+
+/* κινητό */
+@media (max-width:1023px){
+  .rf-g{grid-template-columns:1fr}
+  #s-rafi .mb{padding-top:80px}
+  .rf-mcam{margin-bottom:16px}
+  .rf-mr{display:flex;flex-direction:column;gap:8px;padding:14px 16px;border-top:1px solid var(--hair)}
+  .card>.rf-mr:first-child,.rf-sub+.rf-mr{border-top:0}
+  #m-low .rf-mr{background:var(--row-bad);box-shadow:inset 4px 0 0 var(--alert);border-top-color:#EBC9BE}
+  .rf-mr.bad{background:var(--row-bad);box-shadow:inset 4px 0 0 var(--alert)}
+  .rf-mr .a{display:flex;justify-content:space-between;align-items:baseline;gap:12px}
+  .rf-mr .a b.v{font-size:var(--l);font-variant-numeric:tabular-nums}
+  .rf-mr .a b.v.x{color:var(--alert)}
+  .rf-mr .s{color:var(--muted)}
+  .rf-ex{grid-template-columns:56px minmax(0,1fr) auto;padding:12px 16px}
+  .rf-mcam{display:grid;grid-template-columns:72px minmax(0,1fr) auto;gap:12px;align-items:center;margin-bottom:16px;padding:12px;border-radius:16px;background:var(--stage);color:#fff;box-shadow:var(--sh-stage);border:1px solid rgba(211,219,230,.16)}
+  .rf-mcam[hidden]{display:none}
+  .rf-mth{width:72px;height:72px;border-radius:12px;background:linear-gradient(180deg,#0B1D38,#071630);box-shadow:inset 0 2px 8px rgba(0,0,0,.5);display:flex;align-items:flex-end;justify-content:center;padding-bottom:14px}
+  .rf-mth .rf-row{width:80%;gap:8%}
+  .rf-mcam .t{min-width:0;display:flex;flex-direction:column}
+  .rf-mcam .t>span:first-child{color:var(--n4)}
+  .rf-mcam .t>b{font-size:18px;line-height:1.25}
+  .rf-mx{display:flex;align-items:center;gap:6px;margin-top:4px}
+  .rf-mx b{font-size:22px;line-height:1}
+  .rf-mx b.x{color:#FF8A70}
+  .rf-mx i{font-size:14px;color:var(--n4)}
+  .rf-mx em{white-space:nowrap;font-size:14px;font-style:normal;margin-left:6px;background:linear-gradient(160deg,#B23A1E,#8E2A12);padding:2px 8px;border-radius:6px;font-weight:700}
+  .rf-mcam .go{display:flex;align-items:center;justify-content:center;width:32px;min-height:44px;color:#fff;font-size:20px}
+  .rf-tiles{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px}
+  .rf-tiles[hidden]{display:none}
+  .rf-tile{display:grid;grid-template-columns:auto 1fr;gap:8px 10px;align-items:center;padding:14px;border-radius:16px;background:var(--surf);border:1px solid var(--line);box-shadow:var(--sh-card);position:relative;color:var(--ink)}
+  .rf-tile>b{font-size:var(--xl);line-height:1;letter-spacing:-.03em}
+  .rf-tile>span:not(.rf-ti){grid-column:1/3;font-weight:700}
+  .rf-tile small{display:block;font-weight:400;font-size:14px;color:var(--muted)}
+  .rf-tile>i{position:absolute;right:12px;top:14px;color:var(--muted);font-size:18px}
+  .rf-ti{width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;color:#fff;background:linear-gradient(160deg,var(--m-apo),var(--m-apo2))}
+  .rf-ti.al{background:linear-gradient(160deg,#B23A1E,#8E2A12)}
+  .rf-ti i{font-size:20px}
+  .rf-back{display:inline-flex;align-items:center;gap:6px;min-height:44px;margin:-4px 0 6px;color:#fff;font-weight:700;position:relative;background:linear-gradient(transparent,transparent)}
+  .rf-back i{font-size:18px}
 }
-/* ---------- κινητό ---------- */
-@media (max-width:720px){
-  .photos{grid-template-columns:1fr 1fr;gap:10px;padding:14px 16px 16px}
-  .photo{padding:0 10px 14px}
-  .photo .can{width:12px;height:20px}
-  .photo .shelfrow{gap:4px}
-  .fr .rw{padding:0 16px;grid-template-columns:36px 1fr auto;gap:12px}
-  .fr .rw .no{width:32px;height:32px}
-  .fr .more{padding:12px 16px}
-  .tog{padding:12px 16px}
-}
+
+/* real data: photos, calm empty notes, a scene without a latest move */
+.rf-note{padding:22px 20px;color:var(--muted)}
+.rf-note.rf-dark{color:var(--n4)}
+.rf-cb.rf-solo{grid-template-columns:minmax(0,1fr);align-items:start}
+.rf-np.rf-ok{padding-bottom:20px}
+.rf-img img,.rf-mth img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.rf-mth{position:relative;overflow:hidden}
+/* the lists sit in their own container: keep the card layout of the design */
+#rf-scene-body,#rf-low-body{flex:1;display:flex;flex-direction:column}
+#rf-low-body>.rf-lr:first-child,#rf-exp-body>.rf-ex:first-child,#rf-mexp-body>.rf-ex:first-child,#rf-mlow-body>.rf-mr:first-child,#rf-all-body>.rf-sub:first-child{border-top:0}
