@@ -73,6 +73,21 @@ class ReplayTest(unittest.TestCase):
         self.assertEqual(data["first_id"], events[0]["id"])
         self.assertEqual(data["last_id"], events[2]["id"])
 
+    def test_events_carry_their_type_and_approvals_their_approval_id(self):
+        put(self.conn, self.midnight + timedelta(hours=10), "master", "approval.requested",
+            {"approval_id": "A-7", "summary": "Ζητάω πιστωτικό 2,43 €;", "action": "x", "exact": {},
+             "why": "y"})
+        put(self.conn, self.midnight + timedelta(hours=10, minutes=1), "owner", "approval.decided",
+            {"approval_id": "A-7", "decision": "yes", "channel": "web"})
+        put(self.conn, self.midnight + timedelta(hours=11), "master", "check.morning_done",
+            {"findings": []})
+        events = self.client.get("/api/screen/replay").json()["events"]
+        self.assertEqual([e["type"] for e in events],
+                         ["approval.requested", "approval.decided", "check.morning_done"])
+        self.assertEqual(events[0]["approval_id"], "A-7")
+        self.assertEqual(events[1]["approval_id"], "A-7")
+        self.assertNotIn("approval_id", events[2])
+
     def test_winter_time_is_utc_plus_two(self):
         offset = server_app.athens_offset(datetime(2026, 11, 14, 5, 0, tzinfo=timezone.utc))
         self.assertEqual(offset, timedelta(hours=2))

@@ -1,4 +1,4 @@
-"""API of the time machine page: today's events that count for the day, with their minute of the day.
+"""API of the history page ("Ιστορικό της μέρας"): today's events that count for the day, with their minute of the day.
 
 The page replays the day from these events and asks the existing `/api/state?until_id=` for
 "how the home screen looked at that moment". Nothing is written here.
@@ -54,13 +54,17 @@ def replay_sync():
             if e.at < day_start or server.is_quiet(e) or not _wanted(e):
                 continue
             local = server._local(server._parse_utc(e.at))
-            events.append({
+            item = {
                 "id": e.id,
                 "minute": local.hour * 60 + local.minute,
                 "hhmm": local.strftime("%H:%M"),
                 "team": "agent" if e.type == "agent.planned" else team_of(e.actor),
+                "type": e.type,
                 "text": describe(e, names),
-            })
+            }
+            if e.type in ("approval.requested", "approval.decided"):
+                item["approval_id"] = (e.payload or {}).get("approval_id")
+            events.append(item)
         day = server._local(server._parse_utc(day_start))
         return {
             "events": events,

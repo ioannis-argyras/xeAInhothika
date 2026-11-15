@@ -8,6 +8,7 @@
 <link rel="stylesheet" href="/static/vendor/phosphor/bold/style.css">
 <link rel="stylesheet" href="/static/vendor/phosphor/fill/style.css">
 <link rel="stylesheet" href="/static/app.css">
+<link rel="stylesheet" href="/static/arxiki.css">
 <link rel="stylesheet" href="/static/pages/mixani.css">
 </head>
 <body>
@@ -25,36 +26,99 @@
   </div>
 </header>
 
-<section id="s-mixani" class="screen on">
-  <div class="band"><div class="in">
+<section id="s-mix" class="screen on" aria-labelledby="h-mix" aria-busy="true">
+<div class="desk">
+  <div class="band bandB"><div class="in">
     <div>
-      <div class="kick"><i class="ph ph-clock-counter-clockwise"></i>Επανάληψη · από τα γεγονότα που δεν σβήνονται</div>
-      <h1>Η μέρα ξαναπαίζει σε 5″</h1>
+      <div class="kick"><i class="ph ph-clock-counter-clockwise"></i><span id="d-kick">Η μέρα</span></div>
+      <h1 id="h-mix">Ιστορικό της μέρας</h1>
+      <p class="lead" id="d-lead"></p>
     </div>
-    <button class="btn yes" id="play" type="button"><i class="ph-fill ph-play"></i>Παίξε τη μέρα</button>
+    <div class="mx-act">
+      <button class="btn yes" id="play" type="button"><i class="ph-fill ph-play"></i>Παίξε τη μέρα σε 5″</button>
+      <a class="btn no" href="/"><i class="ph ph-arrow-u-up-left"></i>Πίσω στο τώρα</a>
+    </div>
   </div></div>
+
   <div class="wrap">
-    <section class="card big-ruler" aria-label="Χάρακας της μέρας">
-      <div class="hd"><b><i class="ph ph-clock"></i><span id="day-title">Σήμερα</span></b><a href="/">Πίσω στο τώρα<i class="ph ph-arrow-right"></i></a></div>
-      <div class="ruler" id="ruler" style="margin-top:34px">
-        <div class="tr"></div><div class="ps" id="ps" style="width:0"></div>
-        <span class="h" style="left:0;transform:none">00:00</span><span class="h h6" style="left:25%">06:00</span><span class="h" style="left:50%">12:00</span><span class="h h18" style="left:75%">18:00</span><span class="h" style="left:100%;transform:translateX(-100%)">24:00</span>
-        <div id="marks"></div>
-        <div class="knob" id="knob" role="slider" tabindex="0" aria-label="Ώρα της επανάληψης" aria-valuemin="0" aria-valuemax="1439" aria-valuenow="0" aria-valuetext="00:00" style="left:0"><span id="knob-time">00:00</span></div>
+    <article class="stage" aria-label="Η επανάληψη">
+      <div class="shd"><span><i class="ph ph-clock-counter-clockwise"></i>Η μέρα όπως ήταν</span><span id="d-count"></span></div>
+      <div class="mx-top">
+        <div>
+          <div class="mx-clk"><b id="d-clk">--:--</b><span id="d-day"></span></div>
+          <div class="mx-cur" id="d-cur"></div>
+        </div>
+        <div>
+          <div id="d-wt"></div>
+          <p class="mx-qt" id="d-qt"></p>
+        </div>
       </div>
-    </section>
-    <div class="row2 g-mix mt">
-      <section class="card" aria-label="Η αρχική εκείνη τη στιγμή">
-        <div class="hd"><b><i class="ph ph-monitor"></i><span id="thumb-title">Η αρχική</span></b><span class="m">όπως ήταν</span></div>
-        <div class="thumb"><div class="tb"><span id="th-sales">Φόρτωση…</span><span class="sim">Ταμείο: προσομοίωση</span></div>
-          <div class="tg"><div class="dk" id="th-approval"></div><div id="th-low"></div></div></div>
-      </section>
-      <section class="card feed" aria-label="Μέχρι εκείνη τη στιγμή">
-        <div class="hd"><b><i class="ph ph-list"></i>Μέχρι εκείνη τη στιγμή</b><span class="m">νεότερα πάνω</span></div>
-        <div id="feed"></div>
-      </section>
+      <div class="mx-lw">
+        <div class="mx-lh"><b><i class="ph ph-users-three"></i>Ποιος έκανε τι, ώρα με την ώρα</b><span id="d-now"></span></div>
+        <div class="mx-lanes" id="d-lanes"></div>
+      </div>
+      <div class="sft"><i class="ph ph-lock-simple"></i><span class="tx">Τα γεγονότα δεν αλλάζουν και δεν σβήνονται. Η επανάληψη μόνο τα ξαναδείχνει.</span></div>
+    </article>
+
+    <div class="mx-g">
+      <article class="card" aria-label="Η αρχική εκείνη τη στιγμή">
+        <div class="hd"><b><i class="ph ph-monitor"></i><span id="d-home-t">Η αρχική</span></b><span class="r">όπως ήταν</span></div>
+        <div id="d-dz"></div>
+        <div class="mx-sl" id="d-sl"></div>
+        <div class="mx-h3"><i class="ph-fill ph-package"></i>Χαμηλά στην Αποθήκη</div>
+        <div class="mx-lst" id="d-lst"></div>
+      </article>
+
+      <article class="card" aria-label="Μέχρι εκείνη τη στιγμή">
+        <div class="hd"><b><i class="ph ph-list-bullets"></i><span id="d-ev-t">Μέχρι εκείνη τη στιγμή</span></b><span class="r">νεότερα πάνω</span></div>
+        <div id="d-feed"></div>
+        <div class="mx-mo" id="d-mo"></div>
+      </article>
     </div>
   </div>
+</div>
+
+<div class="mob">
+  <div class="mb"><div class="mi">
+    <div class="kick"><i class="ph ph-clock-counter-clockwise"></i><span id="m-kick">Η μέρα</span></div>
+    <h1>Ιστορικό της μέρας</h1>
+    <p class="lead" id="m-lead"></p>
+    <div class="up1"><button class="btn yes" id="play-m" type="button"><i class="ph-fill ph-play"></i>Παίξε τη μέρα σε 5″</button></div>
+  </div></div>
+  <div class="mwrap"><div class="mi">
+    <article class="stage mx-ms" aria-label="Η επανάληψη">
+      <div class="shd"><span><i class="ph ph-clock-counter-clockwise"></i>Η μέρα όπως ήταν</span><span id="m-count"></span></div>
+      <div class="mx-mb">
+        <div class="mx-clk"><b id="m-clk">--:--</b><span id="m-day"></span></div>
+        <div class="mx-cur" id="m-cur"></div>
+      </div>
+      <div class="mx-lw">
+        <div class="mx-lh"><b><i class="ph ph-users-three"></i>Ποιος, πότε</b><span id="m-now"></span></div>
+        <div class="mx-lanes" id="m-lanes"></div>
+      </div>
+    </article>
+    <div class="mx-mw">
+      <div id="m-wt"></div>
+      <p class="mx-qt" id="m-qt"></p>
+    </div>
+    <div class="seg2 mx-s2 mx-mt16" role="tablist" aria-label="Η επανάληψη">
+      <button type="button" role="tab" aria-selected="true" data-p="m-feed">Τι έγινε <span class="c n" id="m-tabc">0</span></button>
+      <button type="button" role="tab" aria-selected="false" data-p="m-home">Η αρχική τότε</button>
+    </div>
+    <div class="mpanel" id="m-feed" role="tabpanel">
+      <article class="card"><div id="m-feedl"></div><div class="mx-mo" id="m-mo"></div></article>
+    </div>
+    <div class="mpanel" id="m-home" role="tabpanel" hidden>
+      <article class="card">
+        <div id="m-dz"></div>
+        <div class="mx-sl" id="m-sl"></div>
+        <div class="mx-h3"><i class="ph-fill ph-package"></i>Χαμηλά στην Αποθήκη</div>
+        <div class="mx-lst" id="m-lst"></div>
+      </article>
+    </div>
+    <a class="btn q mx-back" href="/"><i class="ph ph-arrow-u-up-left"></i>Πίσω στο τώρα</a>
+  </div></div>
+</div>
 </section>
 </div>
 

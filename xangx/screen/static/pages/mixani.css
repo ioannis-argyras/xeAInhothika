@@ -1,34 +1,151 @@
-/* Ιστορικό της μέρας: οι κανόνες της σελίδας από το design/kateuthynseis-v2/index.html, ενότητα «μηχανή».
-   Τα κοινά (βιτρίνα, κάρτα, χάρακας, μπάρα καρτελών) έρχονται από το app.css. */
-.g-mix{grid-template-columns:1.5fr 1fr;align-items:start}
-.hd a{display:inline-flex;align-items:center;gap:6px;font-weight:700;min-height:44px}
-.big-ruler{padding:6px 0 0}
-.big-ruler .ruler{height:72px;touch-action:pan-y;cursor:pointer}
-.knob{position:absolute;top:8px;width:24px;height:24px;margin-left:-12px;border-radius:50%;background:var(--accent);border:3px solid var(--band);box-shadow:0 2px 6px rgba(10,27,51,.35);cursor:grab;touch-action:none}
-.knob span{position:absolute;top:-28px;left:50%;transform:translateX(-50%);white-space:nowrap;font-weight:700;color:var(--ink)}
-.thumb{background:var(--page);border-radius:12px;border:1px solid var(--line);overflow:hidden;margin:18px 22px 22px}
-.thumb .tb{background:var(--band);min-height:70px;padding:12px 14px 40px;color:var(--n5)}
-.thumb .tg{display:grid;grid-template-columns:1.6fr 1fr;gap:10px;padding:0 14px 14px;margin-top:-26px}
-.thumb .tg div{background:var(--surf);border:1px solid var(--line);border-radius:8px;min-height:120px;padding:10px 12px}
-.thumb .tg div.dk{background:var(--stage);border-color:var(--stage);color:var(--n5)}
-.feed .ev{display:grid;grid-template-columns:56px 1fr;gap:10px;padding:13px 22px;border-top:1px solid var(--hair)}
-.feed .ev:first-child{border-top:0}
-.feed .ev.more{color:var(--muted);background:var(--strip)}
-.feed .empty{padding:18px 22px;color:var(--muted)}
-.mk{transition:opacity .16s var(--ease)}
-.mk.fut{opacity:.45}
-.ruler .mk i{flex-shrink:0}
-.tabs{grid-template-columns:repeat(5,1fr)}
-.btn.yes:disabled{opacity:1;background:var(--accent-h)}
+/* Ιστορικό της μέρας: το εγκεκριμένο σχέδιο Β (15/11/2026), κατά λέξη. Όλες οι νέες κλάσεις με πρόθεμα mx-.
+   Μεγέθη: στη σκηνή 96 / 24 / 16, στις λωρίδες 16 / 18 (η κόκκινη κουκκίδα), στις κάτω κάρτες 44 / 20 / 14 (έως τρία ανά ενότητα). */
+#s-mix{--ln:180px;--wait:#A3351B}
+#s-mix .bandB{padding-bottom:var(--rise)}
+#s-mix .bandB .in{padding-bottom:26px}
+#s-mix .bandB>*{max-width:1344px;margin-left:auto;margin-right:auto}
+.mx-act{display:flex;gap:10px;flex-shrink:0}
+#s-mix .stage .shd{font-size:16px}
 
-@media (max-width:1100px){
-  .g-mix{grid-template-columns:1fr}
+/* ---------- σκηνή: ρολόι, τρέχον γεγονός, ό,τι περιμένει εσένα ---------- */
+.mx-top{display:grid;grid-template-columns:minmax(0,1fr) 440px;gap:32px;padding:26px 28px 24px;align-items:center}
+.mx-clk{display:flex;align-items:baseline;gap:16px}
+.mx-clk b{font-size:96px;line-height:.92;letter-spacing:-.04em;color:#fff}
+.mx-clk span{font-size:16px;color:var(--n4)}
+.mx-cur{display:grid;grid-template-columns:56px minmax(0,1fr);gap:16px;align-items:center;margin-top:22px}
+.mx-ic{width:56px;height:56px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;flex-shrink:0}
+.mx-ic i{font-size:26px}
+.mx-ic.you{background:var(--accent);color:var(--on-accent)}
+.mx-cur .t span{display:block;font-size:16px;color:var(--n4)}
+.mx-cur .t b{display:block;font-size:24px;line-height:1.25;letter-spacing:-.01em;color:#fff;text-wrap:balance}
+
+.mx-wt{border-radius:18px;background:linear-gradient(160deg,#B23C1F,#7E2410);color:#fff;padding:20px 22px;box-shadow:0 0 0 4px rgba(255,255,255,.10),0 10px 24px -8px rgba(2,10,22,.6)}
+.mx-wt .h{display:flex;align-items:center;gap:10px;font-size:16px;font-weight:700}
+.mx-wt .h i{font-size:22px}
+.mx-wt b{display:block;font-size:24px;line-height:1.2;letter-spacing:-.01em;margin-top:10px}
+.mx-wt span{display:block;font-size:16px;color:#FBE3DC;margin-top:2px}
+.mx-wt.low{background:var(--stage-hd);box-shadow:none;border:1px solid rgba(211,219,230,.16)}
+.mx-qt{display:flex;align-items:center;flex-wrap:wrap;gap:8px 18px;margin-top:16px;font-size:16px;color:var(--n5)}
+.mx-qt>span{display:flex;align-items:center;gap:8px}
+.mx-qt b{color:#fff}
+.mx-qt .mx-ic{width:28px;height:28px}
+.mx-qt .mx-ic i{font-size:15px}
+
+/* ---------- λωρίδες της μέρας, σε ανοιχτό πάνελ μέσα στη σκηνή ---------- */
+.mx-lw{margin:0 28px 26px;background:#EEF2F7;border-radius:18px;box-shadow:0 2px 10px rgba(0,0,0,.35);color:var(--ink);padding:14px 20px 10px;overflow:hidden}
+.mx-lh{display:flex;align-items:center;justify-content:space-between;gap:12px;color:var(--muted);margin-bottom:10px;font-size:16px}
+.mx-lh b{color:var(--ink);display:flex;align-items:center;gap:8px}
+.mx-lh b i{font-size:20px;color:var(--n3)}
+.mx-lanes{position:relative}
+.mx-ln{display:grid;grid-template-columns:var(--ln) minmax(0,1fr);align-items:center;min-height:52px;border-top:1px solid #C9D3DF}
+.mx-ln:nth-child(odd){background:#DCE4EE}
+.mx-ln:first-child{border-top:0}
+.mx-lb{display:flex;align-items:center;gap:10px;padding-left:10px;font-weight:700;font-size:16px}
+.mx-lb .mx-ic{width:32px;height:32px}
+.mx-lb .mx-ic i{font-size:17px}
+.mx-tk{position:relative;height:52px}
+.mx-ov{position:absolute;left:var(--ln);right:0;top:0;bottom:0;pointer-events:none}
+.mx-gl{position:absolute;top:0;bottom:0;width:1px;background:#B9C6D6}
+.mx-gl.h{background:#D3DCE7}
+.mx-pa{position:absolute;left:0;top:0;bottom:0;background:rgba(36,86,166,.07)}
+.mx-fu{position:absolute;right:0;top:0;bottom:0;background:repeating-linear-gradient(90deg,rgba(10,27,51,.07) 0 6px,transparent 6px 12px)}
+.mx-nw{position:absolute;top:-2px;bottom:0;width:0;border-left:2px dashed var(--n3)}
+.mx-ph{position:absolute;top:-2px;bottom:0;width:2px;margin-left:-1px;background:var(--ink)}
+.mx-d{position:absolute;top:50%;width:32px;height:32px;margin:-16px 0 0 -16px;border-radius:50%;background:var(--c);border:2px solid #fff;display:flex;align-items:center;justify-content:center;z-index:1}
+.mx-d b{font-size:16px;line-height:1;color:#fff}
+.mx-d.fut{background:#fff;border-color:var(--c)}
+.mx-d.fut b{color:var(--c)}
+.mx-d.you b{color:var(--on-accent)}
+.mx-d.you.fut b{color:#6B4F00}
+.mx-d.wt{width:40px;height:40px;margin:-20px 0 0 -20px;background:var(--wait);border:3px solid #fff;box-shadow:0 0 0 5px rgba(163,53,27,.30),0 2px 6px rgba(10,27,51,.4);z-index:2}
+.mx-d.wt b{font-size:18px}
+.mx-wl{position:absolute;top:50%;transform:translate(-100%,-50%);padding-right:30px;white-space:nowrap;color:var(--wait);font-weight:700;font-size:16px;z-index:2}
+.mx-ax{position:relative;height:44px;margin-left:var(--ln)}
+.mx-ax span{position:absolute;top:10px;transform:translateX(-50%);color:var(--muted);font-size:16px}
+.mx-ax span.s{transform:none}.mx-ax span.e{transform:translateX(-100%)}
+.mx-ax span.off{visibility:hidden}
+.mx-kn{position:absolute;top:4px;transform:translateX(-50%);min-height:34px;padding:0 14px;border-radius:999px;background:var(--accent);color:var(--on-accent);font-weight:700;font-size:16px;display:flex;align-items:center;gap:6px;box-shadow:0 2px 6px -2px rgba(10,27,51,.45);z-index:2}
+#s-mix .mx-ax .mx-kn{color:var(--on-accent);transform:translateX(-50%)}
+.mx-kn i{font-size:16px}
+
+/* ---------- κάτω: η αρχική τότε, και η ροή ---------- */
+.mx-g{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:var(--gap);margin-top:var(--gap);align-items:stretch}
+.mx-dz{background:var(--stage);color:#fff;padding:18px 22px;display:grid;grid-template-columns:44px minmax(0,1fr);gap:14px;align-items:center}
+.mx-dz .mx-ic{width:44px;height:44px;background:var(--wait)}
+.mx-dz .mx-ic i{font-size:22px}
+.mx-dz>div>span{display:block;color:var(--n4)}
+.mx-dz>div>b{display:block;font-size:var(--l);line-height:1.3}
+.mx-sl{padding:18px 22px 20px;background:var(--tint);display:grid;grid-template-columns:auto minmax(0,1fr);column-gap:18px;align-items:end;border-bottom:1px solid var(--line)}
+.mx-sl h3{grid-column:1/-1}
+.mx-sl b{display:block;font-size:var(--xl);line-height:1;letter-spacing:-.03em}
+.mx-sl span{display:block;color:var(--muted);margin:0 0 4px}
+.mx-h3{display:flex;align-items:center;gap:8px;padding:14px 22px 8px;font-weight:700;background:#E1EFF0}
+.mx-sl h3{font-size:var(--s);font-weight:700;display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.mx-sl h3 i,.mx-h3 i{font-size:18px;color:var(--n3)}
+.mx-h3 i{color:var(--m-apo)}
+.mx-lo{display:grid;grid-template-columns:minmax(0,1fr) 120px 40px;gap:12px;align-items:center;min-height:48px;padding:0 22px;background:#E1EFF0;border-top:1px solid #C5DCDE}
+.mx-lo .br{display:flex;gap:3px}
+.mx-lo .br i{flex:1;height:12px;border-radius:2px;background:var(--m-apo)}
+.mx-lo .br i.g{background:transparent;border:1px dashed #6F8FA0}
+.mx-lo em{font-style:normal;text-align:right;font-weight:700}
+.mx-lo.bad{background:var(--row-bad);border-top-color:#EBC9BE;box-shadow:inset 4px 0 0 var(--alert)}
+.mx-lo.bad em{color:var(--alert)}
+.mx-lo.bad .br i:not(.g){background:var(--alert)}
+.mx-lst{flex:1;background:#E1EFF0}
+
+.mx-fr{display:grid;grid-template-columns:52px 36px minmax(0,1fr);gap:14px;align-items:center;min-height:60px;padding:8px 22px;border-top:1px solid rgba(10,27,51,.10);background:var(--cb)}
+.mx-fr:first-child{border-top:0}
+.mx-fr time{font-weight:700;color:var(--ink)}
+.mx-fr .mx-ic{width:36px;height:36px}
+.mx-fr .mx-ic i{font-size:18px}
+.mx-fr .t b{display:block;font-weight:500;line-height:1.35}
+.mx-fr .t span{display:block;color:var(--muted)}
+.mx-fr.on{box-shadow:inset 5px 0 0 var(--c)}
+.mx-fr.on .t b{font-weight:700}
+.mx-fr.wt{background:var(--row-bad);box-shadow:inset 5px 0 0 var(--wait)}
+.mx-fr.wt .t span{color:var(--wait);font-weight:700}
+.mx-mo{display:flex;align-items:center;justify-content:space-between;min-height:52px;padding:0 22px;border-top:1px solid var(--line);background:var(--hdr);color:var(--muted)}
+.mx-mo a{display:flex;align-items:center;gap:6px;font-weight:700;color:var(--ink);min-height:44px}
+
+/* ---------- κινητό ---------- */
+@media (max-width:1023px){
+  #s-mix .mb{padding-top:80px}
+  #s-mix .stage .shd{font-size:14px}
+  .mx-ms .mx-mb{padding:18px 18px 16px}
+  .mx-ms .mx-clk b{font-size:64px}
+  .mx-ms .mx-clk span,.mx-ms .mx-cur .t span{font-size:14px}
+  .mx-ms .mx-cur{grid-template-columns:44px minmax(0,1fr);gap:12px;margin-top:14px}
+  .mx-ms .mx-cur .mx-ic{width:44px;height:44px}
+  .mx-ms .mx-cur .mx-ic i{font-size:22px}
+  .mx-ms .mx-cur .t b{font-size:18px}
+  #s-mix .mx-ms{--ln:44px}
+  .mx-ms .mx-lw{margin:0 12px 14px;padding:10px 12px 6px}
+  .mx-ms .mx-lh{font-size:14px}
+  .mx-ms .mx-lb{padding-left:6px}
+  .mx-ms .mx-d{width:30px;height:30px;margin:-15px 0 0 -15px}
+  .mx-ms .mx-d.wt{width:34px;height:34px;margin:-17px 0 0 -17px}
+  .mx-ms .mx-d b{font-size:14px}
+  .mx-ms .mx-ln,.mx-ms .mx-tk{min-height:44px;height:44px}
+  .mx-ms .mx-ax{height:40px}
+  .mx-ms .mx-ax span{font-size:14px}
+  .mx-ms .mx-kn{min-height:30px;padding:0 10px;font-size:14px}
+  .mx-mw{margin-top:16px}
+  .mx-mw .mx-wt{padding:16px 18px}
+  .mx-mw .mx-wt b{font-size:18px}
+  .mx-mw .mx-wt .h,.mx-mw .mx-wt span{font-size:14px}
+  .mx-mw .mx-qt{color:var(--muted);font-size:14px;margin-top:12px}
+  .mx-mw .mx-qt b{color:var(--ink)}
+  .mx-fr{grid-template-columns:44px 32px minmax(0,1fr);gap:10px;padding:8px 16px}
+  .mx-fr .mx-ic{width:32px;height:32px}
+  .mx-fr .mx-ic i{font-size:16px}
+  .mx-mo{padding:0 16px}
+  .mx-dz{padding:16px}
+  .mx-sl,.mx-h3{padding-left:16px;padding-right:16px}
+  .mx-lo{padding:0 16px;grid-template-columns:minmax(0,1fr) 84px 36px}
+  .mx-back{display:flex;width:100%;margin-top:16px}
+  .mx-mt16{margin-top:16px}
+  .seg2.mx-s2{grid-template-columns:repeat(2,1fr)}
 }
-@media (max-width:720px){
-  .big-ruler .ruler{display:block;margin:30px 16px 0!important}
-  .big-ruler .ruler .h6,.big-ruler .ruler .h18{display:none}
-  .thumb{margin:14px 16px 16px}
-  .thumb .tg div{min-height:80px}
-  .feed .ev{padding:13px 16px}
-  .band .in .btn.yes{height:52px}
-}
+
+/* Ήσυχη εκδοχή της ζώνης «Περίμενε εσένα», όταν δεν περίμενε απόφαση (το ίδιο όπως το .mx-wt.low). */
+.mx-dz.low .mx-ic{background:var(--n3)}
