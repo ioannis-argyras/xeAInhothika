@@ -248,8 +248,11 @@ def practice(conn, order_id, barcodes):
 
 
 def pending_order(conn):
-    """The newest sent order whose delivery is not closed yet, or None."""
-    for e in reversed(read_events(conn, types=["order.sent"])):
+    """The oldest sent order whose delivery is not closed yet, or None.
+
+    The oldest arrives first: in the demo the camera sends a new order at 0:15, and the
+    delivery at 0:55 is still P-0318 (Stavros 15/11/2026)."""
+    for e in read_events(conn, types=["order.sent"]):
         order_id = e.payload.get("order_id")
         if order_id and _completed(conn, delivery_id_for(order_id)) is None and _order(conn, order_id):
             return order_id
