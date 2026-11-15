@@ -16,6 +16,7 @@ from starlette.concurrency import run_in_threadpool
 from xangx.screen.api_b1 import router as api_b1_router
 from xangx.screen.api_b2 import router as api_b2_router
 from xangx.screen.api_c import router as api_c_router
+from xangx.screen.api_home import router as api_home_router
 from xangx.screen.describe import _mask, describe, load_names
 from xangx.server.access import access_middleware
 from xangx.server.mcp import router as mcp_router
@@ -73,6 +74,7 @@ include_role_routes(app)
 app.include_router(api_b1_router)
 app.include_router(api_b2_router)
 app.include_router(api_c_router)
+app.include_router(api_home_router)
 app.include_router(mcp_router)
 
 # Added last, so it runs first: the team access code covers every route above.

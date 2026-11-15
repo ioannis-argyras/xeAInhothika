@@ -4,6 +4,8 @@ import re
 
 from xangx.shared.money import format_eur
 
+MONTHS_GENITIVE = ("Ιανουαρίου", "Φεβρουαρίου", "Μαρτίου", "Απριλίου", "Μαΐου", "Ιουνίου",
+                   "Ιουλίου", "Αυγούστου", "Σεπτεμβρίου", "Οκτωβρίου", "Νοεμβρίου", "Δεκεμβρίου")
 _IBAN = re.compile(r"\b[A-Z]{2}\d{2}(?:\s?[A-Z0-9]{4}){3,7}(?:\s?[A-Z0-9]{1,4})?\b")
 
 
@@ -169,6 +171,11 @@ def _describe(t, p, name):
         return f"Ζητήθηκε πιστωτικό για το τιμολόγιο {p['invoice_id']}"
     if t == "report.daily_created":
         return f"Ημερήσια αναφορά {p['date']}: πωλήσεις {format_eur(p['sales_cents'])}"
+    if t == "report.month_created":
+        month = MONTHS_GENITIVE[int(str(p["month"]).split("-")[1]) - 1]
+        count = int(p["invoice_count"])
+        return (f"Φάκελος {month}: {count} {'τιμολόγιο' if count == 1 else 'τιμολόγια'}, "
+                f"{format_eur(p['total_cents'])}")
     if t == "exception.flagged":
         return f"Προσοχή: {p['note']}"
     if t == "payment.asked":
