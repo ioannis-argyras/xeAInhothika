@@ -92,7 +92,9 @@ def record_payment(conn, invoice_id, method, today):
     key = f"payment-recorded:{invoice_id}:{method}:{today}"
     event, _ = append_event(conn, type="payment.recorded", actor="owner", payload=payload,
                             idem_key=key)
-    if event.id in undone_ids(conn):
+    for _ in range(20):
+        if event.id not in undone_ids(conn):
+            break
         # The same answer was undone earlier: this one is a new answer, not the old event again.
         event, _ = append_event(conn, type="payment.recorded", actor="owner", payload=payload,
                                 idem_key=f"{key}:after-{event.id}")

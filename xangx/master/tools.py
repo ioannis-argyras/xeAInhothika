@@ -124,7 +124,7 @@ def greek_day_start_utc(now=None):
     now = now or datetime.now(timezone.utc)
     local = now + greek_offset(now)
     midnight_local = local.replace(hour=0, minute=0, second=0, microsecond=0)
-    start = midnight_local - greek_offset(now)
+    start = midnight_local - greek_offset(midnight_local - greek_offset(now))
     return start.strftime("%Y-%m-%dT%H:%M:%S.000Z")
 
 

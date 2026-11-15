@@ -548,7 +548,7 @@ def _payment_sync(invoice_id, method):
             raise HTTPException(404, "Δεν έχω ρωτήσει για αυτό το τιμολόγιο.")
         return {"ok": True, "event_id": event.id}
     except EventError as exc:
-        return {"ok": False, "message": str(exc)}
+        raise HTTPException(409, str(exc))
     finally:
         conn.close()
 

@@ -14,6 +14,8 @@ from xangx.shared import (
 from xangx.shared.catalog import CATALOG
 from xangx.shared.cursors import consume, get_cursor
 from xangx.shared.money import format_eur, line_net_cents, vat_cents
+from xangx.shared import payments, undo
+from xangx.shared.undo import undone_ids
 from xangx.shared.views import pending_approvals, stock_on_hand
 
 SCHEMA_DOC = (
@@ -283,6 +285,22 @@ class SharedTests(unittest.TestCase):
                 self.conn, type="invoice.read", actor="system",
                 payload=INVOICE_READ, at="2025-03-01 10:00",
             )
+
+    def test_same_payment_answer_after_two_undos(self):
+        append_event(
+            self.conn, type="payment.asked", actor="accountant",
+            payload={"invoice_id": "B-512", "supplier_id": "sup-a",
+                     "amount_cents": 5170, "invoice_date": "2026-11-14"},
+        )
+        seen = []
+        for _ in range(2):
+            event = payments.record_payment(self.conn, "B-512", "cash", "2026-11-15")
+            seen.append(event.id)
+            status, _body = undo.undo(self.conn, event.id)
+            self.assertEqual(status, 200)
+        third = payments.record_payment(self.conn, "B-512", "cash", "2026-11-15")
+        self.assertNotIn(third.id, undone_ids(self.conn))
+        self.assertNotIn(third.id, seen)
 
 
 if __name__ == "__main__":

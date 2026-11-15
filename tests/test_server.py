@@ -528,6 +528,15 @@ class PaymentCardTest(unittest.TestCase):
         self.assertEqual(self.client.post("/api/payments/X-9", json={"method": "cash"}).status_code, 404)
         self.assertEqual(self.recorded(), [])
 
+    def test_payment_error_is_409_with_detail(self):
+        from xangx.shared import payments
+        from xangx.shared.events import EventError
+        self.ask()
+        with mock.patch.object(payments, "record_payment", side_effect=EventError("δοκιμή")):
+            r = self.client.post("/api/payments/B-512", json={"method": "cash"})
+        self.assertEqual(r.status_code, 409)
+        self.assertEqual(r.json()["detail"], "δοκιμή")
+
     def test_describe_texts(self):
         def ev(type_, payload):
             return Event(1, "2026-11-14T10:00:00.000Z", "store-1", "system", type_, None, None, None, payload, 1)
