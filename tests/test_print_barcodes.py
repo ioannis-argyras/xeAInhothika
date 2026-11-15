@@ -68,6 +68,13 @@ class HtmlTest(unittest.TestCase):
         self.assertEqual(page.count('class="card"'), 2)
         self.assertIn("χωριστά", page)
 
+    def test_loose_chocolate_card(self):
+        page = pcb.build_html([("p", "P", 24, "S", CASES[0])], None,
+                              [("Σοκολάτα γάλακτος 100g", "4006381333931", "Λιανική, σκανάρεται 6 φορές")])
+        self.assertEqual(page.count('class="card"'), 2)
+        self.assertIn("Σοκολάτα γάλακτος 100g · χωριστά", page)
+        self.assertIn("σκανάρεται 6 φορές", page)
+
 
 if __name__ == "__main__":
     unittest.main()

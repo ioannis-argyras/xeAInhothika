@@ -131,6 +131,23 @@ def load_water_pack(conn):
     return (row["name"], row["barcode"]) if row else None
 
 
+# Products ordered in a number the case does not divide: one retail sticker, scanned once per unit.
+# Chocolate: P-0318 has 30, the case holds 24, so on stage 1 case + this sticker 6 times
+# (decision Giannis 15/11/2026: "συμφωνω εφοσον δεν πειραζει που δεν εχουμε").
+LOOSE = [("choco-milk-100", "Λιανική, σκανάρεται 6 φορές")]
+
+
+def load_loose(conn):
+    """[(name, retail barcode, how to scan)] for LOOSE products that have a retail barcode."""
+    out = []
+    for product_id, how in LOOSE:
+        row = conn.execute("SELECT name, barcode FROM products WHERE id = ? AND barcode IS NOT NULL",
+                           (product_id,)).fetchone()
+        if row:
+            out.append((row["name"], row["barcode"], how))
+    return out
+
+
 def verify(cases, extra=()):
     for product_id, _name, _pack, _sup, code in cases:
         _verify_one(product_id, code)
@@ -175,7 +192,7 @@ def card_html(name, line1, line2, code, note):
     )
 
 
-def build_html(cases, water=None):
+def build_html(cases, water=None, loose=()):
     cards = []
     for _pid, name, pack, supplier, code in cases:
         cards.append(card_html(
@@ -186,6 +203,9 @@ def build_html(cases, water=None):
         cards.append(card_html(
             f"{wname} · χωριστά", "Λιανική εξάδα, σκανάρεται μία-μία", f"Παράδοση {DELIVERY}", wcode,
             "✂ κόψε στη διακεκομμένη γραμμή"))
+    for lname, lcode, how in loose:
+        cards.append(card_html(
+            f"{lname} · χωριστά", how, f"Παράδοση {DELIVERY}", lcode, "✂ κόψε στη διακεκομμένη γραμμή"))
     return (
         '<!DOCTYPE html>\n<html lang="el"><head><meta charset="utf-8">'
         '<meta name="viewport" content="width=device-width, initial-scale=1">'
@@ -208,15 +228,18 @@ def main(argv=None):
     try:
         cases, source = load_cases(conn)
         water = load_water_pack(conn)
+        loose = load_loose(conn)
     finally:
         conn.close()
     if source == "fallback":
         print("Η βάση δεν έχει barcode κιβωτίων: χρησιμοποιώ την εφεδρική λίστα των 5.")
-    verify(cases, [("water-1500x6 (λιανική)", water[1])] if water else [])
+    verify(cases, ([("water-1500x6 (λιανική)", water[1])] if water else [])
+           + [(f"{name} (λιανική)", code) for name, code, _ in loose])
     path = Path(out)
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(build_html(cases, water), encoding="utf-8")
-    print(f"{len(cases)} κιβώτια" + (" + εξάδα νερού" if water else "") + f" από: {source}")
+    path.write_text(build_html(cases, water, loose), encoding="utf-8")
+    print(f"{len(cases)} κιβώτια" + (" + εξάδα νερού" if water else "")
+          + "".join(f" + {name} χωριστά" for name, _, _ in loose) + f" από: {source}")
     print(path.resolve())
     return 0
 
