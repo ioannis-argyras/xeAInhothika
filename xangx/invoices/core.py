@@ -535,6 +535,21 @@ def flag_unread(conn, invoice_id, offline):
     return e
 
 
+def duplicate_note(conn, dup_payload):
+    """One Greek sentence for a duplicate: the paper's number and supplier, not the INV- code.
+    Both copies carry the same number (rule "same_number"), so the first copy's reading names it."""
+    other = _latest(conn, "invoice.read", dup_payload["other_invoice_id"])
+    if other is None:
+        return (f"Το τιμολόγιο {dup_payload['invoice_id']} μοιάζει διπλό με το "
+                f"{dup_payload['other_invoice_id']}.")
+    p = other.payload
+    label = f"{p['series']}-{p['number']}".strip("-")
+    supplier = _supplier_by_afm(conn, p["supplier_afm"])
+    if supplier:
+        label += f" ({supplier['name']})"
+    return f"Το τιμολόγιο {label} ήρθε δεύτερη φορά και μοιάζει διπλό. Δεν το πέρασα ξανά."
+
+
 # ---------- the whole flow ----------
 
 def summary(conn, invoice_id):
@@ -543,7 +558,7 @@ def summary(conn, invoice_id):
     if read is None:
         dup = _latest(conn, "invoice.duplicate_suspected", invoice_id)
         if dup:
-            return f"Το τιμολόγιο {invoice_id} μοιάζει διπλό με το {dup.payload['other_invoice_id']}."
+            return duplicate_note(conn, dup.payload)
         return f"Το τιμολόγιο {invoice_id} δεν έχει διαβαστεί ακόμα."
     p = read.payload
     supplier = _supplier_by_afm(conn, p["supplier_afm"])

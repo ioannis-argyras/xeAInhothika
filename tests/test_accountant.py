@@ -136,6 +136,10 @@ class Accountant(unittest.TestCase):
         worker.run_once(self.conn)
         kinds = sorted(e.payload["kind"] for e in self._types("exception.flagged"))
         self.assertEqual(kinds, ["arithmetic", "duplicate_invoice", "new_iban"])
+        [dup] = [e for e in self._types("exception.flagged")
+                 if e.payload["kind"] == "duplicate_invoice"]
+        self.assertIn("Α-2271", dup.payload["note"])
+        self.assertNotIn("INV-", dup.payload["note"])
 
     def test_credit_reminder_uses_the_papers_due_date(self):
         self._invoice(payment={"terms": "credit", "credit_days": None, "due_date": "2026-12-01"})

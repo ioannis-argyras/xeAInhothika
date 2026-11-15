@@ -290,7 +290,7 @@ def flag_for(conn, event):
         note = f"Τα ποσά του τιμολογίου {p['series']}-{p['number']} δεν βγαίνουν."
     elif event.type == "invoice.duplicate_suspected":
         kind, ref = "duplicate_invoice", f"invoice:{p['invoice_id']}"
-        note = f"Το τιμολόγιο {p['invoice_id']} μοιάζει διπλό με το {p['other_invoice_id']}."
+        note = invoices.duplicate_note(conn, p)
     else:
         return None
     flagged, _ = append_event(

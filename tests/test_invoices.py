@@ -305,6 +305,10 @@ class InvoiceFlow(unittest.TestCase):
         self.assertEqual(len(self._types("invoice.read")), 1)
         [d] = self._types("invoice.duplicate_suspected")
         self.assertEqual((d.payload["invoice_id"], d.payload["other_invoice_id"]), (b, a))
+        text = core.summary(self.conn, b)
+        self.assertEqual(text, f"Το τιμολόγιο Α-2271 ({Y['name']}) ήρθε δεύτερη φορά και "
+                               f"μοιάζει διπλό. Δεν το πέρασα ξανά.")
+        self.assertNotIn("INV-", text)
 
     def test_price_change_vs_previous_invoice(self):
         old = _invoice(number="2200")
