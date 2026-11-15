@@ -232,4 +232,8 @@ a.mft:hover,a.mem:hover .mft{background:var(--strip)}
   .mc .acts.hb-cra .btn.no{order:1;flex:0 0 120px}
   .car .stage .body.hb-cr>.lc{display:flex;flex-direction:column}
   .mt5 .mtv.hb-quiet{font-weight:500;opacity:.85}
+  /* Στο καρουζέλ η κεφαλίδα της σκηνής δεν υπάρχει στο σχέδιο (kinito-apofasi.html): το «1 από N» είναι ήδη πάνω από τις κάρτες. */
+  #hb-car .mc>.shd{display:none}
 }
+/* «Πλήρωσες;» δίπλα στη σκηνή: η γραμμή της ερώτησης γεμίζει το ύψος, χωρίς άδειο λευκό κάτω (κάρτα 13). */
+#hb-pay .askrow{flex:1 0 auto}

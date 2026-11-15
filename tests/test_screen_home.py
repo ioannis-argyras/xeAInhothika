@@ -105,9 +105,17 @@ class ScreenHomeTest(unittest.TestCase):
             self.assertEqual(same["pct"], round((sales["yesterday"]["total_cents"] - mean) / mean * 100))
 
     def test_the_order_of_the_scene(self):
+        # The home shows the latest proposal by time. After 06:45 the scene's morning run can
+        # propose a newer order (P-0319) than the demo's P-0318, so the id depends on the clock.
+        cancelled = {e.payload.get("order_id") for e in read_events(self.conn, types=["order.cancelled"])}
+        latest = max((e for e in read_events(self.conn, types=["order.proposed"])
+                      if e.payload.get("order_id") not in cancelled), key=lambda e: (e.at, e.id))
         order = self.home()["order"]
-        self.assertEqual(order["order_id"], "P-0318")
-        self.assertEqual(order["step"], "received")
+        self.assertEqual(order["order_id"], latest.payload["order_id"])
+        if order["order_id"] == "P-0318":
+            self.assertEqual(order["step"], "received")
+        else:
+            self.assertIn(order["step"], ("proposed", "sent", "received"))
         self.assertTrue(order["supplier"])
         self.assertRegex(order["at"], r"^\d\d:\d\d$")
 
