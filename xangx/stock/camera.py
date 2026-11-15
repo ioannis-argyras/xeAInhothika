@@ -8,6 +8,7 @@ from pathlib import Path
 MODEL = "claude-opus-5-5"
 FALLBACK_BETA = "server-side-fallback-2026-07-01"
 MAX_TAKEN = 48
+FAKE_TAKEN = 2  # without Claude: "2 taken" from the camera's first position, as on stage
 CONFIDENCE = ("high", "medium", "low")
 
 PROMPT = """Two photos of the same shop shelf, taken from the same spot: first BEFORE, then AFTER.
@@ -90,7 +91,7 @@ def count_taken(prev_path, new_path, positions, client=None):
         return []
     if client is None and use_fake_llm():
         first = positions[0]["position_id"]
-        return [{"position_id": first, "taken": 5, "added": 0, "confidence": "high"}]
+        return [{"position_id": first, "taken": FAKE_TAKEN, "added": 0, "confidence": "high"}]
     import anthropic
 
     if client is None:

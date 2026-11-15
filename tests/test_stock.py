@@ -72,7 +72,11 @@ class CameraTest(unittest.TestCase):
         self.assertEqual(r.status_code, 200)
         self.assertIn("Φωτογραφία τώρα", r.text)
 
-    def test_two_photos_give_taken_5(self):
+    def first_position(self):
+        """The fridge's first row, from the data (Coca-Cola before 15/11, cold brew after)."""
+        return camera.camera_positions(self.conn, "cam-1")[0]
+
+    def test_two_photos_give_fake_taken(self):
         r1 = self.post(jpeg("a"))
         self.assertEqual(r1.status_code, 200)
         self.assertTrue(r1.json()["first"])
@@ -81,12 +85,13 @@ class CameraTest(unittest.TestCase):
         r2 = self.post(jpeg("b"))
         self.assertEqual(r2.status_code, 200)
         results = r2.json()["results"]
-        self.assertEqual(results[0]["taken"], 5)
-        self.assertEqual(results[0]["position_name"], "Ψυγείο 1 · 1η σειρά")
+        first = self.first_position()
+        self.assertEqual(results[0]["taken"], camera.FAKE_TAKEN)
+        self.assertEqual(results[0]["position_name"], first["name"])
         events = self.shelf_events()
         self.assertEqual(len(events), 1)
         p = events[0].payload
-        self.assertEqual((p["position_id"], p["product_id"], p["taken"]), ("fridge1-r1", "cola-330", 5))
+        self.assertEqual((p["position_id"], p["product_id"], p["taken"]), (first["position_id"], first["product_id"], camera.FAKE_TAKEN))
         self.assertEqual(events[0].actor, "camera")
         self.assertTrue(os.path.exists(os.path.join(os.environ["XANGX_FILES"], p["file_ref"])))
 
@@ -97,10 +102,10 @@ class CameraTest(unittest.TestCase):
         before = self.conn.execute("SELECT COUNT(*) FROM events").fetchone()[0]
         self.assertTrue(practice(jpeg("a")).json()["first"])  # practice keeps its own chain
         r = practice(jpeg("b")).json()
-        self.assertEqual((r["practice"], r["results"][0]["taken"], r["event_ids"]), (True, 5, []))
+        self.assertEqual((r["practice"], r["results"][0]["taken"], r["event_ids"]), (True, camera.FAKE_TAKEN, []))
         self.assertEqual(self.conn.execute("SELECT COUNT(*) FROM events").fetchone()[0], before)
         self.assertEqual(camera.last_photo("cam-1"), camera.save_photo(jpeg("real")))
-        self.assertEqual(self.post(jpeg("c")).json()["results"][0]["taken"], 5)  # real chain still works
+        self.assertEqual(self.post(jpeg("c")).json()["results"][0]["taken"], camera.FAKE_TAKEN)  # real chain still works
         self.assertEqual(len(self.shelf_events()), 1)
 
     def test_no_internet_gives_plain_greek_502(self):
@@ -156,15 +161,16 @@ class CameraTest(unittest.TestCase):
         self.assertEqual(self.post(big).status_code, 400)
 
     def test_low_detected_once_a_day(self):
-        on_hand = views.stock_on_hand(self.conn, "cola-330")
+        pid = self.first_position()["product_id"]
+        on_hand = views.stock_on_hand(self.conn, pid)
         self.post(jpeg("a"))
         self.post(jpeg("b"))
         worker.run_once(self.conn)
         low = read_events(self.conn, types=["stock.low_detected"])
         self.assertEqual(len(low), 1)
         p = low[0].payload
-        self.assertEqual(p["product_id"], "cola-330")
-        self.assertEqual(p["on_hand"], on_hand - 5)
+        self.assertEqual(p["product_id"], pid)
+        self.assertEqual(p["on_hand"], on_hand - camera.FAKE_TAKEN)
         self.assertEqual(p["source"], "camera")
         self.assertGreater(p["per_day"], 0)
         self.assertEqual(low[0].caused_by, self.shelf_events()[0].id)
@@ -191,7 +197,7 @@ class CountTakenTest(unittest.TestCase):
 
     def test_fake_without_key(self):
         with mock.patch.dict(os.environ, {"XANGX_FAKE_LLM": "1"}):
-            self.assertEqual(camera.count_taken("a", "b", self.POS)[0]["taken"], 5)
+            self.assertEqual(camera.count_taken("a", "b", self.POS)[0]["taken"], camera.FAKE_TAKEN)
 
 
 
