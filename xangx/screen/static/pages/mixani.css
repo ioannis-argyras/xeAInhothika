@@ -1,4 +1,4 @@
-/* Μηχανή του χρόνου: οι κανόνες της σελίδας από το design/kateuthynseis-v2/index.html, ενότητα «μηχανή».
+/* Ιστορικό της μέρας: οι κανόνες της σελίδας από το design/kateuthynseis-v2/index.html, ενότητα «μηχανή».
    Τα κοινά (βιτρίνα, κάρτα, χάρακας, μπάρα καρτελών) έρχονται από το app.css. */
 .g-mix{grid-template-columns:1.5fr 1fr;align-items:start}
 .hd a{display:inline-flex;align-items:center;gap:6px;font-weight:700;min-height:44px}

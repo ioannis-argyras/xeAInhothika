@@ -15,7 +15,7 @@
     { key: "paralavi", name: "Παραλαβή", url: "/stock/scan", icon: "barcode", group: "Μαγαζί" },
     { key: "kamera", name: "Κάμερα ραφιού", url: "/stock/camera", icon: "camera", group: "Μαγαζί" },
     { key: "timologia", name: "Τιμολόγια", url: "/static/pages/timologia.html", icon: "receipt", group: "Χαρτιά" },
-    { key: "mixani", name: "Μηχανή του χρόνου", url: "/static/pages/mixani.html", icon: "clock-counter-clockwise", group: "Η μέρα" }
+    { key: "mixani", name: "Ιστορικό", url: "/static/pages/mixani.html", icon: "clock-counter-clockwise", group: "Η μέρα" }
   ];
   /* Οι 5 καρτέλες του κινητού: τρεις από τον πίνακα, η στρογγυλή Φωτογραφία στη μέση, και το «Περισσότερα». */
   var TAB_LEFT = [
