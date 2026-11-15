@@ -533,7 +533,10 @@ i.ph-bold{line-height:1}
 @media (prefers-contrast:more){.tabs{background:#fff;backdrop-filter:none}}
 
 /* ---------- Λογότυπο (Α, μόνο λέξη, εγκρίθηκε 15/11/2026): όλη η μορφή της λέξης είναι σε αυτό το μπλοκ, ώστε να αλλάζει γραμματοσειρά από ένα σημείο ---------- */
-.brand .wm em{font-style:normal;color:var(--accent);font-weight:700}
+@font-face{font-family:"Schibsted Grotesk";font-style:normal;font-weight:500;font-display:swap;src:url(/static/vendor/schibsted-grotesk/SchibstedGrotesk-Medium.woff2) format("woff2")}
+@font-face{font-family:"Schibsted Grotesk";font-style:normal;font-weight:600;font-display:swap;src:url(/static/vendor/schibsted-grotesk/SchibstedGrotesk-SemiBold.woff2) format("woff2")}
+.brand .wm{font-family:"Schibsted Grotesk",var(--f);font-weight:500;letter-spacing:-.035em}
+.brand .wm em{font-style:normal;color:var(--accent);font-weight:600}
 .ii{display:inline-block;position:relative;padding:0 .07em}
 .ii::before,.ii::after{content:"";position:absolute;left:50%;width:.34em;height:.085em;background:currentColor;transform:translateX(-50%);border-radius:.02em}
 .ii::before{top:.13em}.ii::after{bottom:.135em}

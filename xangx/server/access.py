@@ -139,7 +139,10 @@ PAGE = """<!doctype html>
   .lb { padding:30px 32px 0; }
   .lb b { display:block; font-size:var(--xl); line-height:1.05; letter-spacing:-.02em; }
   .lb p { margin-top:8px; color:var(--muted); }
-  .lb .wm em { font-style:normal; color:#C98A00; font-weight:700; }
+  @font-face{font-family:"Schibsted Grotesk";font-style:normal;font-weight:500;font-display:swap;src:url(/static/vendor/schibsted-grotesk/SchibstedGrotesk-Medium.woff2) format("woff2")}
+  @font-face{font-family:"Schibsted Grotesk";font-style:normal;font-weight:600;font-display:swap;src:url(/static/vendor/schibsted-grotesk/SchibstedGrotesk-SemiBold.woff2) format("woff2")}
+  .lb .wm { font-family:"Schibsted Grotesk", "Ubuntu Sans", sans-serif; font-weight:500; letter-spacing:-.035em; }
+  .lb .wm em { font-style:normal; color:#C98A00; font-weight:600; }
   .ii { display:inline-block; position:relative; padding:0 .07em; }
   .ii::before, .ii::after { content:""; position:absolute; left:50%; width:.34em; height:.085em; background:currentColor; transform:translateX(-50%); border-radius:.02em; }
   .ii::before { top:.13em; } .ii::after { bottom:.135em; }
