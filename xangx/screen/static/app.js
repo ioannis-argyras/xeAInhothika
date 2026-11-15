@@ -252,10 +252,7 @@ function renderStages(state) {
   if (first) stageNode(home, first, state, { chat: false, titleId: "stage-title", credit });
   else if (sent && !sent.newSeen) hb.doneStage(home, sent);
   else idleStage(home, state);
-  const chat = $("chat-stage");
-  chat.hidden = !first;
-  $("chat-grid").classList.toggle("solo", !first);
-  if (first) stageNode(chat, first, state, { chat: true, titleId: "chat-stage-title" });
+  syDecision(first || null);
 }
 
 /* ---------- κεφαλίδα ---------- */
@@ -354,8 +351,7 @@ function connectStream() {
     try { e = JSON.parse(msg.data); } catch (err) { return; }
     if (e.quiet) { refreshSoon(); return; }  // till sales: only the totals change
     if (liveSteps && (e.type === "agent.tool_ran" || e.type === "approval.requested")) {
-      liveSteps.hidden = false;
-      liveSteps.appendChild(stepNode(e.text, e.type === "approval.requested"));
+      syLive(e);
     }
     refreshSoon();
   };
@@ -373,122 +369,356 @@ function richText(node, text) {
   });
 }
 
-function stepNode(text, waiting) {
-  const step = el("div", "step" + (waiting ? " w" : ""));
-  const ic = el("span", "ic" + (waiting ? " w" : ""));
-  ic.appendChild(icon(TEAM_ICON.master));
-  const body = el("span");
-  const label = el("span", "m", "Συνεργάτης");
+/* ---- Σελίδα Συνομιλία (σχέδιο Β): όλο το κείμενο με textContent, ποτέ innerHTML με δεδομένα ---- */
+const SY_TEAM = { orders: "Παραγγελίες", accountant: "Λογιστής", master: "Συνεργάτης" };
+const SY_PANELS = { cur: "m-cur", noritera: "m-hist", vimata: "m-steps" };
+const sy = {
+  q: null, clock: "", at: 0, doneAt: 0, doneClock: "", working: false, failed: false, reply: "",
+  steps: [], rounds: [], pending: [], need: null, day: null, view: "cur", sig: "",
+};
+
+function syText(id, text) { $(id).textContent = text; }
+
+// Text where codes like P-0319 never break across two lines.
+function syCodes(node, text) {
+  node.replaceChildren();
+  String(text).split(/([A-ZΑ-Ω]-\d+)/).forEach((part, i) => {
+    if (!part) return;
+    node.appendChild(i % 2 ? el("span", "sy-nw", part) : document.createTextNode(part));
+  });
+}
+
+function syWants(k) { return k + (k === 1 ? " θέλει εσένα" : " θέλουν εσένα"); }
+
+function syElapsed() {
+  if (!sy.q || !sy.doneAt || sy.failed) return "—";
+  return String(Math.max(1, Math.round((sy.doneAt - sy.at) / 1000)));
+}
+
+// The time tile: the number big, the unit small next to it.
+function syTime(id, t) {
+  const b = $(id);
+  b.replaceChildren(document.createTextNode(t));
+  if (t !== "—") b.appendChild(el("small", "sy-u", " δευτ."));
+}
+
+// Few steps leave the left column short next to the decision (many steps, the right one). Then the stage
+// stacks: the question next to the tiles, the answer and the steps across, the decision across at the bottom.
+function syFit() {
+  const cb = document.querySelector("#s-synomilia .sy-cb");
+  if (!cb || !cb.offsetParent) return;
+  cb.classList.remove("sy-low");
+  const l = cb.querySelector(".sy-cl").getBoundingClientRect().bottom;
+  const r = cb.querySelector(".sy-cr").getBoundingClientRect().bottom;
+  cb.classList.toggle("sy-low", Math.abs(l - r) > 56);
+}
+
+// One step of the vertical path: done (check), waiting for the owner (hand, yellow), or a warning (red).
+function syStepNode(text, waiting) {
+  const kind = waiting ? "w" : /Προσοχή|IBAN/.test(text) ? "al" : "";
+  const li = el("li", kind || null);
+  const dot = el("span", "sy-d");
+  dot.appendChild(kind === "w" ? icon("hand-pointing", "ph-fill") : kind === "al" ? icon("warning", "ph-bold") : icon("check", "ph-bold"));
   const line = el("span");
   richText(line, text);
-  body.append(label, document.createElement("br"), line);
-  step.append(ic, body);
-  if (waiting) {
-    const r = el("span", "r");
-    r.appendChild(el("b", null, "σε σένα"));
-    step.appendChild(r);
+  li.append(dot, line);
+  return li;
+}
+
+// Called from the live stream while an answer is being worked on.
+function syLive(e) {
+  if (sy.steps.some((s) => s.id === e.id)) return;
+  sy.steps.push({ id: e.id, text: e.text, waiting: e.type === "approval.requested" });
+  syDrawAsk();
+}
+
+// The last question: the stage on the desktop, the card and the steps screen on the phone.
+function syDrawAsk() {
+  const asked = sy.q !== null;
+  const wait = sy.pending.length;
+  const n = sy.steps.length;
+  syText("sy-who", asked ? "Εσύ · " + sy.clock : "Η τελευταία σου ερώτηση");
+  syText("sy-when", !asked ? "" : sy.working ? "δουλεύω…" : sy.failed ? "δεν απάντησε" : "απάντησε " + sy.doneClock);
+  syText("sy-q", asked ? "«" + sy.q + "»" : "Ρώτα ή ζήτα κάτι");
+  const ans = $("sy-ans");
+  const mans = $("sy-mans");
+  if (!asked) {
+    ans.textContent = "Γράψε στο πεδίο πάνω, ή πάτα μία έτοιμη ερώτηση.";
+    mans.textContent = "Γράψε στο πεδίο κάτω.";
+  } else if (sy.working) {
+    ans.textContent = mans.textContent = "δουλεύω…";
+  } else {
+    richText(ans, sy.reply);
+    richText(mans, sy.reply);
   }
-  return step;
+  const list = [$("sy-steps"), $("sy-steps-m")];
+  list.forEach((ol) => ol.replaceChildren(...sy.steps.map((s) => syStepNode(s.text, s.waiting))));
+  $("sy-steps").classList.toggle("sy-one", n <= 3);
+
+  const time = syElapsed();
+  syTime("sy-t-time", time);
+  syTime("sy-s-time", time);
+  syText("sy-t-steps", asked ? String(n) : "—");
+  syText("sy-s-steps", asked ? String(n) : "—");
+  syText("sy-t-wait", String(wait));
+  syText("sy-s-wait", String(wait));
+  const tile = $("sy-t-wait").parentNode;
+  tile.classList.toggle("sy-al", wait > 0);
+  tile.classList.toggle("apo", wait === 0);
+
+  syText("sy-mkk", asked ? "Εσύ · " + sy.clock + (sy.working || sy.failed ? "" : " · απάντησε " + sy.doneClock) : "Η τελευταία σου ερώτηση");
+  syText("sy-mq", asked ? "«" + sy.q + "»" : "Ρώτα ή ζήτα κάτι");
+  const link = $("sy-msteps");
+  link.hidden = !n;
+  if (n) {
+    $("sy-msteps-t").replaceChildren(el("b", null, plural(n, "βήμα", "βήματα")),
+      document.createTextNode((time !== "—" ? " σε " + time + " δευτ." : "") + (wait ? " · " + syWants(wait) : "")));
+  }
+  syFit();
 }
 
-function addMsg(node) {
-  const empty = $("conv-empty");
-  if (empty) empty.remove();
-  node.dataset.at = String(Date.now());
-  $("conv").appendChild(node);
-  node.scrollIntoView({ block: "end" });
+// The decision that waits for the owner (or the calm line when nothing waits). Same call as the home page.
+function syButtons(box, a, info, extra) {
+  box.replaceChildren();
+  const msg = el("span", "msg");
+  const yes = el("button", "btn yes", info.yes);
+  yes.prepend(a.action === "send_order" || a.action === "request_credit" ? icon("paper-plane-tilt") : icon("check", "ph-bold"));
+  const no = el("button", "btn no", "Όχι");
+  yes.type = no.type = "button";
+  const decide = (decision) => async () => {
+    yes.disabled = no.disabled = true;
+    msg.textContent = "";
+    try {
+      const r = await post("/api/approvals/" + encodeURIComponent(a.approval_id), { decision });
+      if (r && r.ok === false) {
+        msg.textContent = r.message || "Δεν έγινε.";
+        yes.disabled = no.disabled = false;
+        return;
+      }
+      refreshSoon();
+    } catch (e) {
+      msg.textContent = e.message;
+      yes.disabled = no.disabled = false;
+    }
+  };
+  yes.addEventListener("click", decide("yes"));
+  no.addEventListener("click", decide("no"));
+  box.append(yes, no, msg);
 }
 
-// Rounds the partner did not start for the owner: the clock's and another agent's MCP calls.
-// They sit in the conversation in order of time, with a small label above.
-const roundNodes = new Map();  // round id -> { node, sig }
+function syDecision(a) {
+  sy.need = a;
+  const info = a ? approvalInfo(a.action) : null;
+  $("sy-from-i").className = "ph-fill ph-" + (a ? TEAM_ICON[info.team] : "check-circle");
+  syText("sy-from", a ? info.ask : "Αποφάσεις");
+  syCodes($("sy-need-h"), a ? (a.summary || a.approval_id) : "Δεν περιμένει τίποτα από σένα");
+  const ex = $("sy-need-ex");
+  ex.textContent = a && a.exact ? a.exact : "";
+  ex.hidden = !ex.textContent;
+  const why = $("sy-need-why");
+  why.textContent = a && a.why ? a.why : "";
+  why.hidden = !why.textContent;
+  const acts = $("sy-need-acts");
+  acts.hidden = !a;
+  if (a) syButtons(acts, a, info); else acts.replaceChildren();
+  // phone: the same decision, first on the page
+  if (a) {
+    syText("sy-mk", "Θέλει εσένα · " + SY_TEAM[info.team]);
+    syCodes($("sy-mneed-h"), a.summary || a.approval_id);
+    syText("sy-mneed-ex", a.exact || "");
+    syButtons($("sy-mneed-acts"), a, info);
+  }
+  syApplyView();
+}
 
+// Lead of the showcase and the kicker: today's rounds, steps and what waits for the owner.
+function syDrawDay() {
+  const n = sy.rounds.length;
+  const m = sy.rounds.reduce((acc, r) => acc + r.steps.length, 0);
+  const k = sy.pending.length;
+  const d = sy.day;
+  syText("sy-kick", "Συνεργάτης" + (d ? " · " + d.weekday + " " + d.date : ""));
+  syText("sy-kick-m", "Συνεργάτης" + (d ? " · " + d.date : ""));
+  const lead = $("sy-lead");
+  lead.replaceChildren(document.createTextNode("Σήμερα έκανε "), el("b", null, String(n)),
+    document.createTextNode(n === 1 ? " γύρο και " : " γύρους και "), el("b", null, String(m)),
+    document.createTextNode(m === 1 ? " βήμα." : " βήματα."));
+  const leadM = $("sy-lead-m");
+  leadM.replaceChildren(el("b", null, String(n)), document.createTextNode(n === 1 ? " γύρος σήμερα." : " γύροι σήμερα."));
+  if (k) {
+    lead.append(document.createTextNode(" "), el("b", null, String(k)), document.createTextNode(k === 1 ? " θέλει εσένα." : " θέλουν εσένα."));
+    leadM.append(document.createTextNode(" "), el("b", null, String(k)), document.createTextNode(k === 1 ? " θέλει εσένα." : " θέλουν εσένα."));
+  }
+  syText("sy-d-rounds", String(n));
+  syText("sy-d-steps", String(m));
+  syText("sy-d-wait", String(k));
+}
+
+// One cell of "Νωρίτερα σήμερα" on the desktop: who (colour), when, what, how many steps.
 function roundNode(r) {
-  const node = el("div", "cm ai auto");
-  node.dataset.at = String(Date.parse(r.at) || Date.now());
-  node.appendChild(el("span", "m who2", r.label + " · " + r.hhmm));
-  const body = el("p");
-  if (r.text) richText(body, r.text);
-  else { body.className = "working"; body.textContent = "δουλεύω…"; }
-  node.appendChild(body);
-  if (r.steps.length) {
-    const box = el("div", "steps");
-    r.steps.forEach((s) => box.appendChild(stepNode(s.text, s.waiting)));
-    node.appendChild(box);
-  }
-  return node;
+  const mcp = r.kind === "mcp";
+  const cell = el("div", "sy-hc");
+  const who = el("span", "sy-w " + (mcp ? "log" : "syn"));
+  who.appendChild(icon(mcp ? "calculator" : "circles-three", "ph-fill"));
+  const text = el("span", "sy-hx");
+  if (r.text) richText(text, r.text); else text.textContent = "δουλεύω…";
+  const num = el("b", "sy-n" + (mcp ? " log" : ""));
+  num.append(el("b", null, String(r.steps.length)), el("small", null, r.steps.length === 1 ? "βήμα" : "βήματα"));
+  const top = el("span", "sy-top");
+  top.append(who, num);
+  cell.append(top, el("b", "sy-t", r.hhmm), el("b", "sy-ht", r.label.replace(/^Μόνος του · /, "") || "Μόνος του"), text);
+  return cell;
+}
+
+function syNowCell(a) {
+  const cell = el("div", "sy-hc sy-now");
+  const who = el("span", "sy-w yes");
+  who.appendChild(icon("hand-pointing", "ph-fill"));
+  const text = el("span", "sy-hx");
+  syCodes(text, a.summary || a.approval_id);
+  const top = el("span", "sy-top");
+  top.append(who);
+  cell.append(top, el("b", "sy-t", "τώρα"), el("b", "sy-ht", "Περιμένει εσένα"), text);
+  return cell;
+}
+
+// One row of the phone's "Νωρίτερα σήμερα" screen.
+function syRoundRow(r) {
+  const mcp = r.kind === "mcp";
+  const wait = r.steps.some((s) => s.waiting);
+  const row = el("div", "sy-mr " + (wait ? "sy-wait" : mcp ? "log" : "syn"));
+  const who = el("span", "sy-w " + (mcp ? "log" : "syn"));
+  who.appendChild(icon(mcp ? "calculator" : "circles-three", "ph-fill"));
+  const p = el("span", "p");
+  const text = el("span");
+  if (r.text) richText(text, r.text); else text.textContent = "δουλεύω…";
+  p.append(el("b", null, r.hhmm + " · " + (r.label.replace(/^Μόνος του · /, "") || "Μόνος του")), text);
+  const num = el("b", "sy-n");
+  num.append(el("b", null, String(r.steps.length)), el("small", null, r.steps.length === 1 ? "βήμα" : "βήματα"));
+  row.append(who, p, num);
+  return row;
+}
+
+function syDrawHist() {
+  const last = sy.rounds.slice(-3);
+  const cells = last.map(roundNode);
+  if (sy.pending.length) cells.push(syNowCell(sy.pending[0]));
+  const host = $("sy-hist");
+  host.style.setProperty("--sy-n", String(Math.max(cells.length, 1)));
+  if (cells.length) host.replaceChildren(...cells);
+  else host.replaceChildren(el("p", "sy-none", "Τίποτα ακόμα σήμερα"));
+  const steps = last.reduce((acc, r) => acc + r.steps.length, 0);
+  syText("sy-hist-r", last.length ? last.length + " " + (last.length === 1 ? "γύρος" : "γύροι") + " · " + plural(steps, "βήμα", "βήματα") : "");
+
+  const mhist = $("sy-mhist");
+  if (last.length) mhist.replaceChildren(...last.slice().reverse().map(syRoundRow));
+  else mhist.replaceChildren(el("p", "sy-none", "Τίποτα ακόμα σήμερα"));
+  syText("sy-tile-s", last.length
+    ? last.length + " " + (last.length === 1 ? "γύρος" : "γύροι") + " · τελευταίος " + last[last.length - 1].hhmm
+    : "Τίποτα ακόμα σήμερα");
 }
 
 function renderRounds(rounds) {
-  const conv = $("conv");
-  rounds.forEach((r) => {
-    const sig = JSON.stringify([r.text, r.steps]);
-    const known = roundNodes.get(r.id);
-    if (known && known.sig === sig) return;
-    const node = roundNode(r);
-    if (known) known.node.replaceWith(node);
-    else {
-      const empty = $("conv-empty");
-      if (empty) empty.remove();
-      const at = Number(node.dataset.at);
-      const after = Array.from(conv.children).find((c) => Number(c.dataset.at) > at);
-      conv.insertBefore(node, after || null);
-    }
-    roundNodes.set(r.id, { node, sig });
+  const state = lastState;
+  const pending = state && state.pending_approvals ? state.pending_approvals : [];
+  const sig = JSON.stringify([rounds, pending.map((a) => a.approval_id + a.summary), state && state.day]);
+  if (sig === sy.sig) return;
+  sy.sig = sig;
+  sy.rounds = rounds;
+  sy.pending = pending;
+  sy.day = state ? state.day : null;
+  syDrawDay();
+  syDrawHist();
+  syDrawAsk();
+}
+
+// The phone has three screens inside the page: the card, the steps, the earlier rounds. The hash is not used
+// (route() only knows #synomilia), so the state is a class on the page plus the history entry.
+function syApplyView() {
+  const page = $("s-synomilia");
+  Object.keys(SY_PANELS).forEach((k) => {
+    $(SY_PANELS[k]).hidden = k !== sy.view;
+    page.classList.toggle("sy-v-" + k, k === sy.view);
   });
+  $("sy-mneed").hidden = sy.view !== "cur" || !sy.need;
+  $("ask-chat-m").hidden = sy.view !== "cur";
+  setTimeout(syFit, 0);
+}
+
+function syView(view) {
+  sy.view = SY_PANELS[view] ? view : "cur";
+  syApplyView();
+}
+
+function syGo(view) {
+  if (view === "back") {
+    if (history.state && history.state.sy) history.back(); else syView("cur");
+    return;
+  }
+  history.pushState({ sy: view }, "", location.href);
+  syView(view);
+  window.scrollTo(0, 0);
+}
+
+function syInit() {
+  document.querySelectorAll("[data-sy-go]").forEach((a) => {
+    a.addEventListener("click", (ev) => { ev.preventDefault(); syGo(a.dataset.syGo); });
+  });
+  document.querySelectorAll("#sy-sug .sy-q").forEach((b) => {
+    b.addEventListener("click", () => { if (!sy.working) sendChat(b.textContent); });
+  });
+  document.querySelectorAll('a[data-k="synomilia"]').forEach((a) => {
+    a.addEventListener("click", () => syView("cur"));
+  });
+  window.addEventListener("popstate", (ev) => syView(ev.state && ev.state.sy));
+  window.addEventListener("hashchange", () => syView("cur"));
+  window.addEventListener("resize", syFit);
+  if (document.fonts) document.fonts.ready.then(syFit);
+  bindAsk("ask-chat-m", "ask-chat-input-m", false);
+  syDecision(null);
+  syDrawDay();
+  syDrawHist();
+  syDrawAsk();
 }
 
 function nowClock() {
   return clock(new Date().toISOString());
 }
 
-async function showSteps(wrap, eventIds) {
+// The steps of an answer that came without live steps: read them back from the events of this answer.
+async function showSteps(eventIds) {
   if (!eventIds || !eventIds.length) return;
   try {
     const state = await api("/api/state");
     const ids = new Set(eventIds);
-    const steps = (state.recent || []).filter((e) => ids.has(e.id) && e.type === "agent.tool_ran").reverse();
-    if (!steps.length) return;
-    const box = el("div", "steps");
-    steps.forEach((s) => box.appendChild(stepNode(s.text, false)));
-    wrap.appendChild(box);
+    const found = (state.recent || [])
+      .filter((e) => ids.has(e.id) && (e.type === "agent.tool_ran" || e.type === "approval.requested")).reverse();
+    // a step may also have come in live while the state was being fetched
+    found.filter((e) => !sy.steps.some((s) => s.id === e.id))
+      .forEach((e) => sy.steps.push({ id: e.id, text: e.text, waiting: e.type === "approval.requested" }));
+    syDrawAsk();
   } catch (e) { /* the answer is already shown */ }
 }
 
 async function sendChat(text) {
   const sends = document.querySelectorAll(".send");
   sends.forEach((b) => { b.disabled = true; });
-  $("chat-kick").textContent = "Εσύ · " + nowClock();
-  $("chat-title").textContent = "«" + text + "»";
-  const me = el("div", "cm me");
-  me.append(el("span", "m who2", "Εσύ · " + nowClock()), el("p", null, text));
-  addMsg(me);
-  const ai = el("div", "cm ai");
-  ai.appendChild(el("span", "m who2", "Συνεργάτης"));
-  const body = el("p", "working", "δουλεύω…");
-  ai.appendChild(body);
-  const steps = el("div", "steps");
-  steps.hidden = true;
-  ai.appendChild(steps);
-  liveSteps = steps;
-  addMsg(ai);
+  Object.assign(sy, { q: text, clock: nowClock(), at: Date.now(), doneAt: 0, doneClock: "", working: true, failed: false, reply: "", steps: [] });
+  syView("cur");
+  syDrawAsk();
+  liveSteps = $("sy-steps");
   try {
     const r = await post("/api/chat", { text });
-    body.className = "";
-    richText(body, r.reply || "Δεν έχω κάτι να πω.");
-    if (!steps.children.length) {
-      steps.remove();
-      await showSteps(ai, r.event_ids);
-    }
+    Object.assign(sy, { working: false, doneAt: Date.now(), doneClock: nowClock(), reply: r.reply || "Δεν έχω κάτι να πω." });
+    syDrawAsk();
+    if (!sy.steps.length) await showSteps(r.event_ids);
   } catch (e) {
-    ai.classList.add("err");
-    body.className = "";
-    body.textContent = e.message;
+    Object.assign(sy, { working: false, failed: true, doneAt: Date.now(), doneClock: nowClock(), reply: e.message });
+    syDrawAsk();
   }
   liveSteps = null;
   sends.forEach((b) => { b.disabled = false; });
   refreshSoon();
-  ai.scrollIntoView({ block: "end" });
 }
 
 function bindAsk(formId, inputId, goToChat) {
@@ -508,6 +738,7 @@ function bindAsk(formId, inputId, goToChat) {
 bindAsk("ask-home", "ask-home-input", true);
 bindAsk("ask-home-m", "ask-home-input-m", true);
 bindAsk("ask-chat", "ask-chat-input", false);
+syInit();
 
 route();
 refresh();

@@ -12,6 +12,7 @@
 <link rel="stylesheet" href="/static/arxiki.css">
 <link rel="stylesheet" href="/static/arxiki-95.css">
 <link rel="stylesheet" href="/static/undo.css">
+<link rel="stylesheet" href="/static/synomilia.css">
 </head>
 <body>
 <div class="banner" id="paused-banner" role="status" hidden>Όλες οι ενέργειες είναι σε παύση. Πάτα «Συνέχισε» για να ξαναρχίσουν.</div>
@@ -86,30 +87,97 @@
 </section>
 
 <!-- ΣΥΝΟΜΙΛΙΑ -->
-<section id="s-synomilia" class="screen">
-  <div class="band"><div class="in">
+<section id="s-synomilia" class="screen" aria-labelledby="h-synomilia">
+<div class="desk">
+  <div class="band bandB"><div class="in">
     <div>
-      <div class="kick"><i class="ph ph-user"></i><span id="chat-kick">Συνομιλία</span></div>
-      <h1 id="chat-title">Ρώτα ή ζήτα κάτι</h1>
+      <div class="kick"><i class="ph ph-chat-circle"></i><span id="sy-kick">Συνεργάτης</span></div>
+      <h1 id="h-synomilia">Συνομιλία</h1>
+      <p class="lead" id="sy-lead"></p>
+    </div>
+    <div class="sy-ask">
+      <form class="ask full" id="ask-chat" autocomplete="off">
+        <input id="ask-chat-input" type="text" placeholder="Γράψε στον συνεργάτη…" aria-label="Μήνυμα προς τον συνεργάτη">
+        <button class="send" type="submit" aria-label="Στείλε στον συνεργάτη"><i class="ph-bold ph-arrow-up"></i></button>
+      </form>
+      <div class="sy-sug" id="sy-sug"><button class="sy-q" type="button">Πώς πάμε σήμερα;</button><button class="sy-q" type="button">Τι λείπει από τα ράφια;</button><button class="sy-q" type="button">Τι πληρώνω αυτή την εβδομάδα;</button></div>
     </div>
   </div></div>
+
   <div class="wrap">
-    <div class="row2 g-chat solo" id="chat-grid">
-      <div class="col">
-        <section class="card" aria-label="Συνομιλία">
-          <div class="hd"><b><i class="ph ph-circles-three"></i>Συνεργάτης</b></div>
-          <div id="conv">
-            <p class="empty" id="conv-empty">Δεν υπάρχει ακόμα κάποια συνομιλία. Γράψε κάτω, π.χ. «Πώς πάμε σήμερα;».</p>
+    <article class="stage sy-cur" aria-label="Η τελευταία σου ερώτηση">
+      <div class="shd"><span><i class="ph ph-user"></i><span id="sy-who">Η τελευταία σου ερώτηση</span></span><span id="sy-when"></span></div>
+      <div class="sy-cb">
+        <div class="sy-cl">
+          <h2 id="sy-q">Ρώτα ή ζήτα κάτι</h2>
+          <div class="sy-well"><i class="ph-fill ph-circles-three"></i><p id="sy-ans" aria-live="polite">Γράψε στο πεδίο πάνω, ή πάτα μία έτοιμη ερώτηση.</p></div>
+          <ol class="sy-st" id="sy-steps" aria-label="Τα βήματα"></ol>
+        </div>
+        <div class="sy-cr">
+          <div class="sy-tiles">
+            <div class="sy-tl syn"><i class="ph-fill ph-timer"></i><b id="sy-t-time">—</b><span>χρόνος</span></div>
+            <div class="sy-tl apo"><i class="ph-fill ph-list-checks"></i><b id="sy-t-steps">—</b><span>βήματα</span></div>
+            <div class="sy-tl sy-al"><i class="ph-fill ph-hand-pointing"></i><b id="sy-t-wait">0</b><span>θέλει εσένα</span></div>
           </div>
-        </section>
-        <form class="ask full" id="ask-chat" autocomplete="off">
-          <input id="ask-chat-input" type="text" placeholder="Γράψε στον συνεργάτη…" aria-label="Μήνυμα προς τον συνεργάτη">
-          <button class="send" type="submit" aria-label="Στείλε στον συνεργάτη"><i class="ph-bold ph-arrow-up"></i></button>
-        </form>
+          <div class="sy-need" id="sy-need" aria-label="Θέλει εσένα">
+            <p class="sy-from"><i class="ph-fill ph-check-circle" id="sy-from-i"></i><span id="sy-from">Αποφάσεις</span></p>
+            <h3 id="sy-need-h">Δεν περιμένει τίποτα από σένα</h3>
+            <p class="sy-ex" id="sy-need-ex" hidden></p>
+            <p class="sy-ex" id="sy-need-why" hidden></p>
+            <div class="sy-acts" id="sy-need-acts" hidden></div>
+          </div>
+        </div>
       </div>
-      <article class="stage chat" id="chat-stage" hidden></article>
-    </div>
+      <div class="sft"><i class="ph ph-shield-check"></i><span class="tx">Ό,τι θέλει χρήματα ή email, σε ρωτά πρώτα.</span><a href="/static/pages/ergasies.html">Όλες οι εργασίες <i class="ph ph-arrow-right"></i></a></div>
+    </article>
+
+    <section class="card sy-hist mt" aria-label="Νωρίτερα σήμερα">
+      <div class="hd"><b><i class="ph ph-clock-counter-clockwise"></i>Νωρίτερα σήμερα</b><span class="r" id="sy-hist-r"></span></div>
+      <div class="sy-h4" id="sy-hist"></div>
+    </section>
   </div>
+</div>
+
+<div class="mob">
+  <div class="mb"><div class="mi">
+    <div class="kick"><i class="ph ph-chat-circle"></i><span id="sy-kick-m">Συνεργάτης</span></div>
+    <h1>Συνομιλία</h1>
+    <p class="lead" id="sy-lead-m"></p>
+  </div></div>
+  <div class="mwrap"><div class="mi">
+    <div class="sy-mneed" id="sy-mneed" hidden>
+      <p class="sy-mk"><i class="ph-fill ph-hand-pointing"></i><span id="sy-mk"></span></p>
+      <b id="sy-mneed-h"></b>
+      <span id="sy-mneed-ex"></span>
+      <div class="sy-macts" id="sy-mneed-acts"></div>
+    </div>
+    <div class="mpanel" id="m-cur">
+      <article class="sy-mcur">
+        <p class="sy-mkk"><i class="ph ph-user"></i><span id="sy-mkk">Η τελευταία σου ερώτηση</span></p>
+        <div class="sy-mq" id="sy-mq">Ρώτα ή ζήτα κάτι</div>
+        <a class="sy-msteps" id="sy-msteps" href="#synomilia" data-sy-go="vimata" hidden><span class="sy-d"><i class="ph-bold ph-check"></i></span><span id="sy-msteps-t"></span><i class="ph ph-caret-right"></i></a>
+        <p class="sy-mans" id="sy-mans" aria-live="polite">Γράψε στο πεδίο κάτω.</p>
+      </article>
+      <a class="sy-tile" href="#synomilia" data-sy-go="noritera"><span class="sy-ti"><i class="ph-fill ph-clock-counter-clockwise"></i></span><span><b>Νωρίτερα σήμερα</b><small id="sy-tile-s"></small></span><i class="ph ph-caret-right"></i></a>
+    </div>
+    <div class="mpanel" id="m-hist" hidden>
+      <a class="sy-back" href="#synomilia" data-sy-go="back"><i class="ph ph-caret-left"></i>Πίσω στη Συνομιλία</a>
+      <section class="card tbl" id="sy-mhist"></section>
+      <div class="sy-mday"><div><b id="sy-d-rounds">0</b><span>γύροι</span></div><div><b id="sy-d-steps">0</b><span>βήματα</span></div><div class="sy-al"><b id="sy-d-wait">0</b><span>θέλει εσένα</span></div></div>
+    </div>
+    <div class="mpanel" id="m-steps" hidden>
+      <a class="sy-back" href="#synomilia" data-sy-go="back"><i class="ph ph-caret-left"></i>Πίσω στη Συνομιλία</a>
+      <article class="sy-mst">
+        <ol class="sy-st" id="sy-steps-m" aria-label="Τα βήματα"></ol>
+      </article>
+      <div class="sy-mday"><div><b id="sy-s-time">—</b><span>χρόνος</span></div><div><b id="sy-s-steps">—</b><span>βήματα</span></div><div class="sy-al"><b id="sy-s-wait">0</b><span>θέλει εσένα</span></div></div>
+    </div>
+  </div></div>
+  <form class="ask full sy-mask" id="ask-chat-m" autocomplete="off">
+    <input id="ask-chat-input-m" type="text" placeholder="Γράψε στον συνεργάτη…" aria-label="Μήνυμα προς τον συνεργάτη">
+    <button class="send" type="submit" aria-label="Στείλε στον συνεργάτη"><i class="ph-bold ph-arrow-up"></i></button>
+  </form>
+</div>
 </section>
 </div>
 
