@@ -204,6 +204,7 @@ function place() {
     $('colL').append($('got'));
     $('colR').append($('miss'), $('extra'));
   }
+  $('man').placeholder = mq.matches ? 'Με το χέρι ή USB' : 'π.χ. 5449000000996';
   const v = $('v'); if (v.srcObject) v.play().catch(() => {});
 }
 mq.addEventListener('change', place); place();
