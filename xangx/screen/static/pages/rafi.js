@@ -5,7 +5,6 @@
   var COLLAPSE_OVER = 4;   // a camera with more rows than this shows only the first rows
   var SHOWN_ROWS = 3;
   var last = null;
-  var paused = false;
   var timer = null;
   var opened = {};         // cameras without a low position that the user opened
   var showAll = {};        // cameras whose full row list is open
@@ -567,52 +566,20 @@
     window.scrollTo(0, 0);
   }
 
-  /* ---------- pause and the live dot ---------- */
-  function paintPause() {
-    ["stop-btn", "stop-ibtn"].forEach(function (id) {
-      var b = $(id);
-      var ic = b.querySelector("i");
-      ic.className = "ph " + (paused ? "ph-play" : "ph-pause");
-      var label = paused ? "Συνέχισε" : "Παύση όλων";
-      var sp = b.querySelector("span");
-      if (sp) sp.textContent = label; else b.setAttribute("aria-label", label);
-    });
-  }
-
-  function loadPause() {
-    fetch("/api/state").then(function (r) { return r.json(); })
-      .then(function (s) { paused = !!s.paused; paintPause(); }).catch(function () {});
-  }
-
-  function togglePause() {
-    fetch(paused ? "/api/resume" : "/api/pause", { method: "POST" })
-      .catch(function () {}).then(loadPause);
-  }
-
-  function live(on) {
-    $("live-text").textContent = on ? "Ζωντανά" : "Σύνδεση…";
-    $("live-dot").style.background = on ? "#55B48A" : "#9AA6B6";
-  }
-
   function connect() {
     var es = new EventSource("/api/events/stream");
-    es.onopen = function () { live(true); loadSoon(); };
-    es.onerror = function () { live(false); };
+    es.onopen = function () { loadSoon(); };
     es.onmessage = function (msg) {
       var e;
       try { e = JSON.parse(msg.data); } catch (err) { return; }
       if (/^(shelf\.|stock\.|approval\.|system\.)/.test(e.type || "")) loadSoon();
-      if (/^system\./.test(e.type || "")) loadPause();
     };
   }
 
   function init() {
-    $("stop-btn").addEventListener("click", togglePause);
-    $("stop-ibtn").addEventListener("click", togglePause);
     window.addEventListener("hashchange", showScreen);
     showScreen();
     load();
-    loadPause();
     connect();
   }
 
