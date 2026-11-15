@@ -8,6 +8,8 @@
 <link rel="stylesheet" href="/static/vendor/phosphor/bold/style.css">
 <link rel="stylesheet" href="/static/vendor/phosphor/fill/style.css">
 <link rel="stylesheet" href="/static/app.css">
+<link rel="stylesheet" href="/static/arxiki.css">
+<link rel="stylesheet" href="/static/undo.css">
 <link rel="stylesheet" href="/static/pages/timologia.css">
 </head>
 <body>
@@ -25,58 +27,153 @@
   </div>
 </header>
 
-<section id="timologia" class="screen on">
-  <div class="band"><div class="in">
+<section id="s-tim" class="screen on" aria-labelledby="h-tim" aria-busy="true">
+
+<!-- ΦΟΡΤΩΣΗ -->
+<div id="v-wait">
+  <div class="band bandB"><div class="in">
     <div>
-      <div class="kick"><i class="ph ph-receipt"></i><span id="kick">Τιμολόγια</span></div>
-      <h1 id="title" aria-live="polite">Φόρτωση…</h1>
-      <p class="lead" id="lead" aria-live="polite" hidden></p>
+      <div class="kick"><i class="ph ph-receipt"></i>Τιμολόγια</div>
+      <h1>Φόρτωση…</h1>
     </div>
-    <div class="sum-top" id="sum-top" hidden><div class="kick">Σύνολο</div><div class="huge" id="sum-big"></div></div>
-    <a class="btn yes" href="/accountant/month"><i class="ph ph-folder-zip"></i>Φάκελος του μήνα</a>
-    <a class="btn yes" href="/invoices/photo"><i class="ph ph-camera"></i>Φωτογραφία τιμολογίου</a>
   </div></div>
-  <div class="wrap" id="wrap" aria-busy="true">
-    <section class="card tbl list" id="list" aria-label="Τιμολόγια σήμερα" hidden>
-      <div class="tr2 th"><span>Προμηθευτής</span><span>Τιμολόγιο</span><span class="n">Σύνολο</span><span>Κατάσταση</span></div>
-      <div id="list-body"></div>
-    </section>
-    <div class="row2 g-inv" id="detail" hidden>
-      <div class="col">
-        <section class="card tbl inv" id="lines-card" aria-label="Γραμμές τιμολογίου">
-          <div class="hd"><b><i class="ph ph-list-dashes"></i><span id="lines-title">Γραμμές του τιμολογίου</span></b><span class="m" id="lines-count"></span></div>
-          <div class="tr2 th" id="lines-th"></div>
-          <div id="lines-body"></div>
-          <div class="total"><div class="tr2 th" id="lines-total"></div></div>
-        </section>
-        <section class="card checks" id="checks-card" aria-label="Έλεγχοι">
-          <div class="hd"><b><i class="ph ph-seal-check"></i>Έλεγχοι</b><span class="m">χωρίς AI, με κανόνες</span></div>
-          <div id="checks-body"></div>
-        </section>
+</div>
+
+<!-- ΛΙΣΤΑ (χωρίς ?id) -->
+<div id="v-lista" hidden>
+<div class="desk">
+  <div class="band bandB"><div class="in">
+    <div>
+      <div class="kick"><i class="ph ph-receipt"></i><span id="l-kick"></span></div>
+      <h1 id="h-tim">Τιμολόγια</h1>
+      <p class="lead" id="l-lead"></p>
+    </div>
+    <div class="tb-act">
+      <div class="row">
+        <a class="btn yes" href="/invoices/photo"><i class="ph ph-camera"></i>Ανέβασε τιμολόγιο</a>
+        <a class="btn no" href="/invoices/photo"><i class="ph ph-upload-simple"></i>Από αρχείο</a>
       </div>
-      <div class="col" id="credit-col" hidden>
-        <article class="stage" aria-labelledby="credit-q">
-          <div class="shd"><span><i class="ph ph-receipt"></i>Θέλει εσένα</span><span id="credit-at"></span></div>
-          <div class="body one">
-            <div>
-              <h2 id="credit-q"></h2>
-              <p class="why" id="credit-why"></p>
-              <div class="will" id="credit-will"></div>
-              <div class="acts">
-                <button class="btn yes" id="credit-yes" type="button"><i class="ph ph-paper-plane-tilt"></i>Ναι, στείλε το αίτημα</button>
-                <button class="btn no" id="credit-no" type="button">Όχι</button>
-                <p class="msg" id="credit-msg" role="status"></p>
-              </div>
-            </div>
-          </div>
+      <span>Έρχονται και μόνα τους από email και myDATA</span>
+    </div>
+  </div></div>
+
+  <div class="wrap">
+    <div class="tb-g">
+      <article class="stage" id="l-stage" aria-label="Θέλουν εσένα"></article>
+      <article class="card" id="l-pay" aria-label="Πληρωμές των νέων">
+        <div class="hd"><b><i class="ph ph-calendar-blank"></i>Πληρωμές των νέων</b><span class="r" id="l-pay-n"></span></div>
+      </article>
+    </div>
+
+    <div class="tb-g mt">
+      <section class="card tbl tb-top" id="l-all" aria-label="Όλα τα τιμολόγια">
+        <div class="hd"><b><i class="ph ph-files"></i>Όλα τα τιμολόγια</b><span class="r" id="l-all-n"></span></div>
+        <div class="tr2 th"><span>Τιμολόγιο</span><span>Ήρθε</span><span class="n">Γραμμές</span><span>Κατάσταση</span><span class="n">Σύνολο</span></div>
+      </section>
+
+      <div class="stack">
+        <article class="card" id="l-tr" aria-label="Τάσεις τιμών">
+          <div class="hd"><b><i class="ph ph-chart-line-up"></i>Τάσεις τιμών</b><span class="r" id="l-tr-n"></span></div>
+        </article>
+        <article class="card" id="l-sp" aria-label="Αγορές ανά προμηθευτή">
+          <div class="hd"><b><i class="ph ph-storefront"></i>Αγορές ανά προμηθευτή</b><span class="r" id="l-sp-n"></span></div>
+        </article>
+        <article class="card" id="l-fold" aria-label="Φάκελος του μήνα">
+          <div class="hd"><b><i class="ph-fill ph-folder-simple tb-log"></i>Φάκελος του μήνα</b><span class="r">Λογιστής</span></div>
+          <div class="tb-fold" id="l-fold-b"></div>
         </article>
       </div>
     </div>
-    <section class="card" id="problem" hidden>
+  </div>
+</div>
+
+<div class="mob">
+  <div class="mb"><div class="mi">
+    <div class="kick"><i class="ph ph-receipt"></i><span id="m-kick"></span></div>
+    <h1>Τιμολόγια</h1>
+    <p class="lead" id="m-lead"></p>
+    <div class="up1">
+      <a class="btn yes" href="/invoices/photo"><i class="ph ph-camera"></i>Ανέβασε τιμολόγιο</a>
+      <div class="row"><a class="btn no sm" href="/invoices/photo"><i class="ph ph-upload-simple"></i>Από αρχείο</a><span>ή έρχονται μόνα τους από email και myDATA</span></div>
+    </div>
+  </div></div>
+  <div class="mwrap"><div class="mi">
+    <div class="seg2" role="tablist" aria-label="Τιμολόγια">
+      <button type="button" role="tab" aria-selected="true" data-p="m-need">Για σένα <span class="c" id="m-c-need"></span></button>
+      <button type="button" role="tab" aria-selected="false" data-p="m-all">Όλα <span class="c n" id="m-c-all"></span></button>
+      <button type="button" role="tab" aria-selected="false" data-p="m-tr">Τάσεις</button>
+    </div>
+    <div class="mpanel" id="m-need" role="tabpanel"></div>
+    <div class="mpanel" id="m-all" role="tabpanel" hidden></div>
+    <div class="mpanel" id="m-tr" role="tabpanel" hidden></div>
+  </div></div>
+</div>
+</div>
+
+<!-- ΕΝΑ ΤΙΜΟΛΟΓΙΟ (?id=) -->
+<div id="v-tim" hidden>
+<div class="desk">
+  <div class="band bandB"><div class="in">
+    <div>
+      <a class="back" href="/static/pages/timologia.html"><i class="ph ph-caret-left"></i>Τιμολόγια</a>
+      <div class="kick"><i class="ph ph-receipt" id="d-kick-i"></i><span id="d-kick"></span></div>
+      <h1 id="h-tim2"></h1>
+      <p class="lead" id="d-lead" hidden></p>
+    </div>
+    <div class="tb-sum" id="d-sum" hidden><span>Σύνολο</span><b id="d-total"></b></div>
+  </div></div>
+
+  <div class="wrap">
+    <article class="stage" id="d-stage" hidden></article>
+    <div class="tb-g" id="d-g">
+      <div class="stack">
+        <section class="card tbl tb-ln" id="d-lines" aria-label="Παραγγείλαμε, ήρθαν, χρεώθηκαν" hidden>
+          <div class="hd"><b><i class="ph ph-list-dashes"></i><span id="d-lines-t">Παραγγείλαμε, ήρθαν, χρεώθηκαν</span></b><span class="r" id="d-lines-n"></span></div>
+        </section>
+        <section class="card" id="d-hist" aria-label="Τι έγινε με αυτό το τιμολόγιο" hidden>
+          <div class="hd"><b><i class="ph ph-clock-counter-clockwise"></i>Τι έγινε με αυτό το τιμολόγιο</b><span class="r" id="d-hist-n"></span></div>
+        </section>
+      </div>
+      <div class="stack">
+        <section class="card" id="d-checks" aria-label="Έλεγχοι" hidden>
+          <div class="hd"><b><i class="ph ph-seal-check"></i>Έλεγχοι</b><span class="r">χωρίς AI, με κανόνες</span></div>
+        </section>
+        <section class="card" id="d-pay" aria-label="Πληρωμή" hidden>
+          <div class="hd"><b><i class="ph ph-calendar-blank"></i>Πληρωμή</b></div>
+        </section>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="mob">
+  <div class="mb"><div class="mi">
+    <a class="back" href="/static/pages/timologia.html"><i class="ph ph-caret-left"></i>Τιμολόγια</a>
+    <div class="tb-mtop">
+      <div><div class="kick"><i class="ph ph-receipt" id="m2-kick-i"></i><span id="m2-kick"></span></div><h1 id="m2-title"></h1><p class="lead" id="m2-lead"></p></div>
+      <div class="tot" id="m2-sum" hidden>Σύνολο<b id="m2-total"></b></div>
+    </div>
+  </div></div>
+  <div class="mwrap"><div class="mi" id="m2-body"></div></div>
+</div>
+</div>
+
+<!-- ΠΡΟΒΛΗΜΑ -->
+<div id="v-problem" hidden>
+  <div class="band bandB"><div class="in">
+    <div>
+      <div class="kick"><i class="ph ph-receipt"></i>Τιμολόγια</div>
+      <h1>Τιμολόγια</h1>
+    </div>
+  </div></div>
+  <div class="wrap">
+    <section class="card">
       <p class="empty" id="problem-text"></p>
-      <p class="empty"><a class="back-link" href="/static/pages/timologia.html">Όλα τα τιμολόγια</a></p>
+      <p class="empty"><a class="lk u" href="/static/pages/timologia.html">Όλα τα τιμολόγια</a></p>
     </section>
   </div>
+</div>
+
 </section>
 </div>
 
@@ -87,6 +184,7 @@
   <a class="on" href="/static/pages/timologia.html" aria-current="page"><i class="ph-fill ph-receipt"></i>Τιμολόγια</a>
   <a href="/static/pages/rafi.html"><i class="ph ph-package"></i>Ράφι</a>
 </nav>
+<script src="/static/undo.js"></script>
 <script src="/static/pages/timologia.js"></script>
 </body>
 </html>

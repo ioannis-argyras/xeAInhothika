@@ -1,62 +1,179 @@
-/* Τιμολόγια: οι κανόνες του πίνακα, των ελέγχων και της σκηνής είναι από το
-   design/kateuthynseis-v2/index.html (#timologio). */
-/* ---------- λίστες σαν πίνακας ---------- */
-.tbl .tr2{display:grid;align-items:center;gap:16px;padding:0 22px;min-height:50px;border-top:1px solid var(--hair)}
-.tbl .th{min-height:44px;background:var(--strip);color:var(--muted);font-weight:700;border-top:0;border-bottom:1px solid var(--line)}
-.tbl .n{text-align:right}
-.tbl .diff{background:#FBEFEB}
-.tbl .sub{display:none}
+/* Τιμολόγια: η εγκεκριμένη κατεύθυνση Β της αρχικής (15/11/2026), από το design/stadio1-v2/B-timologia/_sx-tim.css. Φορτώνεται μετά τα app.css και arxiki.css.
+   Νέες κλάσεις με πρόθεμα tb-. Το κουτί Α (hb-qb) και το ανοιχτό «Τι ακριβώς» (hb-lt) είναι στο arxiki.css. */
+#s-tim{--xl:44px;--l:20px;--gut:40px;--rise:112px;--gap:24px}
+@media (max-width:1023px){#s-tim{--xl:32px;--gut:16px;--rise:64px;--gap:16px}}
+#s-tim .bandB{padding-bottom:var(--rise)}
+#s-tim .bandB .in{padding-bottom:26px}
+#s-tim .bandB>*{max-width:1344px;margin-left:auto;margin-right:auto}
 
-/* ---------- τιμολόγιο ---------- */
-.inv .tr2{grid-template-columns:1fr 120px 90px 110px 150px}
-.inv.noorder .tr2{grid-template-columns:1fr 110px 150px}
-.total .tr2{min-height:48px}
-.inv .total .tr2{border-top:1px solid var(--line);border-bottom:0;grid-template-columns:1fr auto}
-.total .sum{color:var(--ink)}
-.total .sum b{font-size:var(--l)}
-.checks .ck{display:grid;grid-template-columns:24px 1fr;gap:10px;padding:12px 22px;border-top:1px solid var(--hair);align-items:start}
-.checks .ck:first-child{border-top:0}
-.checks .ck i{font-size:20px;color:var(--ok);margin-top:1px}
-.checks .ck.x i{color:var(--alert)}
-.up{display:inline-flex;align-items:center;gap:2px;color:var(--alert);font-weight:700}
-.up.down{color:var(--ok)}
-.was{display:block}
-.huge{font-size:var(--xl);font-weight:700;letter-spacing:-.03em;line-height:1}
-.sum-top{text-align:right}
-.sum-top .kick{justify-content:flex-end}
-.stage h2{font-size:min(var(--xl),40px)}
-.will{margin-top:16px}
-.will div{display:grid;grid-template-columns:28px 1fr;gap:8px;padding:12px 0;border-top:1px solid rgba(211,219,230,.12);color:var(--n5)}
-.will i{font-size:18px;color:#fff;margin-top:1px}
-.g-inv{grid-template-columns:minmax(0,1fr) 400px;align-items:start}
-.g-inv.solo{grid-template-columns:minmax(0,1fr)}
-.acts .msg{flex-basis:100%;color:var(--n5)}
-.acts .msg:empty{display:none}
+/* βιτρίνα */
+.tb-act{display:flex;flex-direction:column;align-items:flex-end;gap:10px;flex-shrink:0}
+.tb-act .row{display:flex;gap:10px}
+.tb-act>span{color:var(--n4)}
+.tb-sum{text-align:right;flex-shrink:0}
+.tb-sum span{color:var(--n4)}
+.tb-sum b{display:block;font-size:var(--xl);line-height:1.05;letter-spacing:-.03em}
+.tb-g{display:grid;grid-template-columns:minmax(0,1fr) 392px;gap:var(--gap);align-items:stretch}
 
-/* ---------- λίστα τιμολογίων ---------- */
-.list .tr2{grid-template-columns:minmax(0,1.1fr) 150px 130px minmax(0,1.4fr)}
-.list a.tr2{color:var(--ink)}
-.list a.tr2:hover{background:var(--strip)}
-.list a.tr2>span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.list a.tr2 .st{white-space:normal}
-.list .tr2 .go{font-weight:700}
-.back-link{color:var(--n2);font-weight:700;text-decoration:underline;text-underline-offset:4px;text-decoration-color:#9FB0C7}
-.kick a{text-decoration:underline;text-underline-offset:4px;text-decoration-color:rgba(163,180,204,.5)}
-.tbl .retry{margin:0 22px 18px;color:var(--ink);border-color:var(--line)}
-.tabs{grid-template-columns:repeat(5,1fr)}
-.tabs a.on{color:var(--band);font-weight:700}
+/* θέλουν εσένα: γραμμές με φόντο και λωρίδα ανά κατάσταση, πάνω στη σκηνή */
+/* μπλε σε μπλε λύνεται με επίπεδο άλλου τόνου: ανοιχτό πάνελ μέσα στη σκηνή, όπως το εγκεκριμένο κουτί Α */
+.tb-np{flex:1 0 auto;display:flex;flex-direction:column;margin:20px 28px 24px;background:#EEF2F7;border-radius:14px;box-shadow:0 2px 10px rgba(0,0,0,.35);overflow:hidden;color:var(--ink)}
+.tb-nr{flex:1 0 auto;display:grid;grid-template-columns:52px minmax(0,1fr) auto;gap:16px;align-items:center;padding:14px 20px;border-top:1px solid #C9D3E0}
+.tb-nr:first-child{border-top:0}
+.tb-top{align-self:start}
+.tb-nr.red{background:#FBE3DA;box-shadow:inset 6px 0 0 #B23A1E}
+.tb-nr.brz{background:#F4EAD6;box-shadow:inset 6px 0 0 var(--m-log)}
+.tb-ic{width:52px;height:52px;border-radius:14px;display:flex;align-items:center;justify-content:center;color:#fff;box-shadow:inset 0 1px 0 rgba(255,255,255,.14),0 2px 6px rgba(0,0,0,.3)}
+.tb-ic i{font-size:24px}
+.tb-ic.red{background:linear-gradient(160deg,#B23A1E,#8E2A12)}
+.tb-nr .t{min-width:0}
+.tb-nr .t span{display:block;color:var(--muted)}
+.tb-nr .t b{display:block;font-size:var(--l);line-height:1.25;color:var(--ink)}
+.tb-nr .t em{display:block;font-style:normal;color:var(--ink)}
+.tb-nr.red .t b{color:#8E2A12}
+.tb-nr .r{display:flex;align-items:center;gap:16px}
+.tb-nr .r>b{font-size:28px;letter-spacing:-.02em;white-space:nowrap}
+.tb-nr .btn.q{min-height:44px;padding:0 16px;font-weight:700}
 
-@media (max-width:1100px){
-  .g-inv{grid-template-columns:minmax(0,1fr)}
-}
-@media (max-width:720px){
-  .tbl .tr2{padding:0 16px}
-  .tbl .th{display:none}
-  .tbl .sub{display:block}
-  .inv .tr2{grid-template-columns:1fr auto;padding:12px 16px;gap:2px 12px}
-  .inv .tr2 .c{display:none}
-  .g-inv>.col:last-child{order:-1}
-  .list .tr2,.list a.tr2{grid-template-columns:minmax(0,1fr) auto;padding:12px 16px;gap:2px 12px}
-  .list .tr2 .c{display:none}
-  .list a.tr2 .st{grid-column:1/-1;white-space:normal}
+/* πληρωμές των νέων: δαχτυλίδια */
+.tb-tot{display:flex;align-items:baseline;justify-content:space-between;gap:12px;padding:16px 20px 12px}
+.tb-tot b{font-size:var(--xl);line-height:1;letter-spacing:-.03em}
+.tb-tot span{color:var(--muted);text-align:right}
+.tb-pr{display:grid;grid-template-columns:64px minmax(0,1fr) auto;gap:14px;align-items:center;padding:12px 20px;border-top:1px solid var(--hair)}
+:where(.tb-pr:nth-child(even of .tb-pr)){background:var(--zebra)}
+.tb-pr.tb-due{background:var(--row-bad);box-shadow:inset 4px 0 0 var(--alert)}
+.tb-pr .t b{display:block}.tb-pr .t span{display:block;color:var(--muted)}
+.tb-pr>b{font-size:var(--l);white-space:nowrap}
+.ring.tb-r0 .rt{stroke:#E5694D}
+.ring.tb-r0 .rv b{color:var(--alert)}
+.ring .rv small{font-size:12px;color:var(--muted);margin-top:2px}
+
+/* όλα τα τιμολόγια */
+.tb-sub{display:flex;align-items:center;justify-content:space-between;min-height:44px;padding:0 20px;background:var(--grp);border-top:1px solid var(--line);border-bottom:1px solid var(--line);font-weight:700}
+.tb-sub span{font-weight:400;color:var(--muted)}
+.tbl .tr2.th+.tb-sub{border-top:0}
+.tbl .st2.al{color:var(--alert)}
+.tbl .st2 .ph-check-circle{color:var(--ok)}
+.ring.tb-mini{width:32px;height:32px}
+.ring.tb-mini .rt,.ring.tb-mini .rf{stroke-width:4}
+.ring.tb-mini .rv b{font-size:13px}
+.tbl .st2.tb-due2{font-weight:700;color:var(--ink)}
+.tbl .st2.tb-paid{color:var(--muted)}
+.tbl .st2.tb-paid i{font-size:18px;color:var(--ok)}
+.tb-sub.tb-cl{background:var(--hdr);font-weight:700}
+.tb-sub.tb-cl a{display:flex;align-items:center;gap:6px;color:var(--n2);min-height:44px}
+
+/* τάσεις και αγορές */
+.tb-tr{padding:16px 20px 0}
+.tb-tr b{display:block}
+.tb-tr p{display:flex;align-items:center;gap:6px;color:var(--muted);margin-top:2px}
+.tb-tr p b{display:inline;color:var(--alert);font-size:28px;line-height:1.1;letter-spacing:-.02em}
+.tb-tr p i{color:var(--alert);font-size:22px}
+.tb-tr p{align-items:baseline}
+.tb-ink{color:var(--ink)!important}
+.tb-mst{display:grid;grid-template-columns:36px 48px minmax(0,1fr);gap:10px;align-items:center;padding:10px 16px;border-top:1px solid var(--hair)}
+.hd+.tb-mst{border-top:0}
+.tb-mst.you{background:#FFF4D6}
+.tb-mst .c{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff}
+.tb-mst .c i{font-size:18px}
+.tb-mst .c.you{background:var(--accent);color:var(--on-accent)}
+.tb-mst time{font-weight:700;color:var(--n2)}
+.tb-mst span{color:var(--muted)}
+.tb-mst span b{color:var(--ink)}
+.tb-ch{display:block;width:100%;height:150px}
+.tb-sp{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 12px;padding:12px 20px;border-top:1px solid var(--hair)}
+.tb-sp:first-of-type{border-top:0}
+.tb-sp>span{color:var(--ink)}
+.tb-sp>span em{font-style:normal;color:var(--muted)}
+.tb-sp>b{text-align:right}
+.tb-sp .bar{grid-column:1/-1;height:10px;border-radius:5px;background:var(--hair);overflow:hidden}
+.tb-sp .bar i{display:block;height:100%;border-radius:5px;background:var(--n2)}
+.tb-fold{padding:16px 20px 20px;display:flex;flex-direction:column;gap:12px}
+.tb-fold .v{font-size:var(--l);font-weight:700}
+.tb-fold .v span{display:block;font-size:var(--s);font-weight:400;color:var(--muted)}
+.hd>b i.tb-log{color:var(--m-log)}
+
+/* ένα τιμολόγιο: γραμμές */
+.tb-ln .tr2{grid-template-columns:minmax(0,2fr) 96px 64px 88px 72px 88px}
+.tb-ln .tr2 .n{text-align:right}
+.tb-ln .tr2 .x{color:var(--alert);font-weight:700}
+.tb-ln .tr2 .chg{grid-column:1/-1;display:flex;align-items:center;gap:6px;color:var(--muted);margin-top:-4px}
+.tb-ln .tr2 .chg b{color:var(--alert);display:flex;align-items:center;gap:2px}
+.tbl .tr2.tb-chg{background:var(--row-need);row-gap:4px;padding-top:12px;padding-bottom:12px}
+.tb-ln .tot{display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:60px;padding:0 20px;background:var(--hdr);border-top:1px solid var(--line);color:var(--muted)}
+.tb-ln .tot b{font-size:var(--l);color:var(--ink);white-space:nowrap}
+
+/* έλεγχοι */
+.tb-ck{display:grid;grid-template-columns:28px minmax(0,1fr) auto;gap:12px;align-items:center;min-height:52px;padding:8px 20px;border-top:1px solid var(--hair)}
+.hd+.tb-ck{border-top:0}
+:where(.tb-ck:nth-child(even of .tb-ck)){background:var(--zebra)}
+.tb-ck.bad{background:var(--row-bad);box-shadow:inset 4px 0 0 var(--alert)}
+.tb-ck>i{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:16px;background:var(--ok)}
+.tb-ck.bad>i{background:var(--alert)}
+.tb-ck>span:last-child{color:var(--muted);white-space:nowrap}
+
+/* πληρωμή του τιμολογίου */
+.tb-pay{display:grid;grid-template-columns:72px minmax(0,1fr);gap:16px;align-items:center;padding:18px 20px}
+.tb-pay>div>b{display:block;font-size:var(--l)}
+.tb-pay>div>span{display:block;color:var(--muted)}
+.tb-pay .ring{width:72px;height:72px}
+
+/* τι έγινε: βήματα στο χρώμα του μέλους */
+.tb-st{display:grid;grid-template-columns:repeat(6,minmax(0,1fr))}
+.tb-st>div{display:flex;flex-direction:column;gap:6px;padding:16px;border-left:1px solid var(--hair)}
+.tb-st>div:first-child{border-left:0}
+.tb-st>div.you{background:#FFF4D6}
+.tb-st .c{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff}
+.tb-st .c i{font-size:18px}
+.tb-st .c.you{background:var(--accent);color:var(--on-accent)}
+.tb-st time{font-weight:700;color:var(--n2)}
+.tb-st b{line-height:1.3}
+.tb-st span{color:var(--muted);line-height:1.35}
+
+@media (max-width:1180px){.tb-g{grid-template-columns:minmax(0,1fr) 340px}.tb-st{grid-template-columns:repeat(3,minmax(0,1fr))}}
+
+/* κινητό */
+@media (max-width:1023px){
+  .tb-g{grid-template-columns:1fr}
+  #s-tim .mb{padding-top:80px}
+  .tb-mtop{display:flex;align-items:flex-end;justify-content:space-between;gap:12px}
+  .tb-mtop .tot{text-align:right;color:var(--n4);line-height:1.2}
+  .tb-mtop .tot b{display:block;font-size:var(--xl);color:#fff;letter-spacing:-.03em}
+  .tb-mr{display:grid;grid-template-columns:40px minmax(0,1fr) auto;gap:12px;align-items:center;padding:14px 16px;border-top:1px solid var(--hair)}
+  .tb-mr:first-child{border-top:0}
+  .tb-mr.red{background:var(--row-bad);box-shadow:inset 4px 0 0 var(--alert)}
+  .tb-mr.brz{background:#F6EEDD;box-shadow:inset 4px 0 0 var(--m-log)}
+  .tb-mr .tb-ic{width:40px;height:40px;border-radius:12px}
+  .tb-mr .tb-ic i{font-size:20px}
+  .tb-mr .t b{display:block}
+  .tb-mr .t span{display:block;color:var(--alert);font-weight:700}
+  .tb-mr.brz .t span{color:var(--muted);font-weight:400}
+  .tb-mr .r{display:flex;align-items:center;gap:4px}
+  .tb-mr .r b{font-size:var(--l);white-space:nowrap}
+  .tb-mr .r i{font-size:18px;color:var(--muted)}
+  .tb-r3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:14px 12px}
+  .tb-r3>div{display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center;line-height:1.25}
+  .tb-r3>div b{font-size:16px}
+  .tb-r3>div span{color:var(--muted)}
+  .tb-r3 .ring{width:56px;height:56px}
+  .tb-mtot{display:flex;align-items:baseline;justify-content:space-between;padding:12px 16px 0}
+  .tb-mtot b{font-size:var(--xl);letter-spacing:-.03em;line-height:1}
+  .tb-mtot span{color:var(--muted)}
+  .tb-ml .tr2{grid-template-columns:minmax(0,1fr) auto}
+  .tb-ck{padding:8px 16px}
+  .tb-pay{padding:16px}
+  .mc .acts.hb-cra .btn.no{order:1;flex:0 0 auto}
+  .tb-lr{padding:12px 16px;border-top:1px solid var(--hair)}
+  .tb-lr:first-of-type{border-top:0}
+  :where(.tb-lr:nth-child(even of .tb-lr)){background:var(--zebra)}
+  .tb-lr.bad{background:var(--row-bad);box-shadow:inset 4px 0 0 var(--alert)}
+  .tb-lr.chg{background:var(--row-need)}
+  .tb-lr .a{display:flex;justify-content:space-between;gap:12px;align-items:baseline}
+  .tb-lr .a b.v{font-size:var(--l);white-space:nowrap}
+  .tb-lr .q{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:8px}
+  .tb-lr .q span{display:flex;flex-direction:column;line-height:1.2;color:var(--muted)}
+  .tb-lr .q span b{font-size:var(--l);color:var(--ink)}
+  .tb-lr .q span.x b,.tb-lr .q span.x{color:var(--alert)}
+  .tb-lr .nt{display:flex;align-items:center;gap:6px;margin-top:6px;color:var(--muted)}
+  .tb-lr .nt b{color:var(--alert)}
 }
