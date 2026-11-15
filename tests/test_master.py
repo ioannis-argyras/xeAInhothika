@@ -467,5 +467,16 @@ class PaymentsDueTest(MasterTestCase):
         self.assertEqual(telegram.notify_once(self.conn, api, "111"), 0)
 
 
+class GreekDayStartTests(unittest.TestCase):
+    def test_greek_day_start_on_dst_days(self):
+        start = tool_catalog.greek_day_start_utc
+        # Clocks went back on 25/10: midnight was still UTC+3.
+        self.assertEqual(start(datetime(2026, 10, 25, 12, 0, tzinfo=timezone.utc)), "2026-10-24T21:00:00.000Z")
+        # Clocks went forward on 29/03: midnight was still UTC+2.
+        self.assertEqual(start(datetime(2026, 3, 29, 12, 0, tzinfo=timezone.utc)), "2026-03-28T22:00:00.000Z")
+        # An ordinary day, so it does not change.
+        self.assertEqual(start(datetime(2026, 11, 15, 12, 0, tzinfo=timezone.utc)), "2026-11-14T22:00:00.000Z")
+
+
 if __name__ == "__main__":
     unittest.main()
