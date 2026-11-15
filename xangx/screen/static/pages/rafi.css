@@ -9,7 +9,7 @@
 /* βιτρίνα */
 .rf-act{display:flex;flex-direction:column;align-items:flex-end;gap:10px;flex-shrink:0}
 .rf-act>span{color:var(--n4)}
-.rf-g{display:grid;grid-template-columns:minmax(0,1fr) 392px;gap:var(--gap);align-items:stretch}
+.rf-g{display:grid;grid-template-columns:minmax(0,1fr) 440px;gap:var(--gap);align-items:stretch}
 .rf-top{align-self:start}
 
 /* σκηνή: τι είδε η κάμερα */
@@ -50,7 +50,7 @@
 .rf-apo{color:var(--m-apo)!important}
 
 /* σε χαμηλό */
-.rf-lr{flex:1 0 auto;display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-rows:auto auto;gap:8px 16px;align-items:center;padding:14px 20px;border-top:1px solid #EBC9BE;background:var(--row-bad);box-shadow:inset 4px 0 0 var(--alert)}
+.rf-lr{display:grid;grid-template-columns:36px minmax(0,1fr) 88px 52px;gap:12px;align-items:center;min-height:72px;padding:10px 20px;border-top:1px solid #EBC9BE;background:var(--row-bad);box-shadow:inset 4px 0 0 var(--alert)}
 .hd+.rf-lr{border-top:0}
 .rf-lr .t{min-width:0}
 .rf-lr .t b{display:block}
@@ -59,7 +59,14 @@
 .rf-lr .v,.rf-ex .v{grid-row:1/3;grid-column:2;text-align:right;line-height:1}
 .rf-lr .v b{display:block;font-size:34px;letter-spacing:-.02em;color:var(--alert);font-variant-numeric:tabular-nums}
 .rf-lr .v small,.rf-ex .v small{display:block;color:var(--muted);font-size:14px;margin-top:4px}
-.rf-lr .rf-lv{grid-column:1}
+.rf-lr .rf-lv{grid-column:auto}
+.rf-lr .v{grid-row:auto;grid-column:auto}
+.rf-lr .t span{font-size:14px}
+.rf-lr .v b{font-size:28px}
+.rf-li{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;background:linear-gradient(160deg,#B23A1E,#8E2A12);box-shadow:inset 0 1px 0 rgba(255,255,255,.18)}
+.rf-li i{font-size:18px}
+.rf-side{min-width:0}
+.rf-side>.card{flex:0 0 auto}
 
 /* όλες οι θέσεις: λωρίδα ανά κάμερα, ζέβρα, κόκκινο φόντο για χαμηλό */
 .rf-th,.rf-tr{display:grid;grid-template-columns:minmax(0,1fr) 180px 72px 170px;gap:20px;align-items:center;padding:0 20px}
@@ -86,7 +93,7 @@
 .rf-sub.rf-cl+.rf-sub.rf-cl{border-top:0}
 
 /* λήγουν σύντομα: αντίστροφη μέτρηση */
-.rf-ex{display:grid;grid-template-columns:64px minmax(0,1fr) auto;gap:14px;align-items:center;padding:12px 20px;border-top:1px solid var(--hair)}
+.rf-ex{display:grid;grid-template-columns:48px minmax(0,1fr) auto;gap:12px;align-items:center;min-height:72px;padding:10px 20px;border-top:1px solid var(--hair)}
 .hd+.rf-ex{border-top:0}
 .rf-ex.rf-ex1{background:var(--row-bad);box-shadow:inset 4px 0 0 var(--alert)}
 .rf-ex .t b{display:block}.rf-ex .t span{display:block;color:var(--muted)}
@@ -119,7 +126,11 @@
   .rf-mr .a b.v{font-size:var(--l);font-variant-numeric:tabular-nums}
   .rf-mr .a b.v.x{color:var(--alert)}
   .rf-mr .s{color:var(--muted)}
-  .rf-ex{grid-template-columns:56px minmax(0,1fr) auto;padding:12px 16px}
+  .rf-ex{grid-template-columns:44px minmax(0,1fr) auto;padding:10px 16px}
+  .rf-mri{display:grid;grid-template-columns:32px minmax(0,1fr);column-gap:12px;row-gap:6px;align-items:center;padding:12px 16px}
+  .rf-mri>.rf-li{grid-row:1/4;width:32px;height:32px}
+  .rf-mri>.rf-li i{font-size:16px}
+  .rf-mri>:not(.rf-li){grid-column:2}
   .rf-mcam{display:grid;grid-template-columns:72px minmax(0,1fr) auto;gap:12px;align-items:center;margin-bottom:16px;padding:12px;border-radius:16px;background:var(--stage);color:#fff;box-shadow:var(--sh-stage);border:1px solid rgba(211,219,230,.16)}
   .rf-mcam[hidden]{display:none}
   .rf-mth{width:72px;height:72px;border-radius:12px;background:linear-gradient(180deg,#0B1D38,#071630);box-shadow:inset 0 2px 8px rgba(0,0,0,.5);display:flex;align-items:flex-end;justify-content:center;padding-bottom:14px}

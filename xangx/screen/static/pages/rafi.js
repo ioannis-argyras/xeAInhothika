@@ -289,23 +289,27 @@
       if (p.last && p.last.kind === "added") mv = "πρόσθεσαν " + p.last.qty + " στις " + p.last.at;
 
       var row = el("div", "rf-lr");
+      var dot = el("span", "rf-li");
+      dot.appendChild(icon("ph-fill", "package"));
       var t = el("div", "t");
-      var sub = el("span", null, p.name + " · ");
-      sub.appendChild(el("em", null, mv));
+      var sub = el("span", null, p.name);
+      if (p.last) { sub.appendChild(document.createTextNode(" · ")); sub.appendChild(el("em", null, mv)); }
       add(t, el("b", null, p.product_name), sub);
       var v = el("p", "v");
       v.appendChild(el("b", null, p.on_hand == null ? "—" : String(p.on_hand)));
       if (thr != null) v.appendChild(el("small", null, "όριο " + thr));
-      add(row, t, v, level(p));
+      add(row, dot, t, level(p), v);
       body.appendChild(row);
 
-      var m = el("div", "rf-mr");
+      var m = el("div", "rf-mr rf-mri");
+      var mdot = el("span", "rf-li");
+      mdot.appendChild(icon("ph-fill", "package"));
       var a = el("div", "a");
       add(a, el("b", null, p.product_name), el("b", "v x", p.on_hand == null ? "—" : String(p.on_hand)));
       var s = el("span", "s", p.name);
       if (p.last) { s.appendChild(document.createTextNode(" · ")); s.appendChild(el("em", null, mv)); }
       if (thr != null) s.appendChild(document.createTextNode(" · όριο " + thr));
-      add(m, a, level(p), s);
+      add(m, mdot, a, level(p), s);
       mbody.appendChild(m);
     });
   }
@@ -478,8 +482,8 @@
       return;
     }
     list.forEach(function (x) {
-      body.appendChild(expRow(x, 64, 26, false));
-      mob.appendChild(expRow(x, 56, 22, true));
+      body.appendChild(expRow(x, 48, 19, false));
+      mob.appendChild(expRow(x, 44, 17, true));
     });
   }
 
