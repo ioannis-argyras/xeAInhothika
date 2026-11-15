@@ -70,6 +70,110 @@
     return node;
   }
   function pctClass(pct) { return pct > 0 ? "okt" : pct < 0 ? "al" : ""; }
+  function lowerFirst(text) { return String(text || "").charAt(0).toLowerCase() + String(text || "").slice(1); }
+
+  /* ---------- οι προσθήκες για τις στιγμές #2, #5, #6, #9 (σχέδιο 15/11/2026, arxiki-95.css) ---------- */
+  // ο κύκλος του μέλους με το εικονίδιο του γεγονότος
+  function a95Ic(team, icon) {
+    const c = h("span", "a95-ic " + (MEMBERS[team] ? MEMBERS[team].cls : "m-syn"));
+    c.appendChild(ic(icon));
+    return c;
+  }
+  // η φράση σε κομμάτια από τον server: το em είναι «bad» (κόκκινο), «good» (πράσινο) ή «b» (έντονο). Μόνο κείμενο, ποτέ HTML.
+  function a95Fill(node, parts) {
+    const tags = { bad: "em", good: "strong", b: "b" };
+    (parts || []).forEach((p) => {
+      if (p.em && tags[p.em]) node.appendChild(h(tags[p.em], null, p.t));
+      else node.appendChild(document.createTextNode(p.t));
+    });
+    return node;
+  }
+  // «Μόλις τώρα»: έως 4 γραμμές, το νεότερο πάνω
+  function a95Just(d) {
+    const items = (d.just_now || []).slice(0, 4);
+    if (!items.length) return null;
+    const box = h("div", "a95-just");
+    box.appendChild(h("p", "a95-jl", "Μόλις τώρα"));
+    items.forEach((it) => {
+      const row = h("div", "a95-jr" + (it.kind === "price.changed" ? " a95-pr" : ""));
+      const text = h("div");
+      text.append(h("small", null, it.who), a95Fill(h("b"), it.parts));
+      row.append(h("time", null, it.hhmm), a95Ic(it.team, it.icon), text);
+      box.appendChild(row);
+    });
+    return box;
+  }
+  // η αιτία της παραγγελίας, κάτω στη σκηνή
+  function a95Cause(cause) {
+    const row = h("div", "sft a95-cause");
+    row.appendChild(a95Ic("stock", "camera"));
+    row.appendChild(a95Fill(h("span"), cause.parts));
+    return row;
+  }
+  // το ποσό του τίτλου μένει σε μία γραμμή (χωρίς αλλαγή στο app.js: ξαναφτιάχνουμε τον τίτλο εδώ)
+  function a95Money(title) {
+    if (!title || title.querySelector(".a95-nw") || title.children.length) return;
+    const m = /\d[\d.]*,\d\d €/.exec(title.textContent);
+    if (!m) return;
+    const text = title.textContent;
+    title.replaceChildren(document.createTextNode(text.slice(0, m.index)), h("span", "a95-nw", m[0]),
+      document.createTextNode(text.slice(m.index + m[0].length)));
+  }
+  // η σκηνή της αρχικής στον υπολογιστή τη ζωγραφίζει το app.js· εδώ μπαίνουν από πάνω τα δικά μας κομμάτια
+  function a95Stage(state, d) {
+    const stage = byId("home-stage");
+    if (!stage) return;
+    const first = (state.pending_approvals || [])[0];
+    const sigOf = (x) => JSON.stringify(x || null);
+    if (first) {
+      stage.classList.remove("a95-calm");
+      const order = first.action === "send_order";
+      if (order) a95Money(stage.querySelector("h2"));
+      const cause = order && d.order && d.order.cause ? d.order.cause : null;
+      const have = stage.querySelector(".a95-cause");
+      const other = stage.querySelector(".sft:not(.a95-cause)");  // η δεύτερη απόφαση «Μετά: …» έχει ήδη τη θέση
+      if (have && (!cause || other || have.dataset.sig !== sigOf(cause))) have.remove();
+      if (cause && !other && !stage.querySelector(".a95-cause")) {
+        const node = a95Cause(cause);
+        node.dataset.sig = sigOf(cause);
+        stage.appendChild(node);
+      }
+      return;
+    }
+    if (!stage.classList.contains("low")) { stage.classList.remove("a95-calm"); return; }
+    stage.classList.add("a95-calm");
+    const box = stage.querySelector(".body > div");
+    if (!box) return;
+    const sig = sigOf(d.just_now);
+    const have = box.querySelector(".a95-just");
+    if (have && have.dataset.sig === sig) return;
+    if (have) have.remove();
+    const node = a95Just(d);
+    if (node) { node.dataset.sig = sig; box.appendChild(node); }
+  }
+  // κινητό: μία γραμμή κάτω από την κύρια κάρτα. Στη σκηνή της παραγγελίας η αιτία, σε άλλη απόφαση η πρώτη γραμμή του «Μόλις τώρα»
+  function a95Mline(d, kind) {
+    let line = document.getElementById("hb-mline");
+    let content = null;
+    if (kind === "order" && d.order && d.order.cause) {
+      const text = d.order.cause.parts.slice(1).map((x) => x.t).join("");
+      content = { team: "stock", icon: "camera", hhmm: d.order.cause.hhmm,
+        parts: [{ t: text.charAt(0).toUpperCase() + text.slice(1) }] };
+    } else if (kind === "other" && d.just_now && d.just_now.length) {
+      const first = d.just_now[0];
+      content = { team: first.team, icon: first.icon, hhmm: first.hhmm, parts: first.parts };
+    }
+    if (!content) { if (line) line.remove(); return; }
+    if (!line) {
+      line = h("p", "a95-mline");
+      line.id = "hb-mline";
+      byId("hb-car").insertAdjacentElement("afterend", line);
+    }
+    const text = h("span");
+    text.append(h("b", null, content.hhmm), document.createTextNode(" "));
+    a95Fill(text, content.parts);
+    line.replaceChildren(a95Ic(content.team, content.icon), text);
+  }
 
   /* δαχτυλίδι αντίστροφης μέτρησης: γεμίζει κατά min(μέρες, 30) / 30 */
   function ring(size, days, label) {
@@ -310,13 +414,18 @@
       if (!low.length) body.appendChild(h("p", "mv", "Όλα πάνω από το όριο"));
       else body.appendChild(h("p", "mv al", plural(low.length, "χαμηλό", "χαμηλά")));
       low.slice(0, 3).forEach((s) => {
-        const row = h("div", "stk");
+        const row = h("div", "stk" + (s.camera ? " a95-new" : ""));
         const seg = h("span", "seg");
         const total = Math.min(Math.max(Math.round(s.low), 1), 10);
         const filled = Math.min(total, Math.round(s.on_hand / s.low * total));
         for (let i = 0; i < total; i++) seg.appendChild(h("i", i < filled ? "lo" : ""));
         row.append(h("span", null, s.short), seg, h("b", null, qty(s.on_hand) + "/" + qty(s.low)));
         body.appendChild(row);
+        if (s.camera) {
+          const took = h("p", "a95-took");
+          took.append(ic("camera"), document.createTextNode("πήραν " + qty(s.camera.taken) + " στις " + s.camera.hhmm));
+          body.appendChild(took);
+        }
       });
       if (d.stock.expiring.length) {
         body.appendChild(h("p", null, "Λήγουν: " + d.stock.expiring.map((e) => e.short + " " + when(e)).join(", ")));
@@ -333,6 +442,13 @@
         stp.appendChild(li);
       });
       body.appendChild(stp);
+      if (o.reply) {
+        const reply = h("div", "a95-reply");
+        const text = h("div");
+        text.append(h("b", null, o.reply.summary), h("small", null, "απάντηση του προμηθευτή, " + o.reply.hhmm));
+        reply.append(a95Ic("orders", "envelope-open"), text);
+        body.appendChild(reply);
+      }
     } else if (key === "invoices") {
       const inv = d.invoices;
       if (!inv.today && inv.recent && inv.recent.length) {
@@ -437,7 +553,8 @@
       } else if (key === "stock") {
         const low = d.stock.low;
         if (!low.length) value = "Όλα πάνω από το όριο";
-        else { value = plural(low.length, "χαμηλό", "χαμηλά"); sub = low.slice(0, 3).map((s) => s.short.toLowerCase() + " " + qty(s.on_hand)).join(", "); }
+        else { value = plural(low.length, "χαμηλό", "χαμηλά"); sub = low.slice(0, 3).map((s) => s.short.toLowerCase() + " " + qty(s.on_hand) +
+          (s.camera ? " (πήραν " + qty(s.camera.taken) + ")" : "")).join(", "); }
       } else if (key === "orders") {
         const o = d.order;
         if (!o) { value = "Καμία παραγγελία σήμερα"; none = true; }
@@ -445,6 +562,7 @@
           value = money(o.net_cents);
           const verb = { proposed: "πρόταση", sent: "στάλθηκε η", received: "παραλήφθηκε η" }[o.step];
           sub = o.at + " " + verb + " ";
+          if (o.reply) sub = o.reply.hhmm + " ο προμηθευτής " + lowerFirst(o.reply.summary);
         }
       } else if (key === "invoices") {
         const inv = d.invoices;
@@ -473,7 +591,7 @@
       tile.appendChild(mtv);
       const mts = h("span", "mts");
       if (sub) mts.appendChild(document.createTextNode(sub));
-      if (key === "orders" && d.order) mts.appendChild(h("span", "nw", d.order.order_id));
+      if (key === "orders" && d.order && !d.order.reply) mts.appendChild(h("span", "nw", d.order.order_id));
       tile.appendChild(mts);
       box.appendChild(tile);
     });
@@ -587,7 +705,19 @@
     hd.appendChild(b);
     if (u.items.length) hd.appendChild(h("span", "r", u.items.length + " από " + u.can_total));
     box.appendChild(hd);
-    if (!u.items.length) box.appendChild(h("p", "empty", "Τίποτα για αναίρεση τώρα"));
+    if (!u.items.length) {
+      box.appendChild(h("p", "empty", "Τίποτα για αναίρεση τώρα"));
+      if (u.kinds && u.kinds.length) {
+        const what = h("div", "a95-undo");
+        what.appendChild(h("p", "a95-ul", "Αναιρείς μέσα σε " + plural(u.hours, "ώρα", "ώρες")));
+        u.kinds.forEach((k) => {
+          const row = h("p", "a95-ur");
+          row.append(a95Ic(k.team, k.icon), h("span", null, k.label));
+          what.appendChild(row);
+        });
+        box.appendChild(what);
+      }
+    }
     u.items.forEach((it, i) => {
       const row = h("div", "rem3" + (i === 0 ? " first" : ""));
       const t = h("div", "t");
@@ -668,12 +798,14 @@
     return card;
   }
 
-  function idleCard(state) {
-    const card = h("article", "stage mc");
+  function idleCard(state, d) {
+    const card = h("article", "stage mc a95-calm");
     const mcb = h("div", "mcb");
     const t = state.tasks || { done: 0, with_yes: 0, errors: 0 };
     mcb.append(h("h2", null, "Καμία απόφαση δεν περιμένει"),
       h("p", "why", t.done + " εργασίες σήμερα, " + t.with_yes + " με το «ναι» σου, " + t.errors + " λάθη."));
+    const just = a95Just(d);
+    if (just) mcb.appendChild(just);
     card.appendChild(mcb);
     return card;
   }
@@ -724,6 +856,10 @@
       const own = Object.assign({}, state, { pending_approvals: [a], shelf_focus: i === 0 ? state.shelf_focus : null });
       window.xangxStageNode(st, a, own, { chat: false, titleId: "hb-car-t" + cards.length,
         credit: (d.credit || {})[a.approval_id] || null, mobile: true });
+      if (a.action === "send_order") {
+        a95Money(st.querySelector("h2"));
+        if (d.order && d.order.cause) st.classList.add("a95-order");
+      }
       cards.push(st);
     });
     (state.pending_payments || []).forEach((p) => cards.push(payCard(p, d)));
@@ -740,7 +876,9 @@
     else if (!showSent && carHadSent) keep = Math.max(0, keep - 1);
     carHadSent = showSent;
     const real = cards.length;
-    if (!real) cards.push(idleCard(state));
+    if (!real) cards.push(idleCard(state, d));
+    const first = (state.pending_approvals || [])[0];
+    a95Mline(d, !real ? "idle" : !showSent && first && first.action === "send_order" ? "order" : "other");
 
     const chd = h("div", "chd");
     const title = h("b");
@@ -794,6 +932,7 @@
   function draw(state) {
     const d = data;
     if (!d) return;
+    a95Stage(state, d);
     const sig = JSON.stringify([d, state.timeline, state.day, state.pending_payments,
       state.pending_approvals, state.shelf_focus, state.tasks, sent]);
     if (sig === lastSig) return;
